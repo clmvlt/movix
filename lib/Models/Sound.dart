@@ -1,0 +1,7 @@
+enum ScanResult {
+  SCAN_SUCCESS,
+  SCAN_ERROR,
+  SCAN_SWITCH,
+  SCAN_FINISH,
+  NOTHING;
+}
