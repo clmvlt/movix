@@ -25,8 +25,8 @@ class _SplashPageState extends State<SplashPage> {
 
   Future<void> _initializeApp() async {
     SpoolerManager().initialize();
-    loadToursFromPreferences();
-    Globals.isScannerMode = await isScannerMode();
+    loadToursFromHive();
+    Globals.SCAN_MODE = await getScanMode();
     Globals.SOUND_PATH = await getSoundPATH();
     Globals.MAP_APP = await getMapApp();
 

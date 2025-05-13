@@ -135,6 +135,7 @@ class _SpoolerPageState extends State<SpoolerPage> {
       ),
       body: Column(
         children: [
+          Text('${_spoolerList.length} dans le spooler'),
           if (_isLoading || _spoolerManager.isProcessing)
             const Padding(
               padding: EdgeInsets.all(8.0),

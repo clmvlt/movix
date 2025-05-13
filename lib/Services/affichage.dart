@@ -86,6 +86,13 @@ Widget GetLivraisonIconPackageStatus(Package package, double size) {
       size: size * 0.6,
     );
     circleColor = Globals.COLOR_MOVIX_GREEN;
+  } else if (package.idStatus == '6') {
+    icon = Icon(
+      Icons.warning_amber_outlined,
+      color: Colors.white,
+      size: size * 0.6,
+    );
+    circleColor = Globals.COLOR_MOVIX_YELLOW;
   } else {
     icon = Icon(
       FontAwesomeIcons.xmark,

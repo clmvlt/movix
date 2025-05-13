@@ -14,7 +14,27 @@ import 'package:movix/Models/Tour.dart';
 import 'package:movix/Managers/SpoolerManager.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Models/Spooler.dart';
+import 'package:movix/Services/location.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+void ValidLivraisonAnomalie(
+    List<String> photosBase64,
+    String? selectedReasonCode,
+    String other,
+    String actions,
+    Map<String, Package> packages) {
+  final task = Spooler(url: "${Globals.API_URL}/anomalies/create", headers: {
+    'Authorization': Globals.profil?.token ?? ""
+  }, body: {
+    'code': selectedReasonCode,
+    'other': other,
+    'actions': actions,
+    'photos': photosBase64,
+    'barcodes': packages.values.map((package) => package.barcode).toList()
+  });
+  final globalSpooler = SpoolerManager();
+  globalSpooler.addTask(task);
+}
 
 void ValidLivraisonCommand(
     Command command, List<String> base64images, VoidCallback onUpdate) {
@@ -24,7 +44,6 @@ void ValidLivraisonCommand(
   final String timestamp = Globals.getSqlDate();
 
   final List<Spooler> tasks = [];
-
   for (final base64image in base64images) {
     tasks.add(Spooler(
       url: "$apiUrl/addCommandPicture/${command.id}",
@@ -36,6 +55,7 @@ void ValidLivraisonCommand(
   updateCommandState(command, onUpdate, false);
 
   for (final Package p in command.packages.values) {
+    if (p.idStatus == '5') continue;
     if (p.idStatus == '8' || p.idStatus == '9') {
       p.idStatus = '4';
     }
@@ -50,17 +70,22 @@ void ValidLivraisonCommand(
     ));
   }
 
+  final locationService = locator<LocationService>();
+  final location = locationService.currentLocation;
+
   tasks.add(Spooler(
     url: "$apiUrl/setCommandState/${command.id}",
     headers: {'Authorization': token},
     body: {
       "status": command.idStatus,
       "created_at": timestamp,
+      "latitude": location?.latitude.toString() ?? "0",
+      "longitude": location?.longitude.toString() ?? "0",
     },
   ));
 
   globalSpooler.addTasks(tasks);
-  saveToursToPreferences();
+  saveToursToHive();
 }
 
 Future<void> ValidLivraisonTour(
@@ -79,7 +104,7 @@ Future<void> ValidLivraisonTour(
     String sqlDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
     tour.endDate = sqlDate;
     tour.idStatus = "4";
-    saveToursToPreferences();
+    saveToursToHive();
 
     bool res = await setTourData(tour.id, "endkm", tour.endKm);
     if (!res) {
@@ -113,39 +138,46 @@ Future<void> openMap({
   double? latitude,
   double? longitude,
 }) async {
-  final double lat = latitude ?? double.parse(command!.pharmacyLatitude);
+  try {
+    final double lat = latitude ?? double.parse(command!.pharmacyLatitude);
 
-  final double lng = longitude ?? double.parse(command!.pharmacyLongitude);
+    final double lng = longitude ?? double.parse(command!.pharmacyLongitude);
 
-  String app = Globals.MAP_APP;
+    String app = Globals.MAP_APP;
 
-  if (app == "Waze") {
-    final wazeUri = Uri.parse('waze://?ll=$lat,$lng&navigate=yes');
-    if (await canLaunchUrl(wazeUri)) {
-      await launchUrl(wazeUri);
-    } else {
-      throw 'Impossible d\'ouvrir Waze.';
-    }
-  } else if (app == "Google Maps") {
-    if (Platform.isAndroid) {
-      final intent = AndroidIntent(
-        action: 'action_view',
-        data: 'google.navigation:q=$lat,$lng&mode=d',
-        package: 'com.google.android.apps.maps',
-        flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
-      );
-      await intent.launch();
-    } else if (Platform.isIOS) {
-      final googleMapsUrl =
-          Uri.parse('comgooglemaps://?daddr=$lat,$lng&directionsmode=driving');
-      if (await canLaunchUrl(googleMapsUrl)) {
-        await launchUrl(googleMapsUrl);
+    if (app == "Waze") {
+      final wazeUri = Uri.parse('waze://?ll=$lat,$lng&navigate=yes');
+      if (await canLaunchUrl(wazeUri)) {
+        await launchUrl(wazeUri);
       } else {
-        throw 'Google Maps n\'est pas installé sur cet appareil.';
+        throw 'Impossible d\'ouvrir Waze.';
       }
-    } else {
-      throw 'Plateforme non supportée.';
+    } else if (app == "Google Maps") {
+      if (Platform.isAndroid) {
+        final intent = AndroidIntent(
+          action: 'action_view',
+          data: 'google.navigation:q=$lat,$lng&mode=d',
+          package: 'com.google.android.apps.maps',
+          flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
+        );
+        await intent.launch();
+      } else if (Platform.isIOS) {
+        final googleMapsUrl = Uri.parse(
+            'comgooglemaps://?daddr=$lat,$lng&directionsmode=driving');
+        final appleMapsUrl =
+            Uri.parse('http://maps.apple.com/?daddr=$lat,$lng&dirflg=d');
+
+        if (await canLaunchUrl(googleMapsUrl)) {
+          await launchUrl(googleMapsUrl);
+        } else if (await canLaunchUrl(appleMapsUrl)) {
+          await launchUrl(appleMapsUrl);
+        } else {
+          throw 'Aucune application de navigation disponible.';
+        }
+      }
     }
+  } catch (e) {
+    Globals.showSnackbar(e.toString());
   }
 }
 
@@ -291,7 +323,7 @@ Future<int?> askForKilometers(BuildContext context) async {
 bool isCommandValid(Command command) {
   for (var p in command.packages.values) {
     var s = p.idStatus;
-    if (s != '3' && s != '4' && s != '5') return false;
+    if (s != '3' && s != '4' && s != '5' && s != '6') return false;
   }
   return true;
 }
@@ -342,10 +374,7 @@ void sendPharmacyInformations(String comment, bool invalidGeocodage,
 
   final task = Spooler(
     url: "$apiUrl/pharmacyinfos/create",
-    headers: {
-      'Authorization': token,
-      'Content-Type': 'application/json'
-      },
+    headers: {'Authorization': token, 'Content-Type': 'application/json'},
     body: {
       "cip": command.cip,
       "commentaire": comment,

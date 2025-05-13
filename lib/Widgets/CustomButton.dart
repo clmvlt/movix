@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:movix/Services/globals.dart';
@@ -9,12 +8,14 @@ Widget customButton({
   Color color = Globals.COLOR_MOVIX,
   double fontSize = 18,
   double verticalPadding = 16.0,
+  double horizontalPadding = 12.0,
   double borderRadius = 15.0,
+  double bottomPadding = 16.0,
+  double topPadding = 0,
 }) {
-  final double bottomPadding = Platform.isIOS ? 48.0 : 16.0;
 
   return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 12.0).copyWith(bottom: bottomPadding),
+    padding: EdgeInsets.symmetric(horizontal: horizontalPadding).copyWith(bottom: bottomPadding, top: topPadding),
     child: SizedBox(
       width: double.infinity,
       child: ElevatedButton(

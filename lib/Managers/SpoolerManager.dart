@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:hive/hive.dart';
 import 'package:movix/API/base.dart';
 import 'package:movix/Models/Spooler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class SpoolerManager {
   static final SpoolerManager _instance = SpoolerManager._internal();
@@ -17,11 +17,14 @@ class SpoolerManager {
 
   final Queue<Spooler> queue = Queue();
   bool isProcessing = false;
-  static const String storageKey = "spooler_queue";
   String lastError = "";
+  static const int batchSize = 10;
 
-  void initialize() {
-    loadQueue();
+  late Box<Spooler> spoolerBox;
+
+  Future<void> initialize() async {
+    spoolerBox = await Hive.openBox<Spooler>('spoolerBox');
+    await loadQueue();
   }
 
   int getTasksCount() {
@@ -47,15 +50,19 @@ class SpoolerManager {
     isProcessing = true;
 
     while (queue.isNotEmpty) {
-      Spooler task = queue.first;
-      bool success = await sendRequest(task);
-      if (success) {
-        queue.removeFirst();
-        await saveQueue();
-      } else {
-        isProcessing = false;
-        return false;
+      final batch = queue.take(batchSize).toList();
+      for (final task in batch) {
+        bool success = await sendRequest(task);
+        if (success) {
+          queue.remove(task);
+        } else {
+          isProcessing = false;
+          await saveQueue();
+          return false;
+        }
       }
+      await saveQueue();
+      await Future.delayed(Duration(milliseconds: 100));
     }
 
     isProcessing = false;
@@ -94,19 +101,19 @@ class SpoolerManager {
   }
 
   Future<void> saveQueue() async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<String> encodedTasks =
-        queue.map((task) => jsonEncode(task.toJson())).toList();
-    await prefs.setStringList(storageKey, encodedTasks);
+    await spoolerBox.clear();
+    for (int i = 0; i < queue.length; i++) {
+      await spoolerBox.put(i, queue.elementAt(i));
+    }
   }
 
   Future<void> loadQueue() async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<String>? encodedTasks = prefs.getStringList(storageKey);
-    if (encodedTasks != null) {
-      queue.clear();
-      queue.addAll(
-          encodedTasks.map((task) => Spooler.fromJson(jsonDecode(task))));
+    queue.clear();
+    for (int i = 0; i < spoolerBox.length; i++) {
+      final task = spoolerBox.get(i);
+      if (task != null) {
+        queue.add(task);
+      }
     }
   }
 

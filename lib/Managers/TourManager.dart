@@ -1,52 +1,43 @@
 import 'dart:convert';
-
-import 'package:movix/Managers/CommandManager.dart';
+import 'package:hive/hive.dart';
 import 'package:movix/Models/Tour.dart';
+import 'package:movix/Managers/CommandManager.dart';
 import 'package:movix/Services/globals.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+const String _toursBoxName = 'toursBox';
 
 Future<void> storeTours(List<Tour> tours) async {
-  Globals.tours = {
-    for (var tour in tours) tour.id: tour,
-  };
-
-  await saveToursToPreferences();
+  Globals.tours = {for (var tour in tours) tour.id: tour};
+  await saveToursToHive();
 }
 
-Future<void> saveToursToPreferences() async {
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  Map<String, String> toursJsonMap = {
-    for (var entry in Globals.tours.entries)
-      entry.key: jsonEncode(entry.value.toJson())
-  };
-  await prefs.setString('tours', jsonEncode(toursJsonMap));
+Future<void> saveToursToHive() async {
+  final box = await Hive.openBox<String>(_toursBoxName);
+  await box.clear();
+  for (var entry in Globals.tours.entries) {
+    await box.put(entry.key, jsonEncode(entry.value.toJson()));
+  }
 }
 
-Future<void> loadToursFromPreferences() async {
+Future<void> loadToursFromHive() async {
   try {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final box = await Hive.openBox<String>(_toursBoxName);
+    Map<String, Tour> loadedTours = {};
 
-    String? toursJsonMapString = prefs.getString('tours');
-
-    if (toursJsonMapString != null) {
-      Map<String, dynamic> toursJsonMap = jsonDecode(toursJsonMapString);
-      Map<String, Tour> loadedTours = {};
-
-      for (var entry in toursJsonMap.entries) {
-        String key = entry.key;
-        Map<String, dynamic> tourData = jsonDecode(entry.value);
+    for (var key in box.keys) {
+      String? jsonStr = box.get(key);
+      if (jsonStr != null) {
+        Map<String, dynamic> tourData = jsonDecode(jsonStr);
         Tour tour = Tour.fromJson(tourData);
-
         for (var command in tour.commands.values) {
           updateCommandState(command, () {}, false);
         }
-        
         loadedTours[key] = tour;
       }
-
-      Globals.tours = loadedTours;
     }
+
+    Globals.tours = loadedTours;
   } catch (e) {
-    print("Error loading tours from preferences: $e");
+    print("Error loading tours from Hive: $e");
   }
 }

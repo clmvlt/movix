@@ -11,7 +11,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _scanneurMode = Globals.isScannerMode;
+  String _selectedScanMode = Globals.SCAN_MODE;
   String _selectedSoundPack = Globals.SOUND_PATH == "mario" ? "Mario" : "Basic";
   String _selectedMapApp = Globals.MAP_APP;
 
@@ -23,26 +23,23 @@ class _SettingsPageState extends State<SettingsPage> {
         titleTextStyle: Globals.appBarTextStyle,
         title: const Text('Paramètres'),
         backgroundColor: Globals.COLOR_MOVIX,
-          foregroundColor: Colors.white,
+        foregroundColor: Colors.white,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: <Widget>[
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 3,
-            child: SwitchListTile(
-              title: const Text('Mode scanneur', style: TextStyle(fontWeight: FontWeight.w600)),
-              value: _scanneurMode,
-              activeColor: Globals.COLOR_MOVIX,
-              onChanged: (bool value) {
-                setState(() {
-                  setScannerMode(value);
-                  _scanneurMode = value;
-                });
-              },
-              secondary: const Icon(Icons.qr_code_scanner, color: Globals.COLOR_MOVIX,),
-            ),
+          _buildSelectableCard(
+            context,
+            title: 'Scanneur',
+            subtitle: _selectedScanMode,
+            icon: Icons.qr_code_scanner,
+            options: const ["Camera", "DT50", "Manuel"],
+            onSelected: (value) {
+              setState(() {
+                setScanMode(value);
+                _selectedScanMode = value;
+              });
+            },
           ),
           const SizedBox(height: 20),
           _buildSelectableCard(
@@ -97,7 +94,8 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showSelectionDialog(BuildContext context, String title, List<String> options, Function(String) onSelected) {
+  void _showSelectionDialog(BuildContext context, String title,
+      List<String> options, Function(String) onSelected) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -108,7 +106,9 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            child: Text(title,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ),
           ...options.map((option) => ListTile(
                 title: Text(option),

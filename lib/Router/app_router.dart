@@ -9,6 +9,7 @@ import 'package:movix/Pages/Chargement/ChargementPage.dart';
 import 'package:movix/Pages/Chargement/ChargementValidationPage.dart';
 import 'package:movix/Pages/Chargement/FSChargementPage.dart';
 import 'package:movix/Pages/Livraison/AddPharmacyInfosPage.dart';
+import 'package:movix/Pages/Livraison/AnomaliePage.dart';
 import 'package:movix/Pages/Livraison/FSLivraisonPage.dart';
 import 'package:movix/Pages/Livraison/LivraisonPage.dart';
 import 'package:movix/Pages/Livraison/LivraisonValidationPage.dart';
@@ -34,9 +35,11 @@ CustomTransitionPage buildPageWithTransition(Widget child) {
   );
 }
 
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
+  observers: [routeObserver],
   routes: [
     GoRoute(path: '/', pageBuilder: (_, __) => buildPageWithTransition(const SplashPage())),
     GoRoute(path: '/login', pageBuilder: (_, __) => buildPageWithTransition(const LoginPage())),
@@ -60,6 +63,15 @@ final GoRouter appRouter = GoRouter(
         final extra = state.extra as Map<String, dynamic>;
         final command = extra['command'] as Command;
         return buildPageWithTransition(PharmacyInfosPage(command: command));
+      },
+    ),
+    GoRoute(
+      path: '/anomalie',
+      pageBuilder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        final command = extra['command'] as Command;
+        final onUpdate = extra['onUpdate'] as VoidCallback;
+        return buildPageWithTransition(AnomaliePage(command: command, onUpdate: onUpdate));
       },
     ),
     GoRoute(

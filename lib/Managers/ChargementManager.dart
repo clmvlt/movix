@@ -7,58 +7,36 @@ import 'package:movix/Models/Command.dart';
 import 'package:movix/Models/Tour.dart';
 import 'package:movix/Services/globals.dart';
 
-Future<bool> validateChargement(Tour tour, Function update,
-    {List<String>? errors}) async {
-  if (tour.startDate == "") {
-    DateTime now = DateTime.now();
-    String sqlDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
-    setTourData(tour.id, "start_date", sqlDate);
-  }
-
-  final List<String> localErrors = [];
+Future<Map<String, dynamic>> validateChargement(Tour tour, VoidCallback update) async {
   final Map<String, dynamic> result = await validateLoading(tour);
 
-  if (result['status'] == 'success') {
+  if (result['success'] == true) {
     tour.idStatus = "3";
     update();
+
+    DateTime now = DateTime.now();
+    String sqlDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+    await setTourData(tour.id, "start_date", sqlDate);
+
+    await saveToursToHive();
+
     Globals.showSnackbar('Chargement réussi.',
         backgroundColor: Globals.COLOR_MOVIX_GREEN);
-    if (errors != null) errors.clear();
 
-    saveToursToPreferences();
-    return true;
+    return {'success': true, 'errors': ''};
   } else {
-    if (result['errors'] != null && result['errors'] is List) {
-      for (var err in result['errors']) {
-        String message = 'Erreur';
-        if (err['id_command'] != null) {
-          message = 'Commande ${err['id_command']}';
-          if (err['barcode'] != null) {
-            message += ' - Colis ${err['barcode']}';
-          }
-        }
-        if (err['error'] != null) {
-          message += ' : ${err['error']}';
-        }
-        localErrors.add(message);
-      }
-    } else {
-      localErrors.add('Une erreur est survenue lors de la validation.');
-    }
-
-    if (errors != null) {
-      errors.clear();
-      errors.addAll(localErrors);
-    }
-
-    saveToursToPreferences();
-    return false;
+    await saveToursToHive();
+    return {
+      'success': false,
+      'errors': result['errors'] ?? "xx"
+    };
   }
 }
 
+
 bool isAllScanned(Command command) {
   for (var p in command.packages.values) {
-    if (p.idStatus != '2' ) return false;
+    if (p.idStatus != '2') return false;
   }
   return true;
 }

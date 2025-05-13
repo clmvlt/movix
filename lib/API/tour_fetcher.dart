@@ -66,7 +66,8 @@ Future<bool> assignTour(String id) async {
 
 Future<bool> setTourState(String id, String status) async {
   try {
-    final response = await ApiBase.post('/tour/setTourState/$id', {'status': status});
+    final response =
+        await ApiBase.post('/tour/setTourState/$id', {'status': status});
     return ApiBase.isSuccess(response.statusCode);
   } catch (e) {
     print(e);
@@ -91,7 +92,13 @@ Future<Map<String, dynamic>> validateLoading(Tour tour) async {
         'id_command': command.id,
         'id_status': command.idStatus,
         'created_at': Globals.getSqlDate(),
-        'packages': [],
+        'packages': command.packages.values.map((package) {
+          return {
+            'barcode': package.barcode,
+            'id_status': package.idStatus,
+            'created_at': Globals.getSqlDate(),
+          };
+        }).toList(),
       };
     }).toList();
 
@@ -100,22 +107,32 @@ Future<Map<String, dynamic>> validateLoading(Tour tour) async {
       {'commands': commandList},
     );
 
-    if (response.statusCode == 200 || response.statusCode == 207) {
-      final responseData = ApiBase.decodeResponse(response);
+    final responseData = ApiBase.decodeResponse(response);
+    if (response.statusCode == 200) {
       return {
+        'success': true,
         'status': responseData['status'],
-        'errors': responseData['errors'] ?? [],
+        'errors': '',
+      };
+    } else if (response.statusCode == 207) {
+      return {
+        'success': false,
+        'status': responseData['status'],
+        'errors': responseData['errors'] ??
+            "Impossible de déterminer la source de l'erreur"
       };
     } else {
       return {
-        'status': 'error',
-        'message': 'Erreur serveur',
+        'success': false,
+        'status': responseData['status'],
+        'errors': "Impossible de déterminer la source de l'erreur"
       };
     }
   } catch (e) {
     return {
+      'success': false,
       'status': 'error',
-      'message': e.toString(),
+      'errors': e.toString(),
     };
   }
 }

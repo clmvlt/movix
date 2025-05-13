@@ -1,11 +1,11 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:movix/Models/Sound.dart';
+import 'package:movix/Router/app_router.dart';
 import 'package:movix/Services/globals.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class ScannerWidget extends StatefulWidget {
   final Future<ScanResult> Function(String) validateCode;
@@ -16,33 +16,68 @@ class ScannerWidget extends StatefulWidget {
   State<ScannerWidget> createState() => ScannerWidgetState();
 }
 
-class ScannerWidgetState extends State<ScannerWidget> with RouteAware {
+class ScannerWidgetState extends State<ScannerWidget>
+    with RouteAware, WidgetsBindingObserver {
   final Map<String, DateTime> _scannedCodes = {};
-  bool _torchOn = false;
-
   final AudioPlayer _player = AudioPlayer();
   final MobileScannerController _controller = MobileScannerController();
   final FocusNode _focusNode = FocusNode();
-  bool _isFullScreen = false;
 
+  bool _torchOn = false;
+  bool _isFullScreen = false;
   bool _scanningEnabled = true;
   String _inputLog = "";
+
+  ModalRoute<dynamic>? _modalRoute;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _modalRoute = ModalRoute.of(context);
+      if (_modalRoute != null) {
+        routeObserver.subscribe(this, _modalRoute!);
+      }
       _focusNode.requestFocus();
     });
     startScanner();
   }
 
+  Future<void> restartCamera() async {
+    try {
+      await _controller.stop();
+      await _controller.start();
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint('Erreur restartCamera: $e');
+    }
+  }
+
   @override
   void dispose() {
+    stopScanner();
     _controller.dispose();
-    _player.dispose();
     _focusNode.dispose();
+    routeObserver.unsubscribe(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didPushNext() {
+    stopScanner();
+  }
+
+  @override
+  void didPopNext() {
+    startScanner();
+    _focusNode.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(Durations.extralong1, () {
+        restartCamera();
+      });
+    });
   }
 
   void startScanner() {
@@ -75,6 +110,10 @@ class ScannerWidgetState extends State<ScannerWidget> with RouteAware {
     try {
       final result = await widget.validateCode(code.toLowerCase());
       await _playSound(result);
+
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {});
+      }
     } catch (_) {}
   }
 
@@ -86,7 +125,6 @@ class ScannerWidgetState extends State<ScannerWidget> with RouteAware {
       } else {
         _inputLog += event.logicalKey.keyLabel;
       }
-      setState(() {});
     }
   }
 
@@ -97,21 +135,54 @@ class ScannerWidgetState extends State<ScannerWidget> with RouteAware {
         padding: const EdgeInsets.only(bottom: 10),
         child: SizedBox(
           height: 300,
-          child: Center(
-            child: _buildMobileScanner(),
-          ),
+          child: Center(child: _buildMobileScanner()),
         ),
       );
     }
 
+    if (Globals.SCAN_MODE == 'DT50') {
+      return _buildKeyboardScanner();
+    } else if (Globals.SCAN_MODE == 'Manuel') {
+      return _buildManualScanner();
+    }
+
     return Padding(
-      padding: EdgeInsets.only(bottom: Platform.isIOS ? 30 : 10),
+      padding: const EdgeInsets.only(bottom: 10),
       child: SizedBox(
         height: 100,
         child: Center(
-          child: Globals.isScannerMode
-              ? _buildKeyboardScanner()
-              : _buildMobileScanner(),
+          child: _buildMobileScanner(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildManualScanner() {
+    final TextEditingController controller = TextEditingController();
+
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white24, width: 1),
+        ),
+        child: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white, fontSize: 18),
+          cursorColor: Colors.white,
+          onSubmitted: (value) {
+            _processCode(value);
+            controller.clear();
+          },
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            hintText: 'Scanner input',
+            hintStyle: TextStyle(color: Colors.white70),
+          ),
         ),
       ),
     );
@@ -121,21 +192,7 @@ class ScannerWidgetState extends State<ScannerWidget> with RouteAware {
     return RawKeyboardListener(
       focusNode: _focusNode,
       onKey: _handleKeyEvent,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SvgPicture.asset(
-            'assets/svg/barcode.svg',
-            height: 80,
-            width: 100,
-            color: Colors.black,
-          ),
-          const Text(
-            "Mode scanner",
-            style: TextStyle(fontSize: 8, color: Colors.black),
-          ),
-        ],
-      ),
+      child: const SizedBox.shrink(),
     );
   }
 
@@ -201,7 +258,7 @@ class ScannerWidgetState extends State<ScannerWidget> with RouteAware {
               right: 5,
               child: IconButton(
                 icon: Icon(
-                  _torchOn ? Icons.flash_off : Icons.flash_on,
+                  _torchOn ? Icons.flash_on : Icons.flash_off,
                   color: Colors.white,
                   size: 30,
                 ),

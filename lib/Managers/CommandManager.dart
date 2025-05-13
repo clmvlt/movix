@@ -7,7 +7,8 @@ void updateCommandState(Command command, VoidCallback onUpdate, bool online) {
   final packageStatuses = command.packages.values.map((p) => p.idStatus);
   String saveId = command.idStatus;
 
-  bool allStatusesEqual(String status) => packageStatuses.every((s) => s == status);
+  bool allStatusesEqual(String status) =>
+      packageStatuses.every((s) => s == status);
   bool anyStatusEqual(String status) => packageStatuses.any((s) => s == status);
 
   if (allStatusesEqual('3')) {
@@ -16,6 +17,8 @@ void updateCommandState(Command command, VoidCallback onUpdate, bool online) {
     command.idStatus = '2'; // Chargé
   } else if (allStatusesEqual('1')) {
     command.idStatus = '1'; // À enlever
+  } else if (allStatusesEqual('6')) {
+    command.idStatus = '4'; // non livré car anomalie
   } else if (allStatusesEqual('4')) {
     command.idStatus = '4'; // NON LIVRÉ
   } else if (allStatusesEqual('5')) {
@@ -28,6 +31,8 @@ void updateCommandState(Command command, VoidCallback onUpdate, bool online) {
     command.idStatus = '6'; // chargé incomplet
   } else if (anyStatusEqual('3') && !allStatusesEqual('3')) {
     command.idStatus = '5'; // livré incomplet
+  } else if (anyStatusEqual('6') && !allStatusesEqual('6')) {
+    command.idStatus = '5'; // livré incomplet car anomalie
   }
 
   onUpdate();

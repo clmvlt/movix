@@ -3,15 +3,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'globals.dart';
 
-Future<bool> isScannerMode() async {
+Future<String> getScanMode() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  bool? isScanner = prefs.getBool('isScanner');
+  String? scanMode = prefs.getString('scan_mode');
 
-  return isScanner ?? false;
+  return scanMode ?? "Camera";
 }
 
-Future<void> setScannerMode(bool isScanner) async {
+Future<void> setScanMode(String scanMode) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  prefs.setBool('isScanner', isScanner);
-  Globals.isScannerMode = isScanner;
+  prefs.setString('scan_mode', scanMode);
+  Globals.SCAN_MODE = scanMode;
 }

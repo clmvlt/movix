@@ -18,10 +18,11 @@ class Globals {
 
   static String SOUND_PATH = "basic";
   static String MAP_APP = "Google Maps";
-  static bool isScannerMode = false;
+  static String SCAN_MODE = 'Camera';
   static Profil? profil;
   static Map<String, Tour> tours = {};
   static bool showEnded = false;
+  static bool get isScannerMode => Globals.SCAN_MODE == 'DT50';
 
   static final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();

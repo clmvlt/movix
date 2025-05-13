@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:movix/Managers/SpoolerManager.dart';
+import 'package:movix/Models/MapAdapter.dart';
+import 'package:movix/Models/Spooler.dart';
 import 'package:movix/Router/app_router.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/location.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +23,16 @@ void main() async {
   ]);
   await FMTCObjectBoxBackend().initialise();
   await const FMTCStore('mapStore').manage.create();
+
+  await Hive.initFlutter();
+  //await Hive.deleteBoxFromDisk('spoolerBox');
+
+  Hive.registerAdapter(SpoolerAdapter());
+  Hive.registerAdapter(MapAdapter());
+  await SpoolerManager().initialize();
+
+  final appDocDir = await getApplicationDocumentsDirectory();
+  Hive.init(appDocDir.path);
 
   runApp(const MyApp());
 }

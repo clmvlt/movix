@@ -122,7 +122,9 @@ class Command {
       cWeight: json['c_weight'] ?? "",
       cVolume: json['c_volume'] ?? "",
       cNumTransport: json['c_num_transport'] ?? "",
-      tourOrder: int.parse(json['tour_order'] ?? '0'),
+      tourOrder: json['tour_order'] is int
+      ? json['tour_order']
+      : int.tryParse(json['tour_order']?.toString() ?? '0') ?? 0,
       idTour: json['id_tour'] ?? "",
       expDate: json['exp_date'] ?? "",
       expCode: json['exp_code'] ?? "",

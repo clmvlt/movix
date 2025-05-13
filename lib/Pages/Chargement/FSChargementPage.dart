@@ -125,11 +125,7 @@ class _FSChargementPageState extends State<FSChargementPage> {
   void navigateToCommand(int index) async {
     if (index >= 0 && index < widget.tour.commands.length) {
       Command nextCommand = widget.tour.commands[listIds[index]]!;
-      setState(() {
-        currentIndex = index;
-        command = nextCommand;
-      });
-      onUpdate();
+      selectCommand(nextCommand);
     }
   }
 
@@ -181,137 +177,161 @@ class _FSChargementPageState extends State<FSChargementPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      color: Colors.white,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                    Stack(
+                      children: [
+                        
+                        Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          color: Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                GetChargementIconCommandStatus(command, 18),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                    child: Text(
-                                  command.pharmacyName,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
-                                )),
-                                if (command.pNew) ...[
-                                  const SizedBox(width: 5),
-                                  newBadge(),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            // STATUS ICON
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    "${command.pharmacyAddress1} ${command.pharmacyAddress2} ${command.pharmacyAddress3}"
-                                        .trim(),
-                                    style: const TextStyle(
-                                        fontSize: 12, color: Colors.black54),
-                                  ),
+                                Row(
+                                  children: [
+                                    GetChargementIconCommandStatus(command, 18),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                        child: Text(
+                                      command.pharmacyName,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                    )),
+                                    if (command.pNew) ...[
+                                      const SizedBox(width: 5),
+                                      newBadge(),
+                                    ],
+                                  ],
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              command.pharmacyCity,
-                              style: const TextStyle(
-                                  fontSize: 12, color: Colors.black54),
-                            ),
-                            const SizedBox(height: 12),
-                            // PACKAGES LIST
-                            command.packages.isNotEmpty
-                                ? ListView.builder(
-                                    shrinkWrap: true,
-                                    itemCount: command.packages.length,
-                                    itemBuilder: (context, index) {
-                                      final package = command.packages.values
-                                          .elementAt(index);
-                                      final zoneName = package.zoneName.isEmpty
-                                          ? '00'
-                                          : package.zoneName;
-                                      final freshEmote =
-                                          package.fresh == 't' ? '❄️' : '';
-                                      final barcodeText =
-                                          '${package.barcode} ${getColisEmote(package.type)}$freshEmote';
-
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 4.0),
-                                        child: Row(
-                                          children: [
-                                            getIconPackageStatus(package, 16),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                barcodeText,
-                                                style: const TextStyle(
-                                                    fontSize: 12),
-                                              ),
-                                            ),
-                                            Text(
-                                              zoneName,
-                                              style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.black54),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  )
-                                : const Text(
-                                    'Aucun package disponible',
-                                    style: TextStyle(
-                                        fontSize: 12, color: Colors.black54),
-                                  ),
-
-                            const Divider(height: 24),
-                            Row(
-                              children: [
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: customToolButton(
-                                    color: Globals.COLOR_MOVIX_RED,
-                                    onPressed: () {
-                                      ShowChargementAnomalieManu(
-                                          context, command, onUpdate);
-                                    },
-                                    iconData: FontAwesomeIcons.xmark,
-                                    text: "Non chargé",
-                                  ),
-                                ),
-                                if (kDebugMode)
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: customToolButton(
-                                      color: Globals.COLOR_MOVIX_YELLOW,
-                                      onPressed: () {
-                                        validerTousLesColis(command);
-                                      },
-                                      iconData: FontAwesomeIcons.xmark,
-                                      text: "DEBUG VALIDE",
+                                const SizedBox(height: 4),
+                                // STATUS ICON
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        "${command.pharmacyAddress1} ${command.pharmacyAddress2} ${command.pharmacyAddress3}"
+                                            .trim(),
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black54),
+                                      ),
                                     ),
-                                  ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  command.pharmacyCity,
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.black54),
+                                ),
+                                const SizedBox(height: 12),
+                                // PACKAGES LIST
+                                command.packages.isNotEmpty
+                                    ? ListView.builder(
+                                        shrinkWrap: true,
+                                        itemCount: command.packages.length,
+                                        itemBuilder: (context, index) {
+                                          final package = command
+                                              .packages.values
+                                              .elementAt(index);
+                                          final zoneName =
+                                              package.zoneName.isEmpty
+                                                  ? '00'
+                                                  : package.zoneName;
+                                          final freshEmote =
+                                              package.fresh == 't' ? '❄️' : '';
+                                          final barcodeText =
+                                              '${package.barcode} ${getColisEmote(package.type)}$freshEmote';
+
+                                          return Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 4.0),
+                                            child: Row(
+                                              children: [
+                                                getIconPackageStatus(
+                                                    package, 16),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    barcodeText,
+                                                    style: const TextStyle(
+                                                        fontSize: 12),
+                                                  ),
+                                                ),
+                                                Text(
+                                                  zoneName,
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.black54),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : const Text(
+                                        'Aucun package disponible',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black54),
+                                      ),
+
+                                const Divider(height: 24),
+                                Row(
+                                  children: [
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: customToolButton(
+                                        color: Globals.COLOR_MOVIX_RED,
+                                        onPressed: () {
+                                          ShowChargementAnomalieManu(
+                                              context, command, onUpdate);
+                                        },
+                                        iconData: FontAwesomeIcons.xmark,
+                                        text: "Non chargé",
+                                      ),
+                                    ),
+                                    if (kDebugMode)
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: customToolButton(
+                                          color: Globals.COLOR_MOVIX_YELLOW,
+                                          onPressed: () {
+                                            validerTousLesColis(command);
+                                          },
+                                          iconData: FontAwesomeIcons.xmark,
+                                          text: "DEBUG VALIDE",
+                                        ),
+                                      ),
+                                  ],
+                                )
                               ],
-                            )
-                          ],
+                            ),
+                          ),
                         ),
-                      ),
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Text("${PackageSearcher.countPackageStatusInCommand(command)['2']}/${command.packages.length}",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

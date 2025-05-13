@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:movix/Managers/PackageManager.dart';
 import 'package:movix/Models/Command.dart';
+import 'package:movix/Models/PackageSearcher.dart';
 import 'package:movix/Models/Sound.dart';
 import 'package:movix/Managers/LivraisonManager.dart';
 import 'package:movix/Widgets/CustomButton.dart';
@@ -100,215 +102,216 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
     Command command = widget.command;
 
     return Scaffold(
-      appBar: AppBar(
-        toolbarTextStyle: Globals.appBarTextStyle,
-        titleTextStyle: Globals.appBarTextStyle,
-        title: Text(command.pharmacyName),
-        backgroundColor: Globals.COLOR_MOVIX,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.white),
-            onPressed: () {
-              context.push('/pharmacy', extra: {"command": command});
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Card(
-                    margin:
-                        const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
-                    elevation: 6,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    color: Colors.white,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              GetLivraisonIconCommandStatus(command, 26),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  command.pharmacyName,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+        appBar: AppBar(
+          toolbarTextStyle: Globals.appBarTextStyle,
+          titleTextStyle: Globals.appBarTextStyle,
+          title: Text(command.pharmacyName),
+          backgroundColor: Globals.COLOR_MOVIX,
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.info_outline, color: Colors.white),
+              onPressed: () {
+                context.push('/pharmacy', extra: {"command": command});
+              },
+            ),
+          ],
+        ),
+        body: Stack(fit: StackFit.expand, children: [
+          SingleChildScrollView(
+              child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ScannerWidget(
+                  validateCode: validateCode,
+                ),
+                customButton(
+                    onPressed: () => _showInputDialog(context),
+                    color: CIPScanned
+                        ? Globals.COLOR_MOVIX_GREEN
+                        : Globals.COLOR_MOVIX_RED,
+                    fontSize: 14,
+                    horizontalPadding: 2,
+                    bottomPadding: 8,
+                    label: CIPScanned ? 'CIP Validé' : "CIP non validé"),
+                Card(
+                  elevation: 6,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            GetLivraisonIconCommandStatus(command, 26),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                command.pharmacyName,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
                                 ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
-                              if (command.pNew) ...[
-                                const SizedBox(width: 5),
-                                newBadge(),
-                              ],
+                            ),
+                            if (command.pNew) ...[
+                              const SizedBox(width: 5),
+                              newBadge(),
                             ],
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  "${command.pharmacyAddress1} ${command.pharmacyAddress2} ${command.pharmacyAddress3}"
-                                      .trim(),
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Colors.black54),
-                                ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                "${command.pharmacyAddress1} ${command.pharmacyAddress2} ${command.pharmacyAddress3}"
+                                    .trim(),
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.black54),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            command.pharmacyCity,
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.black54),
-                          ),
-                          const SizedBox(height: 12),
-                          command.packages.isNotEmpty
-                              ? SizedBox(
-                                  height:
-                                      command.packages.length > 3 ? 150 : null,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[100],
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    padding: const EdgeInsets.all(8),
-                                    child: Scrollbar(
-                                      thumbVisibility: true,
-                                      child: SingleChildScrollView(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: command.packages.values
-                                              .map((package) {
-                                            final emote =
-                                                getColisEmote(package.type);
-                                            final isFresh = package.fresh == 't'
-                                                ? '❄️'
-                                                : '';
-                                            return Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 4.0),
-                                              child: Row(
-                                                children: [
-                                                  GetLivraisonIconPackageStatus(
-                                                      package, 15),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    package.barcode,
-                                                    style: const TextStyle(
-                                                      fontSize: 11,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color: Colors.black87,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          command.pharmacyCity,
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.black54),
+                        ),
+                        const SizedBox(height: 12),
+                        command.packages.isNotEmpty
+                            ? Stack(
+                                children: [
+                                  SizedBox(
+                                    height: command.packages.length > 3
+                                        ? 200
+                                        : null,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: const EdgeInsets.all(8),
+                                      child: Scrollbar(
+                                        thumbVisibility: true,
+                                        child: SingleChildScrollView(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: command.packages.values
+                                                .map((package) {
+                                              final emote =
+                                                  getColisEmote(package.type);
+                                              final isFresh =
+                                                  package.fresh == 't'
+                                                      ? '❄️'
+                                                      : '';
+                                              return Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 4.0),
+                                                child: Row(
+                                                  children: [
+                                                    GetLivraisonIconPackageStatus(
+                                                        package, 15),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      package.barcode,
+                                                      style: const TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: Colors.black87,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  Text(
-                                                    " $emote$isFresh",
-                                                    style: const TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color: Colors.black87,
+                                                    Text(
+                                                      " $emote$isFresh",
+                                                      style: const TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: Colors.black87,
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          }).toList(),
+                                                  ],
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                )
-                              : const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 8),
-                                    child: Text(
-                                      'Aucun package disponible',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontStyle: FontStyle.italic,
-                                        color: Colors.black54,
+                                  Positioned(
+                                    top: 0,
+                                    right: 10,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: Text(
+                                        "${PackageSearcher.countPackageStatusInCommand(command)['3']}/${command.packages.length}",
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
                                       ),
                                     ),
                                   ),
+                                ],
+                              )
+                            : const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(
+                                    'Aucun package disponible',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontStyle: FontStyle.italic,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
                                 ),
-                          const SizedBox(height: 12),
-                        ],
-                      ),
+                              ),
+                        const SizedBox(height: 12),
+                        customToolButton(
+                            color: Globals.COLOR_MOVIX_RED,
+                            onPressed: () {
+                              context.push('/anomalie', extra: {
+                                'command': command,
+                                'onUpdate': onUpdate
+                              });
+                            },
+                            iconData: FontAwesomeIcons.warning,
+                            text: "Anomalie")
+                      ],
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () =>
-                        _showInputDialog(context), // Rendre la Card cliquable
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(
-                          vertical: 6, horizontal: 0),
-                      elevation: 5,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      color: CIPScanned
-                          ? Globals.COLOR_MOVIX_GREEN
-                          : Globals.COLOR_MOVIX_RED,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 12.0, horizontal: 12.0),
-                        child: Text(
-                          CIPScanned ? 'CIP Validé' : "CIP non validé",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  )
-                ],
-              ),
+                ),
+                const SizedBox(height: 100,)
+              ],
             ),
+          )),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: customButton(
+                onPressed: () {
+                  confirmValidation(command);
+                },
+                label: "Valider"),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: ScannerWidget(
-              validateCode: validateCode,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0)
-                .copyWith(bottom: 8.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: customButton(
-                  onPressed: () {
-                    confirmValidation(command);
-                  },
-                  label: "Valider"),
-            ),
-          )
-        ],
-      ),
-    );
+        ]));
   }
 
   void _showInputDialog(BuildContext context) {
@@ -380,7 +383,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
                   }
                 },
                 child: const Text(
-                  "Suivant",
+                  "Valider",
                   style: TextStyle(color: Colors.white),
                 ),
               ),
@@ -394,7 +397,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
   void confirmValidation(Command command) async {
     if (!CIPScanned) {
       Globals.showSnackbar("Veuillez scanner le CIP",
-          backgroundColor: Colors.red);
+          backgroundColor: Globals.COLOR_MOVIX_RED);
       return;
     }
 
