@@ -1,43 +1,50 @@
 import 'dart:io';
 
-import 'package:android_intent_plus/android_intent.dart';
-import 'package:android_intent_plus/flag.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:movix/API/tour_fetcher.dart';
 import 'package:movix/Managers/CommandManager.dart';
+import 'package:movix/Managers/SpoolerManager.dart';
 import 'package:movix/Managers/TourManager.dart';
 import 'package:movix/Models/Command.dart';
 import 'package:movix/Models/Package.dart';
-import 'package:movix/Models/Tour.dart';
-import 'package:movix/Managers/SpoolerManager.dart';
-import 'package:movix/Services/globals.dart';
 import 'package:movix/Models/Spooler.dart';
+import 'package:movix/Models/Tour.dart';
+import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/location.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 void ValidLivraisonAnomalie(
-    List<String> photosBase64,
+    List<String> picturesBase64,
     String? selectedReasonCode,
     String other,
     String actions,
-    Map<String, Package> packages) {
-  final task = Spooler(url: "${Globals.API_URL}/anomalies/create", headers: {
-    'Authorization': Globals.profil?.token ?? ""
-  }, body: {
-    'code': selectedReasonCode,
-    'other': other,
-    'actions': actions,
-    'photos': photosBase64,
-    'barcodes': packages.values.map((package) => package.barcode).toList()
-  });
+    Map<String, Package> packages,
+    Command command) {
+  final task = Spooler(
+      url: "${Globals.API_URL}/anomalies",
+      headers: {'Authorization': Globals.profil?.token ?? ""},
+      body: {
+        'cip': command.pharmacy.cip,
+        'code': selectedReasonCode,
+        'other': other,
+        'actions': actions,
+        'barcodes': packages.values.map((package) => package.barcode).toList(),
+        'pictures': picturesBase64
+            .asMap()
+            .entries
+            .map((entry) =>
+                {'name': 'photo_${entry.key + 1}.jpg', 'base64': entry.value})
+            .toList()
+      },
+      formType: 'post');
   final globalSpooler = SpoolerManager();
   globalSpooler.addTask(task);
 }
 
 void ValidLivraisonCommand(
-    Command command, List<String> base64images, VoidCallback onUpdate) {
+    Command command, List<String> base64images, VoidCallback onUpdate) async {
   final globalSpooler = SpoolerManager();
   final String token = Globals.profil?.token ?? "";
   const String apiUrl = Globals.API_URL;
@@ -46,27 +53,32 @@ void ValidLivraisonCommand(
   final List<Spooler> tasks = [];
   for (final base64image in base64images) {
     tasks.add(Spooler(
-      url: "$apiUrl/addCommandPicture/${command.id}",
+      url: "$apiUrl/commands/${command.id}/picture",
       headers: {'Authorization': token},
-      body: {"base64": base64image},
+      body: {
+        "name": "photo_xx.jpg",
+        "base64": base64image
+      },
+      formType: 'post',
     ));
   }
 
   updateCommandState(command, onUpdate, false);
 
   for (final Package p in command.packages.values) {
-    if (p.idStatus == '5') continue;
-    if (p.idStatus == '8' || p.idStatus == '9') {
-      p.idStatus = '4';
+    if (p.status.id == 5) continue;
+    if (p.status.id == 8 || p.status.id == 9) {
+      p.status.id = 4;
     }
     tasks.add(Spooler(
-      url: "$apiUrl/setPackageState/${p.barcode}",
+      url: "$apiUrl/packages/state",
       headers: {'Authorization': token},
       body: {
-        "status": p.idStatus,
-        "cip": command.cip,
-        "created_at": timestamp,
+        "packageBarcodes": [p.barcode],
+        "statusId": p.status.id,
+        "createdAt": timestamp
       },
+      formType: 'put',
     ));
   }
 
@@ -74,14 +86,16 @@ void ValidLivraisonCommand(
   final location = locationService.currentLocation;
 
   tasks.add(Spooler(
-    url: "$apiUrl/setCommandState/${command.id}",
-    headers: {'Authorization': token},
+    url: "$apiUrl/commands/state",
+    headers: {'Authorization': token, "Content-Type": "application/json"},
     body: {
-      "status": command.idStatus,
-      "created_at": timestamp,
-      "latitude": location?.latitude.toString() ?? "0",
-      "longitude": location?.longitude.toString() ?? "0",
+      "commandIds": [command.id],
+      "statusId": command.status.id,
+      "createdAt": timestamp,
+      "latitude": location?.latitude ?? 0.0,
+      "longitude": location?.longitude ?? 0.0,
     },
+    formType: 'put',
   ));
 
   globalSpooler.addTasks(tasks);
@@ -98,27 +112,26 @@ Future<void> ValidLivraisonTour(
         backgroundColor: Globals.COLOR_MOVIX_RED);
   } else {
     int? endkm = await askForKilometers(context);
-    tour.endKm = endkm.toString();
-    tour.totalKm = (int.parse(tour.endKm) - int.parse(tour.startKm)).toString();
+    tour.endKm = endkm ?? 0;
     DateTime now = DateTime.now();
     String sqlDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
     tour.endDate = sqlDate;
-    tour.idStatus = "4";
+    tour.status.id = 4;
     saveToursToHive();
 
-    bool res = await setTourData(tour.id, "endkm", tour.endKm);
+    bool res = await setTourData(tour.id, {"endKm": tour.endKm});
     if (!res) {
       return Globals.showSnackbar(
           "Impossible de mettre à jour les endkm de la tournée",
           backgroundColor: Globals.COLOR_MOVIX_RED);
     }
-    res = await setTourData(tour.id, "end_date", tour.endDate);
+    res = await setTourData(tour.id, {"endDate": tour.endDate});
     if (!res) {
       return Globals.showSnackbar(
           "Impossible de mettre à jour le end_date de la tournée",
           backgroundColor: Globals.COLOR_MOVIX_RED);
     }
-    res = await setTourState(tour.id, tour.idStatus);
+    res = await setTourState(tour.id, tour.status.id);
     if (!res) {
       return Globals.showSnackbar(
           "Impossible de mettre à jour le status de la tournée",
@@ -129,7 +142,7 @@ Future<void> ValidLivraisonTour(
         backgroundColor: Globals.COLOR_MOVIX_GREEN);
 
     updateState();
-    context.go('/tours');
+    GoRouter.of(context).go('/tours');
   }
 }
 
@@ -139,113 +152,316 @@ Future<void> openMap({
   double? longitude,
 }) async {
   try {
-    final double lat = latitude ?? double.parse(command!.pharmacyLatitude);
+    final double lat = latitude ?? command?.pharmacy.latitude ?? 0;
+    final double lng = longitude ?? command?.pharmacy.longitude ?? 0;
 
-    final double lng = longitude ?? double.parse(command!.pharmacyLongitude);
+    final String selectedApp = Globals.MAP_APP;
 
-    String app = Globals.MAP_APP;
+    if (lat == 0 || lng == 0) {
+      Globals.showSnackbar('Aucune position disponible.',
+          backgroundColor: Globals.COLOR_MOVIX_RED);
+      return;
+    }
 
-    if (app == "Waze") {
-      final wazeUri = Uri.parse('waze://?ll=$lat,$lng&navigate=yes');
-      if (await canLaunchUrl(wazeUri)) {
-        await launchUrl(wazeUri);
+    Uri? nativeUri;
+    Uri? altNativeUri;
+    Uri webUri = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving');
+
+    if (Platform.isAndroid) {
+      if (selectedApp == 'Waze') {
+        nativeUri = Uri.parse('waze://?ll=$lat,$lng&navigate=yes');
+        altNativeUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
+        webUri = Uri.parse('https://waze.com/ul?ll=$lat,$lng&navigate=yes');
+      } else if (selectedApp == 'Google Maps') {
+        nativeUri = Uri.parse('google.navigation:q=$lat,$lng&mode=d');
+        altNativeUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
+        webUri = Uri.parse(
+            'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving');
       } else {
-        throw 'Impossible d\'ouvrir Waze.';
+        nativeUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
       }
-    } else if (app == "Google Maps") {
-      if (Platform.isAndroid) {
-        final intent = AndroidIntent(
-          action: 'action_view',
-          data: 'google.navigation:q=$lat,$lng&mode=d',
-          package: 'com.google.android.apps.maps',
-          flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
-        );
-        await intent.launch();
-      } else if (Platform.isIOS) {
-        final googleMapsUrl = Uri.parse(
-            'comgooglemaps://?daddr=$lat,$lng&directionsmode=driving');
-        final appleMapsUrl =
-            Uri.parse('http://maps.apple.com/?daddr=$lat,$lng&dirflg=d');
+    } else if (Platform.isIOS) {
+      if (selectedApp == 'Waze') {
+        nativeUri = Uri.parse('waze://?ll=$lat,$lng&navigate=yes');
+        webUri = Uri.parse('https://waze.com/ul?ll=$lat,$lng&navigate=yes');
+      } else if (selectedApp == 'Google Maps') {
+        nativeUri =
+            Uri.parse('comgooglemaps://?daddr=$lat,$lng&directionsmode=driving');
+        webUri = Uri.parse(
+            'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving');
+      } else {
+        nativeUri = Uri.parse('maps://?daddr=$lat,$lng&dirflg=d');
+        webUri = Uri.parse('https://maps.apple.com/?daddr=$lat,$lng&dirflg=d');
+      }
+    } else {
+      // Web/Desktop fallback
+      nativeUri = null;
+      webUri = Uri.parse(
+          'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving');
+    }
 
-        if (await canLaunchUrl(googleMapsUrl)) {
-          await launchUrl(googleMapsUrl);
-        } else if (await canLaunchUrl(appleMapsUrl)) {
-          await launchUrl(appleMapsUrl);
-        } else {
-          throw 'Aucune application de navigation disponible.';
-        }
+    final List<Uri> attempts = [
+      if (nativeUri != null) nativeUri,
+      if (altNativeUri != null) altNativeUri,
+      webUri,
+    ];
+
+    for (final uri in attempts) {
+      try {
+        final bool launched = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+        if (launched) return;
+      } catch (_) {
+        // on essaie l'URI suivant
       }
     }
+
+    throw Exception(
+        'Aucune application/URL n\'a pu être ouverte. Plateforme: ${Platform.operatingSystem}, App: $selectedApp, Tentatives: ${attempts.map((u) => u.toString()).join(' | ')}');
   } catch (e) {
-    Globals.showSnackbar(e.toString());
+    Globals.showSnackbar(
+      'Erreur lors de l\'ouverture de la carte: ${e.runtimeType}: ${e.toString()}',
+      backgroundColor: Globals.COLOR_MOVIX_RED,
+    );
   }
 }
 
 Future<String?> askForImmat(BuildContext context) async {
   TextEditingController immatController = TextEditingController();
+  FocusNode focusNode = FocusNode();
+  bool showError = false;
 
   return showDialog<String>(
     context: context,
     barrierDismissible: false,
     builder: (context) {
-      return WillPopScope(
-        onWillPop: () async => false,
-        child: AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
-          ),
-          title: const Text(
-            "Immat du véhicule",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-          content: TextField(
-            controller: immatController,
-            maxLength: 7,
-            textCapitalization: TextCapitalization.characters,
-            decoration: InputDecoration(
-              hintText: "Ex : AB123XZ",
-              counterText: "",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(
-                  color: Globals.COLOR_MOVIX,
-                  width: 1.5,
+      return StatefulBuilder(
+        builder: (context, setState) {
+          
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, result) {
+              focusNode.unfocus();
+            },
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                decoration: BoxDecoration(
+                  color: Globals.COLOR_SURFACE,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                        child: Icon(
+                          Icons.local_shipping_outlined,
+                          color: Globals.COLOR_MOVIX,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "Immatriculation du véhicule",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: Globals.COLOR_TEXT_DARK,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Saisissez l'immatriculation de votre véhicule de livraison",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Globals.COLOR_TEXT_DARK.withOpacity(0.7),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Globals.COLOR_BACKGROUND,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: immatController,
+                          focusNode: focusNode,
+                          autofocus: true,
+                          maxLength: 7,
+                          textCapitalization: TextCapitalization.characters,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Globals.COLOR_TEXT_DARK,
+                            letterSpacing: 2,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: "AB123XZ",
+                            hintStyle: TextStyle(
+                              color: Globals.COLOR_TEXT_DARK.withOpacity(0.5),
+                              fontWeight: FontWeight.normal,
+                              letterSpacing: 1,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 20,
+                              horizontal: 16,
+                            ),
+                            counterText: "",
+                          ),
+                        ),
+                      ),
+                      if (showError) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Globals.COLOR_MOVIX_RED.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Globals.COLOR_MOVIX_RED.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 16,
+                                color: Globals.COLOR_MOVIX_RED,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Veuillez saisir une immatriculation",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Globals.COLOR_MOVIX_RED,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              focusNode.unfocus();
+                              Navigator.of(context).pop();
+                              GoRouter.of(context).go('/tours');
+                            },
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(20),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Text(
+                                "Fermer",
+                                style: TextStyle(
+                                  color: Globals.COLOR_TEXT_DARK.withOpacity(0.8),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: 1,
+                        height: 56,
+                        color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                      ),
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              String immat = immatController.text.trim().toUpperCase();
+                              if (immat.isNotEmpty) {
+                                focusNode.unfocus();
+                                Navigator.pop(context, immat);
+                              } else {
+                                setState(() {
+                                  showError = true;
+                                });
+                              }
+                            },
+                            borderRadius: const BorderRadius.only(
+                              bottomRight: Radius.circular(20),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Text(
+                                "Valider",
+                                style: TextStyle(
+                                  color: Globals.COLOR_TEXT_DARK,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                    ],
+                  ),
                 ),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(
-                  color: Globals.COLOR_MOVIX,
-                  width: 2,
-                ),
-              ),
             ),
-          ),
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Globals.COLOR_MOVIX,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              onPressed: () {
-                String immat = immatController.text.trim().toUpperCase();
-                if (immat.isNotEmpty) {
-                  Navigator.pop(context, immat);
-                }
-              },
-              child: const Text(
-                "Valider",
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       );
     },
   );
@@ -253,67 +469,196 @@ Future<String?> askForImmat(BuildContext context) async {
 
 Future<int?> askForKilometers(BuildContext context) async {
   TextEditingController kmController = TextEditingController();
+  FocusNode focusNode = FocusNode();
 
   return showDialog<int>(
     context: context,
     barrierDismissible: false,
     builder: (context) {
-      return WillPopScope(
-        onWillPop: () async => false,
-        child: AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
-          ),
-          title: const Text(
-            "Entrer le kilométrage",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          focusNode.unfocus();
+        },
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            decoration: BoxDecoration(
+              color: Globals.COLOR_SURFACE,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                        child: Icon(
+                          Icons.speed_outlined,
+                          color: Globals.COLOR_MOVIX,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "Kilométrage du véhicule",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: Globals.COLOR_TEXT_DARK,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Saisissez le kilométrage actuel de votre véhicule",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Globals.COLOR_TEXT_DARK.withOpacity(0.7),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Globals.COLOR_BACKGROUND,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: kmController,
+                          focusNode: focusNode,
+                          autofocus: true,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Globals.COLOR_TEXT_DARK,
+                            letterSpacing: 1,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: "132000",
+                            hintStyle: TextStyle(
+                              color: Globals.COLOR_TEXT_DARK.withOpacity(0.5),
+                              fontWeight: FontWeight.normal,
+                              letterSpacing: 0.5,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 20,
+                              horizontal: 16,
+                            ),
+                            suffixText: "km",
+                            suffixStyle: TextStyle(
+                              color: Globals.COLOR_TEXT_DARK.withOpacity(0.6),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              focusNode.unfocus();
+                              Navigator.of(context).pop();
+                              GoRouter.of(context).go('/tours');
+                            },
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(20),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Text(
+                                "Fermer",
+                                style: TextStyle(
+                                  color: Globals.COLOR_TEXT_DARK.withOpacity(0.8),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: 1,
+                        height: 56,
+                        color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                      ),
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              String kmText = kmController.text.trim();
+                              int? km = int.tryParse(kmText);
+                              if (km != null) {
+                                focusNode.unfocus();
+                                Navigator.pop(context, km);
+                              }
+                            },
+                            borderRadius: const BorderRadius.only(
+                              bottomRight: Radius.circular(20),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Text(
+                                "Valider",
+                                style: TextStyle(
+                                  color: Globals.COLOR_TEXT_DARK,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          content: TextField(
-            controller: kmController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: "Ex : 132000",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(
-                  color: Globals.COLOR_MOVIX,
-                  width: 1.5,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(
-                  color: Globals.COLOR_MOVIX,
-                  width: 2,
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Globals.COLOR_MOVIX,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              onPressed: () {
-                String kmText = kmController.text.trim();
-                int? km = int.tryParse(kmText);
-                if (km != null) {
-                  Navigator.pop(context, km);
-                }
-              },
-              child: const Text(
-                "Valider",
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
         ),
       );
     },
@@ -322,23 +667,23 @@ Future<int?> askForKilometers(BuildContext context) async {
 
 bool isCommandValid(Command command) {
   for (var p in command.packages.values) {
-    var s = p.idStatus;
-    if (s != '3' && s != '4' && s != '5' && s != '6') return false;
+    var s = p.status.id;
+    if (s != 3 && s != 4 && s != 5 && s != 6) return false;
   }
   return true;
 }
 
 bool isAllScanned(Command command) {
   for (var p in command.packages.values) {
-    if (p.idStatus != '3') return false;
+    if (p.status.id != 3) return false;
   }
   return true;
 }
 
 bool isTourComplet(Tour tour) {
   for (var command in tour.commands.values) {
-    var s = command.idStatus;
-    if (s != '3' && s != '4' && s != '5' && s != '7' && s != '8' && s != '9') {
+    var s = command.status.id;
+    if (s != 3 && s != 4 && s != 5 && s != 7 && s != 8 && s != 9) {
       return false;
     }
   }
@@ -348,8 +693,8 @@ bool isTourComplet(Tour tour) {
 int countValidCommands(Tour tour) {
   int count = 0;
   for (var command in tour.commands.values) {
-    var s = command.idStatus;
-    if (s == '3' || s == '4' || s == '5' || s == '8' || s == '9') {
+    var s = command.status.id;
+    if (s == 3 || s == 4 || s == 5 || s == 8 || s == 9) {
       count++;
     }
   }
@@ -359,7 +704,7 @@ int countValidCommands(Tour tour) {
 int countTotalCommands(Tour tour) {
   int count = 0;
   for (var command in tour.commands.values) {
-    if (command.idStatus != '7') {
+    if (command.status.id != 7) {
       count++;
     }
   }
@@ -373,14 +718,20 @@ void sendPharmacyInformations(String comment, bool invalidGeocodage,
   const String apiUrl = Globals.API_URL;
 
   final task = Spooler(
-    url: "$apiUrl/pharmacyinfos/create",
-    headers: {'Authorization': token, 'Content-Type': 'application/json'},
+    url: "$apiUrl/pharmacy-infos",
+    headers: {'Authorization': token},
     body: {
-      "cip": command.cip,
+      "cip": command.pharmacy.cip,
       "commentaire": comment,
-      "invalid_geocodage": invalidGeocodage,
-      'photos': bases64,
+      "invalidGeocodage": invalidGeocodage,
+      'pictures': bases64
+            .asMap()
+            .entries
+            .map((entry) =>
+                {'name': 'photo_${entry.key + 1}.jpg', 'base64': entry.value})
+            .toList()
     },
+    formType: 'post',
   );
 
   globalSpooler.addTask(task);

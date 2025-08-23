@@ -19,12 +19,12 @@ class PackageSearcher {
     }
   }
 
-  static Map<String, int> countPackageStatus(Tour tour) {
-    final Map<String, int> mapStatus = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0};
+  static Map<int, int> countPackageStatus(Tour tour) {
+    final Map<int, int> mapStatus = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
 
     for (final command in tour.commands.values) {
       for (final package in command.packages.values) {
-        mapStatus.update(package.idStatus, (value) => value + 1,
+        mapStatus.update(package.status.id, (value) => value + 1,
             ifAbsent: () => 1);
       }
     }
@@ -32,12 +32,12 @@ class PackageSearcher {
     return mapStatus;
   }
 
-  static Map<String, int> countPackageStatusInCommand(
+  static Map<int, int> countPackageStatusInCommand(
       Command command) {
-    final Map<String, int> mapStatus = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0};
+    final Map<int, int> mapStatus = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
 
     for (final package in command.packages.values) {
-      mapStatus.update(package.idStatus, (value) => value + 1,
+        mapStatus.update(package.status.id, (value) => value + 1,
           ifAbsent: () => 1);
     }
 

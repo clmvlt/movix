@@ -11,12 +11,12 @@ Future<Map<String, dynamic>> validateChargement(Tour tour, VoidCallback update) 
   final Map<String, dynamic> result = await validateLoading(tour);
 
   if (result['success'] == true) {
-    tour.idStatus = "3";
+    tour.status.id = 3;
     update();
 
     DateTime now = DateTime.now();
     String sqlDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
-    await setTourData(tour.id, "start_date", sqlDate);
+    await setTourData(tour.id, {"startDate": sqlDate});
 
     await saveToursToHive();
 
@@ -35,41 +35,54 @@ Future<Map<String, dynamic>> validateChargement(Tour tour, VoidCallback update) 
 
 
 bool isAllScanned(Command command) {
+  // Si la commande n'a aucun package, elle est considérée comme validée automatiquement
+  if (command.packages.isEmpty) {
+    return true;
+  }
+  
   for (var p in command.packages.values) {
-    if (p.idStatus != '2') return false;
+    if (p.status.id != 2) return false;
   }
   return true;
 }
 
 bool isChargementComplet(Tour tour) {
   return tour.commands.values.every((command) =>
-      command.idStatus == "2" ||
-      command.idStatus == "6" ||
-      command.idStatus == "7");
+      command.status.id == 2 ||
+      command.status.id == 6 ||
+      command.status.id == 7);
 }
 
 bool isChargementCommandUncomplet(Command command) {
   bool hasScannedPackages =
-      command.packages.values.any((p) => p.idStatus == '1');
+      command.packages.values.any((p) => p.status.id == 1);
   bool hasUnscannedPackages =
-      command.packages.values.any((p) => p.idStatus != '1');
+      command.packages.values.any((p) => p.status.id != 1);
 
   return hasScannedPackages && hasUnscannedPackages;
 }
 
 Future<void> showDialogs(BuildContext context, Tour tour) async {
-  await Future.delayed(Duration.zero);
+  await Future<void>.delayed(Duration.zero);
 
   if (tour.immat == "") {
-    String? immat = await askForImmat(context) ?? "";
-    setTourData(tour.id, "immat", immat);
-    tour.immat = immat;
+    String? immat = await askForImmat(context);
+    if (immat == null) {
+      // User closed the immat popup with "Fermer" button - don't continue
+      return;
+    }
+    if (immat.isNotEmpty) {
+      setTourData(tour.id, {"immat": immat});
+      tour.immat = immat;
+      saveToursToHive();
+    }
   }
 
-  if (tour.startKm == '0' || tour.startKm == '') {
-    String? startKm = (await askForKilometers(context)).toString();
-    setTourData(tour.id, "startkm", startKm);
+  if (tour.startKm == 0) {
+    int? startKm = await askForKilometers(context) ?? 0;
+    setTourData(tour.id, {"startKm": startKm});
     tour.startKm = startKm;
+    saveToursToHive();
   }
 }
 
@@ -77,9 +90,9 @@ Future<void> showDialogs(BuildContext context, Tour tour) async {
 int countValidCommands(Tour tour) {
   int count = 0;
   for (var command in tour.commands.values) {
-    if (command.idStatus == "2" ||
-        command.idStatus == "6" ||
-        command.idStatus == "7") {
+    if (command.status.id == 2 ||
+        command.status.id == 6 ||
+        command.status.id == 7) {
       count++;
     }
   }

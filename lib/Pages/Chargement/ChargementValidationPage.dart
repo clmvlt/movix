@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:movix/Managers/ChargementManager.dart';
 import 'package:movix/Models/PackageSearcher.dart';
 import 'package:movix/Models/Tour.dart';
 import 'package:movix/Services/globals.dart';
-import 'package:go_router/go_router.dart';
 import 'package:movix/Widgets/CustomButton.dart';
 
 class ChargementValidationPage extends StatefulWidget {
@@ -41,11 +41,9 @@ class _ChargementValidationPageState extends State<ChargementValidationPage> {
       isLoading = true;
     });
 
-    Map<String, int> packagesStatusCount = PackageSearcher.countPackageStatus(widget.tour);
+    Map<int, int> packagesStatusCount = PackageSearcher.countPackageStatus(widget.tour);
 
-    print(packagesStatusCount);
-
-    if (packagesStatusCount['1'] != 0) {
+    if (packagesStatusCount[1] != 0) {
       setState(() {
         errors = "Certains colis n'ont pas été rensignés.";
         isLoading = false;
@@ -55,9 +53,9 @@ class _ChargementValidationPageState extends State<ChargementValidationPage> {
       return;
     }
 
-    if (packagesStatusCount['5'] != 0) {
+    if (packagesStatusCount[5] != 0) {
       setState(() {
-        final count = packagesStatusCount['5'] ?? -1;
+        final count = packagesStatusCount[5] ?? -1;
         errors =
             "$count colis ${count > 1 ? 'ont' : 'a'} été renseigné${count > 1 ? 's' : ''} comme MANQUANT, êtes-vous sûr de vouloir valider la tournée ?";
 
@@ -90,7 +88,7 @@ class _ChargementValidationPageState extends State<ChargementValidationPage> {
       });
     } else {
       setState(() {
-        errors = result['errors'];
+        errors = result['errors'] as String;
         isValid = false;
         isLoading = false;
         canForceValidation = false;
@@ -101,34 +99,34 @@ class _ChargementValidationPageState extends State<ChargementValidationPage> {
   @override
 Widget build(BuildContext context) {
   return Scaffold(
-    backgroundColor: const Color(0xFFF9F9F9),
+    backgroundColor: Globals.COLOR_BACKGROUND,
     appBar: AppBar(
       toolbarTextStyle: Globals.appBarTextStyle,
       titleTextStyle: Globals.appBarTextStyle,
       title: const Text('Validation en cours'),
       backgroundColor: Globals.COLOR_MOVIX,
-      foregroundColor: Colors.white,
+      foregroundColor: Globals.COLOR_TEXT_LIGHT,
       elevation: 3,
       centerTitle: true,
     ),
     body: Center(
       child: isLoading
-          ? const Column(
+          ? Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(
+                const CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(Globals.COLOR_MOVIX),
                   strokeWidth: 4,
                 ),
-                SizedBox(height: 30),
+                const SizedBox(height: 30),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
                   child: Text(
                     'Validation de la tournée en cours...\nMerci de patienter.',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+                      color: Globals.COLOR_TEXT_DARK,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -186,10 +184,10 @@ Widget build(BuildContext context) {
                       ),
                       const SizedBox(height: 25),
                       Card(
-                        color: Colors.white,
-                        elevation: 3,
+                        color: Globals.COLOR_SURFACE,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         margin: const EdgeInsets.symmetric(vertical: 10),
                         child: ListTile(

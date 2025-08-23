@@ -1,62 +1,36 @@
+import 'package:movix/API/base.dart';
 import 'package:movix/Managers/TourManager.dart';
 import 'package:movix/Models/Tour.dart';
-import 'package:movix/Services/globals.dart';
-import 'package:movix/API/base.dart';
 
 Future<bool> getProfilTours() async {
   try {
-    final response = await ApiBase.get('/tour/getProfilTours');
+    final response = await ApiBase.get('/tours/by-profile');
 
     if (!ApiBase.isSuccess(response.statusCode)) return false;
 
-    final data = ApiBase.decodeResponse(response)['data'];
+    final data = ApiBase.decodeResponse(response);
     final List<Tour> tours = [];
-
-    for (var tourJson in data) {
-      final tour = await getTour(tourJson['id_tour']);
-      if (tour != null) {
-        tours.add(tour);
+    
+    if (data is List) {
+      for (var tourJson in data) {
+        if (tourJson is Map<String, dynamic>) {
+          final tour = Tour.fromJson(tourJson);
+          tours.add(tour);
+        }
       }
     }
 
     await storeTours(tours);
     return true;
-  } catch (_) {
-    return false;
-  }
-}
-
-Future<Tour?> getTour(String id) async {
-  try {
-    final response = await ApiBase.get('/tour/getTour/$id');
-
-    if (!ApiBase.isSuccess(response.statusCode)) return null;
-
-    final responseData = ApiBase.decodeResponse(response);
-    if (responseData['data'] == null) {
-      print("Error: Invalid response data");
-      return null;
-    }
-
-    final tourData = responseData['data']['tour'];
-    if (tourData == null) {
-      print("Error: Tour data is missing");
-      return null;
-    }
-
-    tourData['commands'] = responseData['data']['commands'];
-    final tour = Tour.fromJson(tourData);
-
-    return tour;
   } catch (e) {
-    print("Error: $e");
-    return null;
+    print(e);
+    return false;
   }
 }
 
 Future<bool> assignTour(String id) async {
   try {
-    final response = await ApiBase.get('/tour/assignTour/$id');
+    final response = await ApiBase.post('/tours/assign/$id', {});
     return ApiBase.isSuccess(response.statusCode);
   } catch (e) {
     print(e);
@@ -64,10 +38,12 @@ Future<bool> assignTour(String id) async {
   }
 }
 
-Future<bool> setTourState(String id, String status) async {
+Future<bool> setTourState(String id, int status) async {
   try {
-    final response =
-        await ApiBase.post('/tour/setTourState/$id', {'status': status});
+    final response = await ApiBase.put('/tours/state', {
+      'tourIds': [id],
+      'statusId': status,
+    });
     return ApiBase.isSuccess(response.statusCode);
   } catch (e) {
     print(e);
@@ -75,9 +51,9 @@ Future<bool> setTourState(String id, String status) async {
   }
 }
 
-Future<bool> setTourData(String id, String type, String data) async {
+Future<bool> setTourData(String id, Map<String, dynamic> data) async {
   try {
-    final response = await ApiBase.post('/tour/setTourData/$id', {type: data});
+    final response = await ApiBase.put('/tours/$id', data);
     return ApiBase.isSuccess(response.statusCode);
   } catch (e) {
     print(e);
@@ -89,26 +65,24 @@ Future<Map<String, dynamic>> validateLoading(Tour tour) async {
   try {
     final commandList = tour.commands.values.map((command) {
       return {
-        'id_command': command.id,
-        'id_status': command.idStatus,
-        'created_at': Globals.getSqlDate(),
+        'commandId': command.id,
+        'status': {'id': command.status.id},
         'packages': command.packages.values.map((package) {
           return {
             'barcode': package.barcode,
-            'id_status': package.idStatus,
-            'created_at': Globals.getSqlDate(),
+            'status': {'id': package.status.id},
           };
         }).toList(),
       };
     }).toList();
 
     final response = await ApiBase.post(
-      '/tour/validateLoading/${tour.id}',
+      '/tours/validate-loading/${tour.id}',
       {'commands': commandList},
     );
 
     final responseData = ApiBase.decodeResponse(response);
-    if (response.statusCode == 200) {
+    if (response.statusCode == 201) {
       return {
         'success': true,
         'status': responseData['status'],

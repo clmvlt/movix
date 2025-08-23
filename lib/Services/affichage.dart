@@ -1,146 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:movix/Services/globals.dart';
-import '../Models/Command.dart';
-import '../Models/Package.dart';
 
-String getTourStatusText(String id) {
-  switch (id) {
-    case "1":
+import '../Models/Command.dart';
+
+String getTourStatusText(int id) {
+  switch (id) { 
+    case 1:
       return "Création";
-    case "2":
+    case 2:
       return "🏠 Chargement";
-    case "3":
+    case 3:
       return "🚛 Livraison";
-    case "4":
+    case 4:
       return "Debiref";
-    case "5":
+    case 5:
       return "Cloturé";
     default:
       return "Introuvable";
   }
 }
 
-String getColisEmote(String type) {
-  switch (type) {
-    case "BAC":
-      return "💊";
-    case "COLIS":
-      return "📦";
-    default:
-      return type;
-  }
-}
-
-Widget getIconPackageStatus(Package package, double size) {
+Widget GetLivraisonIconCommandStatus(Command command, double size) {
   Icon icon;
-  Color circleColor = Colors.black38;
+  Color circleColor = Globals.COLOR_LIGHT_GRAY;
 
-  if (package.idStatus == '2') {
+  if (command.status.id == 1 || command.status.id == 2 || command.status.id == 6) {
+    icon = Icon(
+      Icons.question_mark,
+      color: Globals.COLOR_TEXT_LIGHT,
+      size: size * 0.6,
+    );
+  } else if (command.status.id == 3) {
     icon = Icon(
       Icons.check,
-      color: Colors.white,
+      color: Globals.COLOR_TEXT_LIGHT,
       size: size * 0.6,
     );
     circleColor = Globals.COLOR_MOVIX_GREEN;
-  } else if (package.idStatus == '5') {
+  } else if (command.status.id == 5) {
     icon = Icon(
-      FontAwesomeIcons.xmark,
-      color: Colors.white,
-      size: size * 0.6,
-    );
-    circleColor = Globals.COLOR_MOVIX_RED;
-  } else {
-    icon = Icon(
-      Icons.question_mark,
-      color: Colors.white,
-      size: size * 0.6,
-    );
-  }
-
-  return Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: circleColor,
-    ),
-    child: Center(child: icon),
-  );
-}
-
-Widget GetLivraisonIconPackageStatus(Package package, double size) {
-  Icon icon;
-  Color circleColor = Colors.black38;
-
-  if (package.idStatus == '1' || package.idStatus == '2') {
-    icon = Icon(
-      Icons.question_mark,
-      color: Colors.white,
-      size: size * 0.6,
-    );
-  } else if (package.idStatus == '3') {
-    icon = Icon(
-      Icons.check,
-      color: Colors.white,
-      size: size * 0.6,
-    );
-    circleColor = Globals.COLOR_MOVIX_GREEN;
-  } else if (package.idStatus == '6') {
-    icon = Icon(
-      Icons.warning_amber_outlined,
-      color: Colors.white,
+      FontAwesomeIcons.exclamation,
+      color: Globals.COLOR_TEXT_LIGHT,
       size: size * 0.6,
     );
     circleColor = Globals.COLOR_MOVIX_YELLOW;
   } else {
     icon = Icon(
       FontAwesomeIcons.xmark,
-      color: Colors.white,
-      size: size * 0.6,
-    );
-    circleColor = Globals.COLOR_MOVIX_RED;
-  }
-
-  return Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: circleColor,
-    ),
-    child: Center(child: icon),
-  );
-}
-
-Widget GetLivraisonIconCommandStatus(Command command, double size) {
-  Icon icon;
-  Color circleColor = Colors.black38;
-
-  if (command.idStatus == '1' || command.idStatus == '2' || command.idStatus == '6') {
-    icon = Icon(
-      Icons.question_mark,
-      color: Colors.white,
-      size: size * 0.6,
-    );
-  } else if (command.idStatus == '3') {
-    icon = Icon(
-      Icons.check,
-      color: Colors.white,
-      size: size * 0.6,
-    );
-    circleColor = Globals.COLOR_MOVIX_GREEN;
-  } else if (command.idStatus == '5') {
-    icon = Icon(
-      FontAwesomeIcons.exclamation,
-      color: Colors.white,
-      size: size * 0.6,
-    );
-    circleColor = Colors.orangeAccent;
-  } else {
-    icon = Icon(
-      FontAwesomeIcons.xmark,
-      color: Colors.white,
+      color: Globals.COLOR_TEXT_LIGHT,
       size: size * 0.6,
     );
     circleColor = Globals.COLOR_MOVIX_RED;
@@ -159,32 +67,32 @@ Widget GetLivraisonIconCommandStatus(Command command, double size) {
 
 Widget GetChargementIconCommandStatus(Command command, double size) {
   Icon icon;
-  Color circleColor = Colors.black38;
+  Color circleColor = Globals.COLOR_LIGHT_GRAY;
 
-  if (command.idStatus == '1' || command.idStatus == '3') {
+  if (command.status.id == 1 || command.status.id == 3) {
     icon = Icon(
       Icons.question_mark,
-      color: Colors.white,
+      color: Globals.COLOR_TEXT_LIGHT,
       size: size * 0.6,
     );
-  } else if (command.idStatus == '2') {
+  } else if (command.status.id == 2) {
     icon = Icon(
       Icons.check,
-      color: Colors.white,
+      color: Globals.COLOR_TEXT_LIGHT,
       size: size * 0.6,
     );
     circleColor = Globals.COLOR_MOVIX_GREEN;
-  } else if (command.idStatus == '6') {
+    } else if (command.status.id == 6) {
     icon = Icon(
       FontAwesomeIcons.exclamation,
-      color: Colors.white,
+      color: Globals.COLOR_TEXT_LIGHT,
       size: size * 0.6,
     );
-    circleColor = Colors.orangeAccent;
+    circleColor = Globals.COLOR_MOVIX_YELLOW;
   } else {
     icon = Icon(
       FontAwesomeIcons.xmark,
-      color: Colors.white,
+      color: Globals.COLOR_TEXT_LIGHT,
       size: size * 0.6,
     );
     circleColor = Globals.COLOR_MOVIX_RED;
@@ -201,65 +109,135 @@ Widget GetChargementIconCommandStatus(Command command, double size) {
   );
 }
 
-AlertDialog getColisConfirm(BuildContext context) {
-  return AlertDialog(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(0),
-    ),
-    backgroundColor: Colors.white,
-    title: const Text(
-      'Confirmation',
-      style: TextStyle(color: Colors.black),
-    ),
-    content: const Text(
-      'Tous les colis non scannés seront marqués comme absents. Voulez-vous continuer ?',
-      style: TextStyle(color: Colors.black87),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () {
-          Navigator.of(context).pop(false);
-        },
-        style: TextButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.blueGrey,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+Widget getColisConfirm(BuildContext context) {
+  return Dialog(
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    child: Container(
+      constraints: const BoxConstraints(maxWidth: 400),
+      decoration: BoxDecoration(
+        color: Globals.COLOR_SURFACE,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
-        ),
-        child: const Text('Non'),
+        ],
       ),
-      TextButton(
-        onPressed: () {
-          Navigator.of(context).pop(true);
-        },
-        style: TextButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Globals.COLOR_MOVIX_RED,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Column(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: Globals.COLOR_MOVIX_YELLOW.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                  child: Icon(
+                    Icons.warning_outlined,
+                    color: Globals.COLOR_MOVIX_YELLOW,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Confirmation',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: Globals.COLOR_TEXT_DARK,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Tous les colis non scannés seront marqués comme absents. Voulez-vous continuer ?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Globals.COLOR_TEXT_DARK.withOpacity(0.8),
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-        ),
-        child: const Text('Oui'),
+          Container(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).pop(false),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          'Non',
+                          style: TextStyle(
+                            color: Globals.COLOR_TEXT_DARK.withOpacity(0.8),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 56,
+                  color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                ),
+                Expanded(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).pop(true),
+                      borderRadius: const BorderRadius.only(
+                        bottomRight: Radius.circular(20),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          'Oui, continuer',
+                          style: TextStyle(
+                            color: Globals.COLOR_MOVIX_RED,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-    ],
+    ),
   );
 }
 
-Widget newBadge() {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(
-      color: Globals.COLOR_MOVIX_RED,
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: const Text(
-      'NEW',
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: 10,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  );
-}
+

@@ -1,13 +1,14 @@
 import 'package:movix/API/base.dart';
 import 'package:movix/Services/globals.dart';
 
-Future<bool> setPackageState(String barcode, String status) async {
+Future<bool> setPackageState(String barcode, int status) async {
   try {
-    final response = await ApiBase.post(
-      '/setPackageState/$barcode',
+    final response = await ApiBase.put(
+      '/packages/state',
       {
-        "status": status,
-        "created_at": Globals.getSqlDate(),
+        "statusId": status,
+        "packageBarcodes": [barcode],
+        "createdAt": Globals.getSqlDate(),
       },
     );
 
@@ -18,13 +19,14 @@ Future<bool> setPackageState(String barcode, String status) async {
   }
 }
 
-Future<bool> setCommandState(String id, String status) async {
+Future<bool> setCommandState(String id, int status) async {
   try {
-    final response = await ApiBase.post(
-      '/setCommandState/$id',
+    final response = await ApiBase.put(
+      '/commands/state',
       {
-        "status": status,
-        "created_at": Globals.getSqlDate(),
+        "commandIds": [id],
+        "statusId": status,
+        "createdAt": Globals.getSqlDate(),
       },
     );
 

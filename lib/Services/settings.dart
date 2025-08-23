@@ -1,18 +1,5 @@
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:movix/Services/globals.dart';
-
-Future<String> getSoundPATH() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  String? soundPath = prefs.getString('sound_path');
-
-  return soundPath ?? "basic";
-}
-
-Future<void> setSoundPATH(String soundPath) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  prefs.setString('sound_path', soundPath);
-  Globals.SOUND_PATH = soundPath;
-}
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<String> getMapApp() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -25,4 +12,16 @@ Future<void> setMapApp(String appName) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   prefs.setString('map_app', appName);
   Globals.MAP_APP = appName;
+}
+
+Future<bool> getDarkMode() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getBool('dark_mode') ?? false;
+}
+
+Future<void> setDarkMode(bool value) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setBool('dark_mode', value);
+  Globals.DARK_MODE = value;
+  Globals.darkModeNotifier.value = value;
 }

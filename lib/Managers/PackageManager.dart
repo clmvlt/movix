@@ -5,16 +5,16 @@ import 'package:movix/Models/Command.dart';
 import 'package:movix/Models/Package.dart';
 import 'package:movix/Services/globals.dart';
 
-void setPackageState(Command command, Package package, String id, VoidCallback onUpdate) async {
-    String savedId = package.idStatus;
-    package.idStatus = id;
+void setPackageState(Command command, Package package, int id, VoidCallback onUpdate) async {
+    int savedId = package.status.id;
+    package.status.id = id;
     onUpdate();
 
     updateCommandState(command, onUpdate, false);
 
     API.setPackageState(package.barcode, id).then((res) {
       if (!res) {
-        package.idStatus = savedId;
+        package.status.id = savedId;
         onUpdate();
 
         updateCommandState(command, onUpdate, false);
@@ -24,7 +24,7 @@ void setPackageState(Command command, Package package, String id, VoidCallback o
 }
 
 void setPackageStateOffline(
-    Command command, Package package, String id, Function update) async {
-    package.idStatus = id;
+    Command command, Package package, int id, Function update) async {
+    package.status.id = id;
     update();
 }

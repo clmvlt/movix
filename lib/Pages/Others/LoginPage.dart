@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:movix/Services/date_service.dart';
-import 'package:movix/Services/login.dart';
 import 'package:movix/Models/Profil.dart';
+import 'package:movix/Services/date_service.dart';
 import 'package:movix/Services/globals.dart';
-import 'package:movix/Services/update_service.dart';
+import 'package:movix/Services/login.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,19 +14,28 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool _isLogin = false;
-  late String _appVersion = "";
+  String _appVersion = "1.0.0";
 
   @override
   void initState() {
     super.initState();
-    getAppVersion().then((value) {
+    initializeDateService();
+    _getAppVersion();
+  }
+
+  Future<void> _getAppVersion() async {
+    try {
+      PackageInfo packageInfo = await PackageInfo.fromPlatform();
       setState(() {
-        _appVersion = value;
+        _appVersion = packageInfo.version;
       });
-    });
+    } catch (e) {
+      // En cas d'erreur, on garde la version par défaut
+      print('Erreur lors de la récupération de la version: $e');
+    }
   }
 
   Future<void> _handleLogin() async {
@@ -35,7 +44,7 @@ class _LoginPageState extends State<LoginPage> {
 
     if (email.isEmpty || password.isEmpty) {
       Globals.showSnackbar("Veuillez remplir tous les champs.",
-          backgroundColor: Colors.orange);
+          backgroundColor: Globals.COLOR_MOVIX_YELLOW);
       return;
     }
 
@@ -55,66 +64,26 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Globals.COLOR_MOVIX;
-
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE3F2FD), Color(0xFFFFFFFF)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+      backgroundColor: Globals.COLOR_BACKGROUND,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Container(
+            height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.movie_filter_outlined,
-                    size: 64, color: primaryColor),
-                const SizedBox(height: 20),
-                Text(
-                  'Bienvenue sur Movix',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                  textAlign: TextAlign.center,
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildLoginCard(),
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  getFormatedTodayFR(),
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Colors.grey[700]),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                _buildTextField(
-                    controller: _emailController,
-                    label: 'Identifiant',
-                    icon: Icons.email),
-                const SizedBox(height: 20),
-                _buildTextField(
-                    controller: _passwordController,
-                    label: 'Mot de passe',
-                    icon: Icons.lock,
-                    obscureText: true),
-                const SizedBox(height: 30),
-                _buildLoginButton(),
-                const SizedBox(height: 40),
-                Text(
-                  "v$_appVersion",
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: Colors.grey),
-                  textAlign: TextAlign.center,
-                ),
+                _buildFooter(),
               ],
             ),
           ),
@@ -123,42 +92,222 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildTextField({
+
+  Widget _buildLoginCard() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Globals.COLOR_SURFACE,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Globals.COLOR_SHADOW.withOpacity(0.1),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: Globals.COLOR_MOVIX.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Connexion',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: Globals.COLOR_TEXT_DARK,
+              letterSpacing: -0.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          _buildModernTextField(
+            controller: _emailController,
+            label: 'Identifiant',
+            icon: Icons.person_outline,
+          ),
+          const SizedBox(height: 24),
+          _buildModernTextField(
+            controller: _passwordController,
+            label: 'Mot de passe',
+            icon: Icons.lock_outline,
+            obscureText: true,
+          ),
+          const SizedBox(height: 32),
+          _buildModernLoginButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Text(
+        "Version $_appVersion",
+        style: TextStyle(
+          fontSize: 14,
+          color: Globals.COLOR_TEXT_SECONDARY,
+          fontWeight: FontWeight.w500,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildModernTextField({
     required TextEditingController controller,
     required String label,
     required IconData icon,
     bool obscureText = false,
   }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Colors.grey[700]),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Globals.COLOR_SHADOW.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        style: TextStyle(
+          color: Globals.COLOR_TEXT_DARK,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+        autocorrect: false,
+        enableSuggestions: false,
+        textInputAction: TextInputAction.done,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            color: Globals.COLOR_TEXT_DARK,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
+          floatingLabelStyle: TextStyle(
+            color: Globals.COLOR_MOVIX,
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+          ),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Globals.COLOR_MOVIX.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: Globals.COLOR_MOVIX,
+              size: 20,
+            ),
+          ),
+          filled: true,
+          fillColor: Globals.COLOR_SURFACE_SECONDARY,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: Globals.COLOR_TEXT_SECONDARY.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: Globals.COLOR_MOVIX,
+              width: 2,
+            ),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 20,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildLoginButton() {
-    const primaryColor = Globals.COLOR_MOVIX;
-
-    return ElevatedButton(
-      onPressed: _isLogin ? null : _handleLogin,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: primaryColor,
-        minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        shadowColor: primaryColor.withOpacity(0.5),
-        elevation: 4,
+  Widget _buildModernLoginButton() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Globals.COLOR_MOVIX.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: Globals.COLOR_SHADOW.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: _isLogin
-          ? const SizedBox(
-              height: 24,
-              width: 24,
-              child: CircularProgressIndicator(
-                  color: Colors.white, strokeWidth: 2))
-          : const Text('Se connecter',
-              style: TextStyle(fontSize: 18, color: Colors.white)),
+      child: ElevatedButton(
+        onPressed: _isLogin ? null : _handleLogin,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _isLogin 
+              ? Globals.COLOR_TEXT_SECONDARY 
+              : Globals.COLOR_MOVIX,
+          disabledBackgroundColor: Globals.COLOR_TEXT_SECONDARY,
+          minimumSize: const Size(double.infinity, 58),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+        child: _isLogin
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Connexion en cours...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              )
+            : const Text(
+                'Se connecter',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                ),
+              ),
+      ),
     );
   }
 }

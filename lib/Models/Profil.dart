@@ -1,99 +1,81 @@
+import 'Account.dart';
+
 class Profil {
   String id;
   String identifiant;
-  String token;
   String firstName;
   String lastName;
   String birthday;
-  String idAccount;
+  String createdAt;
+  String updatedAt;
   bool isAdmin;
   bool isWeb;
   bool isMobile;
-  bool isStock;
-  bool isAVTrans;
   String email;
-  String createdAt;
-  String updatedAt;
-  double latitude;
-  double longitude;
-  String societe;
-  String address1;
-  String address2;
+  bool isStock;
+  bool isAvtrans;
+  String token;
+  String passwordHash;
+  Account account;
 
   Profil({
-    this.id = '',
-    this.identifiant = '',
-    this.token = '',
-    this.firstName = '',
-    this.lastName = '',
-    this.birthday = '',
-    this.idAccount = '',
-    this.isAdmin = false,
-    this.isWeb = false,
-    this.isMobile = false,
-    this.isStock = false,
-    this.isAVTrans = false,
-    this.email = '',
-    this.createdAt = '',
-    this.updatedAt = '',
-    this.latitude = 0.00,
-    this.longitude = 0.00,
-    this.societe = '',
-    this.address1 = '',
-    this.address2 = '',
+    required this.id,
+    required this.identifiant,
+    required this.firstName,
+    required this.lastName,
+    required this.birthday,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.isAdmin,
+    required this.isWeb,
+    required this.isMobile,
+    required this.email,
+    required this.isStock,
+    required this.isAvtrans,
+    required this.token,
+    required this.passwordHash,
+    required this.account,
   });
+
+  factory Profil.fromJson(Map<String, dynamic> json) {
+    return Profil(
+      id: (json['id'] is String) ? json['id'] as String : '',
+      identifiant: (json['identifiant'] is String) ? json['identifiant'] as String : '',
+      firstName: (json['firstName'] is String) ? json['firstName'] as String : '',
+      lastName: (json['lastName'] is String) ? json['lastName'] as String : '',
+      birthday: (json['birthday'] is String) ? json['birthday'] as String : '',
+      createdAt: (json['createdAt'] is String) ? json['createdAt'] as String : '',
+      updatedAt: (json['updatedAt'] is String) ? json['updatedAt'] as String : '',
+      isAdmin: (json['isAdmin'] is bool) ? json['isAdmin'] as bool : false,
+      isWeb: (json['isWeb'] is bool) ? json['isWeb'] as bool : false,
+      isMobile: (json['isMobile'] is bool) ? json['isMobile'] as bool : false,
+      email: (json['email'] is String) ? json['email'] as String : '',
+      isStock: (json['isStock'] is bool) ? json['isStock'] as bool : false,
+      isAvtrans: (json['isAvtrans'] is bool) ? json['isAvtrans'] as bool : false,
+      token: (json['token'] is String) ? json['token'] as String : '',
+      passwordHash: (json['passwordHash'] is String) ? json['passwordHash'] as String : '',
+      account: Account.fromJson(json['account'] is Map<String, dynamic> ? json['account'] as Map<String, dynamic> : {}),
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'identifiant': identifiant,
-      'token': token,
-      'first_name': firstName,
-      'last_name': lastName,
+      'firstName': firstName,
+      'lastName': lastName,
       'birthday': birthday,
-      'id_account': idAccount,
-      'is_admin': isAdmin,
-      'is_web': isWeb,
-      'is_mobile': isMobile,
-      'is_stock': isStock,
-      'is_avtrans': isAVTrans,
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
+      'isAdmin': isAdmin,
+      'isWeb': isWeb,
+      'isMobile': isMobile,
       'email': email,
-      'created_at': createdAt,
-      'updated_at': updatedAt,
-      'latitude': latitude.toString(),
-      'longitude': longitude.toString(),
-      'societe': societe,
-      'address1': address1,
-      'address2': address2,
+      'isStock': isStock,
+      'isAvtrans': isAvtrans,
+      'token': token,
+      'passwordHash': passwordHash,
+      'account': account.toJson(),
     };
-  }
-
-  factory Profil.fromJson(Map<String, dynamic> map) {
-    return Profil(
-      id: map['id'] ?? '',
-      identifiant: map['identifiant'] ?? '',
-      token: map['token'] ?? '',
-      firstName: map['first_name'] ?? '',
-      lastName: map['last_name'] ?? '',
-      birthday: map['birthday'] ?? '',
-      idAccount: map['id_account'] ?? '',
-      isAdmin: map['is_admin'] ?? false,
-      isWeb: map['is_web'] ?? false,
-      isMobile: map['is_mobile'] ?? false,
-      isStock: map['is_stock'] ?? false,
-      isAVTrans: map['is_avtrans'] ?? false,
-      email: map['email'] ?? '',
-      createdAt: map['created_at'] ?? '',
-      updatedAt: map['updated_at'] ?? '',
-      latitude: (map['latitude'] is String)
-          ? double.parse(map['latitude'])
-          : map['latitude']?.toDouble() ?? 0.0,
-      longitude: (map['longitude'] is String)
-          ? double.parse(map['longitude'])
-          : map['longitude']?.toDouble() ?? 0.0,
-      societe: map['societe'] ?? '',
-      address1: map['address1'] ?? '',
-      address2: map['address2'] ?? '',
-    );
   }
 }

@@ -1,13 +1,11 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:movix/Models/Command.dart';
 import 'package:movix/Managers/LivraisonManager.dart';
+import 'package:movix/Models/Command.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Widgets/CustomButton.dart';
+import 'package:movix/Widgets/PhotoPickerWidget.dart';
 
 class LivraisonValidationPage extends StatefulWidget {
   final Command command;
@@ -22,120 +20,146 @@ class LivraisonValidationPage extends StatefulWidget {
 }
 
 class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
-  final ImagePicker _picker = ImagePicker();
   List<String> base64Images = [];
-  List<File> imageFiles = [];
-  bool btnLocked = false;
 
   void onUpdate() {
     setState(() {});
     widget.onUpdate;
   }
 
-  Future<void> _pickImage() async {
+  void _onImagesChanged(List<String> newImages) {
     setState(() {
-      btnLocked = true;
-    });
-    try {
-      final XFile? pickedFile =
-          await _picker.pickImage(source: ImageSource.camera);
-      if (pickedFile != null) {
-        final File imageFile = File(pickedFile.path);
-        final bytes = await imageFile.readAsBytes();
-        setState(() {
-          base64Images.add(base64Encode(bytes));
-          imageFiles.add(imageFile);
-        });
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print("Erreur lors de la prise de photo: $e");
-      }
-    }
-    setState(() {
-      btnLocked = false;
-    });
-  }
-
-  void _removeImage(int index) {
-    setState(() {
-      base64Images.removeAt(index);
-      imageFiles.removeAt(index);
+      base64Images = newImages;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Globals.COLOR_BACKGROUND,
       appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
         titleTextStyle: Globals.appBarTextStyle,
-        title: const Text("Validation de la Livraison"),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Validation de livraison",
+              style: TextStyle(
+                color: Globals.COLOR_TEXT_LIGHT,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+            ),
+            Text(
+              widget.command.pharmacy.name,
+              style: TextStyle(
+                color: Globals.COLOR_TEXT_LIGHT.withOpacity(0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
         backgroundColor: Globals.COLOR_MOVIX,
-        foregroundColor: Colors.white,
+        foregroundColor: Globals.COLOR_TEXT_LIGHT,
+        elevation: 0,
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              FontAwesomeIcons.camera,
+              size: 18,
+              color: Globals.COLOR_TEXT_LIGHT,
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
-          Expanded(
-            child: imageFiles.isNotEmpty
-                ? GridView.builder(
-                    padding: const EdgeInsets.all(12.0),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: imageFiles.length,
-                    itemBuilder: (context, index) {
-                      return Stack(
-                        children: [
-                          Positioned.fill(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.file(
-                                imageFiles[index],
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            top: 6,
-                            right: 6,
-                            child: GestureDetector(
-                              onTap: () => _removeImage(index),
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Globals.COLOR_MOVIX_RED,
-                                ),
-                                child: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  )
-                : const Center(child: Text("Aucune photo sélectionnée")),
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Globals.COLOR_SURFACE,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Globals.COLOR_MOVIX_GREEN.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    FontAwesomeIcons.circleCheck,
+                    color: Globals.COLOR_MOVIX_GREEN,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Livraison terminée",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Globals.COLOR_TEXT_DARK,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Ajoutez une photo pour confirmer",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Globals.COLOR_TEXT_DARK.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: IconButton(
-              onPressed: () {
-                if (!btnLocked) _pickImage();
-              },
-              icon: Icon(
-                Icons.camera_alt,
-                size: 50,
-                color: btnLocked ? Colors.grey : Globals.COLOR_MOVIX,
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Globals.COLOR_SURFACE,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              tooltip: "Prendre une photo",
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: PhotoPickerWidget(
+                  base64Images: base64Images,
+                  onImagesChanged: _onImagesChanged,
+                  isRequired: true,
+                ),
+              ),
             ),
           ),
           Padding(
@@ -149,7 +173,7 @@ class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
                     ValidLivraisonCommand(
                         widget.command, base64Images, widget.onUpdate);
                         context.go('/tour/livraison', extra: {
-                          'tour': Globals.tours[widget.command.idTour]
+                          'tour': Globals.tours[widget.command.tourId]
                         });
                   } else {
                     Globals.showSnackbar('Au moins une photo est obligatoire.',
@@ -160,7 +184,7 @@ class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
               ),
             ),
           ),
-        ],
+        ],  
       ),
     );
   }

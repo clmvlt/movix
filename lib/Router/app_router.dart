@@ -1,6 +1,4 @@
-
-import 'dart:ui';
-
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:movix/Models/Command.dart';
 import 'package:movix/Models/PackageSearcher.dart';
@@ -17,16 +15,17 @@ import 'package:movix/Pages/Livraison/MapBoxPage.dart';
 import 'package:movix/Pages/Livraison/PharmacyInfosPage.dart';
 import 'package:movix/Pages/Others/HomePage.dart';
 import 'package:movix/Pages/Others/LoginPage.dart';
+import 'package:movix/Pages/Others/PharmaciesPage.dart';
 import 'package:movix/Pages/Others/Settings.dart';
 import 'package:movix/Pages/Others/SplashPage.dart';
 import 'package:movix/Pages/Others/SpoolerPage.dart';
 import 'package:movix/Pages/Others/TestPage.dart';
 import 'package:movix/Pages/Others/TourneesPage.dart';
 import 'package:movix/Pages/Others/UpdatePage.dart';
-import 'package:flutter/material.dart';
+import 'package:movix/Services/globals.dart';
 
-CustomTransitionPage buildPageWithTransition(Widget child) {
-  return CustomTransitionPage(
+CustomTransitionPage<Widget> buildPageWithTransition(Widget child) {
+  return CustomTransitionPage<Widget>(
     transitionDuration: Duration.zero,
     child: child,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -40,11 +39,31 @@ final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<v
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   observers: [routeObserver],
+  redirect: (context, state) {
+    // Ne pas rediriger depuis la page splash
+    if (state.matchedLocation == '/') {
+      return null;
+    }
+    
+    final isLoggedIn = Globals.profil != null;
+    final isLoginRoute = state.matchedLocation == '/login';
+
+    if (!isLoggedIn && !isLoginRoute) {
+      return '/login';
+    }
+
+    if (isLoggedIn && isLoginRoute) {
+      return '/home';
+    }
+
+    return null;
+  },
   routes: [
     GoRoute(path: '/', pageBuilder: (_, __) => buildPageWithTransition(const SplashPage())),
     GoRoute(path: '/login', pageBuilder: (_, __) => buildPageWithTransition(const LoginPage())),
     GoRoute(path: '/home', pageBuilder: (_, __) => buildPageWithTransition(const HomePage())),
     GoRoute(path: '/settings', pageBuilder: (_, __) => buildPageWithTransition(const SettingsPage())),
+    GoRoute(path: '/pharmacies', pageBuilder: (_, __) => buildPageWithTransition(const PharmaciesPage())),
     GoRoute(path: '/spooler', pageBuilder: (_, __) => buildPageWithTransition(const SpoolerPage())),
     GoRoute(path: '/update', pageBuilder: (_, __) => buildPageWithTransition(const UpdatePage())),
     GoRoute(path: '/test', pageBuilder: (_, __) => buildPageWithTransition(const SoundTestPage())),

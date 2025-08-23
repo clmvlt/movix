@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:movix/Managers/LivraisonManager.dart';
 import 'package:movix/Managers/PackageManager.dart';
 import 'package:movix/Models/Command.dart';
-import 'package:movix/Models/PackageSearcher.dart';
 import 'package:movix/Models/Sound.dart';
-import 'package:movix/Managers/LivraisonManager.dart';
-import 'package:movix/Widgets/CustomButton.dart';
-import 'package:movix/Widgets/CustomPopup.dart';
-import 'package:movix/Widgets/ScannerWidget.dart';
+import 'package:movix/Scanning/Scan.dart';
 import 'package:movix/Services/affichage.dart';
 import 'package:movix/Services/globals.dart';
+import 'package:movix/Widgets/CommandWidget.dart';
+import 'package:movix/Widgets/CustomPopup.dart';
+import 'package:movix/Widgets/PackagesWidget.dart';
 
 class FSLivraisonPage extends StatefulWidget {
   final Command command;
@@ -26,7 +26,7 @@ class FSLivraisonPage extends StatefulWidget {
   _FSLivraisonPageState createState() => _FSLivraisonPageState();
 }
 
-class _FSLivraisonPageState extends State<FSLivraisonPage> {
+class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingObserver, RouteAware {
   bool CIPScanned = false;
   final TextEditingController _manCIP = TextEditingController();
 
@@ -35,12 +35,13 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
     widget.onUpdate();
   }
 
+
   @override
   void initState() {
     super.initState();
-
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (widget.command.pNew) {
+      if (widget.command.newPharmacy) {
         bool? res = await showConfirmationPopup(
             context: context,
             title: "Nouvelle pharmacie",
@@ -49,19 +50,25 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
             cancelText: "Fermer",
             confirmText: "Ajouter");
         if (res == true) {
-          context.push('/pharmacy', extra: {"command": widget.command});
+          await context.push('/pharmacy', extra: {"command": widget.command});
         }
       }
     });
   }
 
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _manCIP.dispose();
+    super.dispose();
+  }
+
   Future<ScanResult> validateCode(String code) async {
     if (!CIPScanned) {
-      if (code == widget.command.cip) {
+      if (code == widget.command.pharmacy.cip) {
         setState(() => CIPScanned = true);
-        return Globals.isScannerMode
-            ? ScanResult.NOTHING
-            : ScanResult.SCAN_SUCCESS;
+        return ScanResult.SCAN_SUCCESS;
       }
 
       Globals.showSnackbar(
@@ -80,7 +87,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
       return ScanResult.SCAN_ERROR;
     }
 
-    if (package.idStatus == '3') {
+    if (package.status.id == 3) {
       Globals.showSnackbar(
         "Déjà scanné",
         backgroundColor: Globals.COLOR_MOVIX_RED,
@@ -88,13 +95,11 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
       return ScanResult.SCAN_ERROR;
     }
 
-    setPackageStateOffline(widget.command, package, "3", onUpdate);
+    setPackageStateOffline(widget.command, package, 3, onUpdate);
 
     return isAllScanned(widget.command)
         ? ScanResult.SCAN_FINISH
-        : (Globals.isScannerMode
-            ? ScanResult.NOTHING
-            : ScanResult.SCAN_SUCCESS);
+        : ScanResult.SCAN_SUCCESS;
   }
 
   @override
@@ -102,214 +107,116 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
     Command command = widget.command;
 
     return Scaffold(
+        backgroundColor: Globals.COLOR_BACKGROUND,
         appBar: AppBar(
           toolbarTextStyle: Globals.appBarTextStyle,
           titleTextStyle: Globals.appBarTextStyle,
-          title: Text(command.pharmacyName),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                command.pharmacy.name,
+                style: TextStyle(
+                  color: Globals.COLOR_TEXT_LIGHT,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                'Livraison des colis',
+                style: TextStyle(
+                  color: Globals.COLOR_TEXT_LIGHT.withOpacity(0.8),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
           backgroundColor: Globals.COLOR_MOVIX,
-          foregroundColor: Colors.white,
+          foregroundColor: Globals.COLOR_TEXT_LIGHT,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios, color: Globals.COLOR_TEXT_LIGHT),
+            onPressed: () {
+              context.pop();
+            },
+          ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.info_outline, color: Colors.white),
-              onPressed: () {
-                context.push('/pharmacy', extra: {"command": command});
-              },
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              child: IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.info_outline,
+                    color: Globals.COLOR_TEXT_LIGHT,
+                    size: 20,
+                  ),
+                ),
+                onPressed: () {
+                  context.push('/pharmacy', extra: {"command": command});
+                },
+              ),
             ),
           ],
         ),
         body: Stack(fit: StackFit.expand, children: [
           SingleChildScrollView(
-              child: Padding(
-            padding: const EdgeInsets.all(8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ScannerWidget(
-                  validateCode: validateCode,
-                ),
-                customButton(
-                    onPressed: () => _showInputDialog(context),
-                    color: CIPScanned
-                        ? Globals.COLOR_MOVIX_GREEN
-                        : Globals.COLOR_MOVIX_RED,
-                    fontSize: 14,
-                    horizontalPadding: 2,
-                    bottomPadding: 8,
-                    label: CIPScanned ? 'CIP Validé' : "CIP non validé"),
-                Card(
-                  elevation: 6,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  color: Colors.white,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            GetLivraisonIconCommandStatus(command, 26),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                command.pharmacyName,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                            if (command.pNew) ...[
-                              const SizedBox(width: 5),
-                              newBadge(),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                "${command.pharmacyAddress1} ${command.pharmacyAddress2} ${command.pharmacyAddress3}"
-                                    .trim(),
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.black54),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          command.pharmacyCity,
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.black54),
-                        ),
-                        const SizedBox(height: 12),
-                        command.packages.isNotEmpty
-                            ? Stack(
-                                children: [
-                                  SizedBox(
-                                    height: command.packages.length > 3
-                                        ? 200
-                                        : null,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      padding: const EdgeInsets.all(8),
-                                      child: Scrollbar(
-                                        thumbVisibility: true,
-                                        child: SingleChildScrollView(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: command.packages.values
-                                                .map((package) {
-                                              final emote =
-                                                  getColisEmote(package.type);
-                                              final isFresh =
-                                                  package.fresh == 't'
-                                                      ? '❄️'
-                                                      : '';
-                                              return Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 4.0),
-                                                child: Row(
-                                                  children: [
-                                                    GetLivraisonIconPackageStatus(
-                                                        package, 15),
-                                                    const SizedBox(width: 8),
-                                                    Text(
-                                                      package.barcode,
-                                                      style: const TextStyle(
-                                                        fontSize: 11,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: Colors.black87,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      " $emote$isFresh",
-                                                      style: const TextStyle(
-                                                        fontSize: 10,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: Colors.black87,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            }).toList(),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 0,
-                                    right: 10,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: Text(
-                                        "${PackageSearcher.countPackageStatusInCommand(command)['3']}/${command.packages.length}",
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 8),
-                                  child: Text(
-                                    'Aucun package disponible',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontStyle: FontStyle.italic,
-                                      color: Colors.black54,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                        const SizedBox(height: 12),
-                        customToolButton(
-                            color: Globals.COLOR_MOVIX_RED,
-                            onPressed: () {
-                              context.push('/anomalie', extra: {
-                                'command': command,
-                                'onUpdate': onUpdate
-                              });
-                            },
-                            iconData: FontAwesomeIcons.warning,
-                            text: "Anomalie")
-                      ],
-                    ),
+                  child: ScannerWidget(
+                    validateCode: validateCode,
                   ),
                 ),
-                const SizedBox(height: 100,)
+                _buildCIPStatusButton(),
+                _buildModernCommandCard(command),
+                const SizedBox(height: 120),
               ],
             ),
-          )),
+          ),
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: customButton(
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ElevatedButton(
                 onPressed: () {
                   confirmValidation(command);
                 },
-                label: "Valider"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Globals.COLOR_MOVIX,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 58),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Valider la livraison',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+            ),
           ),
         ]));
   }
@@ -317,80 +224,343 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
   void _showInputDialog(BuildContext context) {
     TextEditingController manCIPController =
         TextEditingController(text: _manCIP.text);
+    FocusNode focusNode = FocusNode();
 
     showDialog<String>(
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return WillPopScope(
-          onWillPop: () async => false,
-          child: AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-            ),
-            title: const Text(
-              "Saisir un code",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            focusNode.unfocus();
+          },
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 400),
+              decoration: BoxDecoration(
+                color: Globals.COLOR_SURFACE,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(32),
+                          ),
+                          child: Icon(
+                            Icons.qr_code_scanner_outlined,
+                            color: Globals.COLOR_MOVIX,
+                            size: 32,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "Saisir un code",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: Globals.COLOR_TEXT_DARK,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          CIPScanned 
+                            ? "Entrez le code d'un colis" 
+                            : "Entrez le code CIP de la pharmacie",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Globals.COLOR_TEXT_DARK.withOpacity(0.7),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Globals.COLOR_BACKGROUND,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                              width: 1,
+                            ),
+                          ),
+                          child: TextField(
+                            controller: manCIPController,
+                            focusNode: focusNode,
+                            autofocus: true,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Globals.COLOR_TEXT_DARK,
+                              letterSpacing: 1.5,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: CIPScanned ? "Code colis" : "Code CIP",
+                              hintStyle: TextStyle(
+                                color: Globals.COLOR_TEXT_DARK.withOpacity(0.5),
+                                fontWeight: FontWeight.normal,
+                                letterSpacing: 0,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 20,
+                                horizontal: 16,
+                              ),
+                              counterText: "",
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                focusNode.unfocus();
+                                Navigator.of(context).pop();
+                              },
+                              borderRadius: const BorderRadius.only(
+                                bottomLeft: Radius.circular(20),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                child: Text(
+                                  "Annuler",
+                                  style: TextStyle(
+                                    color: Globals.COLOR_TEXT_DARK.withOpacity(0.8),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 56,
+                          color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                        ),
+                        Expanded(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                String code = manCIPController.text.trim();
+                                if (code.isNotEmpty) {
+                                  validateCode(code);
+                                  _manCIP.clear();
+                                  focusNode.unfocus();
+                                  Navigator.of(context).pop();
+                                }
+                              },
+                              borderRadius: const BorderRadius.only(
+                                bottomRight: Radius.circular(20),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                child: Text(
+                                  "Valider",
+                                  style: TextStyle(
+                                    color: Globals.COLOR_TEXT_DARK,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            content: TextField(
-              controller: manCIPController,
-              decoration: InputDecoration(
-                hintText: "Entrez le code",
-                counterText: "",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(4),
-                  borderSide: const BorderSide(
-                    color: Globals.COLOR_MOVIX,
-                    width: 1.5,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(4),
-                  borderSide: const BorderSide(
-                    color: Globals.COLOR_MOVIX,
-                    width: 2,
-                  ),
-                ),
-              ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCIPStatusButton() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ElevatedButton.icon(
+        onPressed: () => _showInputDialog(context),
+        icon: Icon(
+          CIPScanned ? Icons.check_circle : Icons.warning,
+          size: 20,
+        ),
+        label: Text(
+          CIPScanned ? 'CIP Validé' : 'CIP non validé',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: CIPScanned ? Globals.COLOR_MOVIX_GREEN : Globals.COLOR_MOVIX_RED,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 58),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernCommandCard(Command command) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Globals.COLOR_SURFACE,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Globals.COLOR_TEXT_GRAY.withOpacity(0.3),
+              width: 2,
             ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text(
-                  "Annuler",
-                  style: TextStyle(color: Colors.black),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              customCardHeader(command, true, true),
+                              const SizedBox(height: 6),
+                              customCity(command),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Globals.COLOR_MOVIX,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                decoration: BoxDecoration(
+                  color: Globals.COLOR_SURFACE_SECONDARY.withOpacity(0.5),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
                   ),
                 ),
-                onPressed: () {
-                  String code = manCIPController.text.trim();
-                  if (code.isNotEmpty) {
-                    validateCode(code);
-                    _manCIP.clear();
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: const Text(
-                  "Valider",
-                  style: TextStyle(color: Colors.white),
+                child: Column(
+                  children: [
+                    const Divider(height: 1),
+                    const SizedBox(height: 16),
+                    CustomListePackages(
+                      command: command,
+                      isLivraison: true,
+                    ),
+                    const SizedBox(height: 20),
+                    _buildModernActionButton(
+                      label: "Signaler une anomalie",
+                      icon: FontAwesomeIcons.warning,
+                      color: Globals.COLOR_MOVIX_RED,
+                      onPressed: () async {
+                        await context.push('/anomalie', extra: {
+                          'command': command,
+                          'onUpdate': onUpdate
+                        });
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        );
-      },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernActionButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        label: Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+      ),
     );
   }
 
@@ -410,8 +580,8 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
       if (confirmation != true) return;
 
       for (final package in command.packages.values) {
-        if (package.idStatus != "3") {
-          setPackageStateOffline(command, package, "4", onUpdate);
+        if (package.status.id != 3) {
+          setPackageStateOffline(command, package, 4, onUpdate);
         }
       }
     }

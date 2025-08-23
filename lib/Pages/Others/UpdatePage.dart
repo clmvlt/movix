@@ -1,10 +1,17 @@
+import 'dart:async';
 import 'dart:io';
+
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:movix/API/update_fetcher.dart';
+import 'package:movix/Models/Update.dart';
+import 'package:movix/Services/date_service.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/update_service.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -21,69 +28,217 @@ class _UpdatePageState extends State<UpdatePage> {
   double progress = 0.0;
   bool isUpdating = false;
   bool updateAvailable = false;
-  String serverChangeLog = "";
   String? serverVersion;
+  List<Update> updates = [];
   CancelToken? cancelToken;
+  String? downloadingVersion;
+  int downloadedBytes = 0;
+  int downloadSpeed = 0;
+  DateTime? lastUpdateTime;
+  int lastDownloadedBytes = 0;
+  Timer? speedTimer;
+  String formattedSpeed = "0 Mo/s";
+  bool showAllVersions = false;
 
   @override
   void initState() {
     super.initState();
-    if (Platform.isAndroid) _getAppVersion();
+    if (Platform.isAndroid) {
+      _getAppVersion();
+      _loadUpdates();
+    }
+  }
+
+  @override
+  void dispose() {
+    speedTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _getAppVersion() async {
     final packageInfo = await PackageInfo.fromPlatform();
     final downloadableVersion = await getDownloadableVersion();
-    final changeLog = await getChangeLog();
 
     setState(() {
       appVersion = packageInfo.version;
       serverVersion = downloadableVersion;
-      serverChangeLog = changeLog ?? "";
       updateAvailable = serverVersion != null && serverVersion != appVersion;
     });
   }
 
-  Future<void> _checkForUpdates() async {
+  Future<void> _loadUpdates() async {
+    final allUpdates = await getAllUpdates();
+    setState(() {
+      updates = allUpdates;
+    });
+  }
+
+  String _formatSpeed(int bytesPerSecond) {
+    if (bytesPerSecond < 1024) {
+      return "$bytesPerSecond o/s";
+    } else if (bytesPerSecond < 1024 * 1024) {
+      return "${(bytesPerSecond / 1024).toStringAsFixed(1)} Ko/s";
+    } else {
+      return "${(bytesPerSecond / (1024 * 1024)).toStringAsFixed(1)} Mo/s";
+    }
+  }
+
+  void _updateDownloadSpeed() {
+    final now = DateTime.now();
+    if (lastUpdateTime != null) {
+      final timeDiff = now.difference(lastUpdateTime!).inMilliseconds;
+      if (timeDiff > 0) {
+        final bytesDiff = downloadedBytes - lastDownloadedBytes;
+        downloadSpeed = (bytesDiff * 1000 ~/ timeDiff);
+        formattedSpeed = _formatSpeed(downloadSpeed);
+        lastDownloadedBytes = downloadedBytes;
+        lastUpdateTime = now;
+      }
+    }
+  }
+
+  Future<bool> _checkUnknownSources() async {
+    if (!Platform.isAndroid) return true;
+    
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final sdkInt = androidInfo.version.sdkInt;
+    
+    if (sdkInt >= 26) {
+      final status = await Permission.requestInstallPackages.status;
+      return status.isGranted;
+    }
+    return true;
+  }
+
+  Future<void> _openUnknownSourcesSettings() async {
+    if (!Platform.isAndroid) return;
+    
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final sdkInt = androidInfo.version.sdkInt;
+    final packageInfo = await PackageInfo.fromPlatform();
+    
+    if (sdkInt >= 26) {
+      final intent = AndroidIntent(
+        action: 'android.settings.MANAGE_UNKNOWN_APP_SOURCES',
+        data: 'package:${packageInfo.packageName}',
+      );
+      await intent.launch();
+    } else {
+      const intent = AndroidIntent(
+        action: 'android.settings.SECURITY_SETTINGS',
+      );
+      await intent.launch();
+    }
+  }
+
+  Future<void> _downloadUpdate(Update update) async {
     if (!await _requestPermissions()) return;
+
+    if (!await _checkUnknownSources()) {
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Autorisation requise", style: TextStyle(color: Globals.COLOR_TEXT_DARK)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Pour installer les mises à jour, vous devez autoriser l'installation d'applications depuis des sources inconnues.",
+                style: TextStyle(color: Globals.COLOR_TEXT_DARK),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Comment faire :",
+                style: TextStyle(fontWeight: FontWeight.bold, color: Globals.COLOR_TEXT_DARK),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "1. Appuyez sur 'Paramètres' ci-dessous\n"
+                "2. Activez 'Autoriser l'installation d'applications'\n"
+                "3. Revenez à l'application et réessayez",
+                style: TextStyle(color: Globals.COLOR_TEXT_DARK),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Annuler", style: TextStyle(color: Globals.COLOR_MOVIX_RED)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _openUnknownSourcesSettings();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Globals.COLOR_MOVIX,
+                foregroundColor: Globals.COLOR_TEXT_LIGHT,
+              ),
+              child: const Text("Paramètres"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (cancelToken != null) {
+      cancelToken!.cancel("Nouveau téléchargement démarré");
+      cancelToken = null;
+    }
 
     setState(() {
       isUpdating = true;
       progress = 0.0;
+      downloadingVersion = update.version;
       cancelToken = CancelToken();
+      downloadedBytes = 0;
+      downloadSpeed = 0;
+      formattedSpeed = "0 Mo/s";
+      lastUpdateTime = DateTime.now();
+      lastDownloadedBytes = 0;
+    });
+
+    speedTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (isUpdating) {
+        _updateDownloadSpeed();
+        setState(() {});
+      } else {
+        timer.cancel();
+      }
     });
 
     try {
       final dir = await getExternalStorageDirectory();
       if (dir == null) throw Exception("Accès au stockage impossible.");
 
-      final apkPath = "${dir.path}/movix_update.apk";
+      final filePath = await downloadUpdate(update.id, (double value, int bytesReceived) {
+        setState(() {
+          progress = value;
+          downloadedBytes = bytesReceived;
+        });
+      }, cancelToken: cancelToken);
 
-      final updated = await checkForUpdates(
-        onProgress: (value) {
-          setState(() => progress = value);
-        },
-        cancelToken: cancelToken,
-        savePath: apkPath,
-      );
-
-      if (updated) {
+      if (filePath != null && cancelToken != null) {
+        await OpenFilex.open(filePath);
         _showMessage("Téléchargement terminé. L'APK va s'ouvrir.",
             Icons.check_circle, Globals.COLOR_MOVIX_GREEN);
-      } else {
-        _showMessage(
-            "Votre application est à jour.", Icons.info, Globals.COLOR_MOVIX);
       }
     } catch (e) {
       if (e is DioException && CancelToken.isCancel(e)) {
-        _showMessage("Téléchargement annulé.", Icons.cancel, Colors.orange);
+        _showMessage("Téléchargement annulé.", Icons.cancel, Globals.COLOR_MOVIX_YELLOW);
       } else {
         _showMessage("Erreur: $e", Icons.error, Globals.COLOR_MOVIX_RED);
       }
     } finally {
+      speedTimer?.cancel();
       setState(() {
         isUpdating = false;
+        downloadingVersion = null;
         cancelToken = null;
+        downloadSpeed = 0;
+        formattedSpeed = "0 Mo/s";
       });
     }
   }
@@ -107,10 +262,19 @@ class _UpdatePageState extends State<UpdatePage> {
   }
 
   void _cancelDownload() {
-    cancelToken?.cancel("Téléchargement annulé par l'utilisateur.");
+    if (cancelToken != null) {
+      cancelToken!.cancel("Téléchargement annulé par l'utilisateur.");
+      cancelToken = null;
+    }
+    speedTimer?.cancel();
     setState(() {
       isUpdating = false;
       progress = 0.0;
+      downloadingVersion = null;
+      downloadSpeed = 0;
+      formattedSpeed = "0 Mo/s";
+      downloadedBytes = 0;
+      lastDownloadedBytes = 0;
     });
   }
 
@@ -123,13 +287,11 @@ class _UpdatePageState extends State<UpdatePage> {
     if (await canLaunchUrl(testFlightLink)) {
       await launchUrl(testFlightLink, mode: LaunchMode.externalApplication);
     } else {
-      final fallback =
-          Uri.parse('https://apps.apple.com/app/testflight/id899247664');
+      final fallback = Uri.parse('https://apps.apple.com/app/testflight/id899247664');
       if (await canLaunchUrl(fallback)) {
         await launchUrl(fallback, mode: LaunchMode.externalApplication);
       } else {
-        _showMessage("Impossible d'ouvrir TestFlight.", Icons.error,
-            Globals.COLOR_MOVIX_RED);
+        _showMessage("Impossible d'ouvrir TestFlight.", Icons.error, Globals.COLOR_MOVIX_RED);
       }
     }
   }
@@ -137,12 +299,12 @@ class _UpdatePageState extends State<UpdatePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F7),
+      backgroundColor: Globals.COLOR_BACKGROUND,
       appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
         titleTextStyle: Globals.appBarTextStyle,
         backgroundColor: Globals.COLOR_MOVIX,
-        foregroundColor: Colors.white,
+        foregroundColor: Globals.COLOR_TEXT_LIGHT,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
@@ -152,20 +314,23 @@ class _UpdatePageState extends State<UpdatePage> {
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child:
-              Platform.isAndroid ? _buildAndroidContent() : _buildIOSContent(),
+          child: Platform.isAndroid ? _buildAndroidContent() : _buildIOSContent(),
         ),
       ),
     );
   }
 
   Widget _buildAndroidContent() {
+    final displayedUpdates = showAllVersions ? updates : updates.take(5).toList();
+    
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Version actuelle
           Card(
-            elevation: 3,
+            elevation: 0,
+            color: Globals.COLOR_SURFACE,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
               padding: const EdgeInsets.all(20.0),
@@ -173,7 +338,7 @@ class _UpdatePageState extends State<UpdatePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text("Version actuelle : $appVersion",
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Globals.COLOR_TEXT_DARK)),
                   const SizedBox(height: 10),
                   Text(
                     updateAvailable
@@ -182,62 +347,143 @@ class _UpdatePageState extends State<UpdatePage> {
                     style: TextStyle(
                       fontSize: 16,
                       color: updateAvailable
-                          ? Colors.orange
+                          ? Globals.COLOR_MOVIX_YELLOW
                           : Globals.COLOR_MOVIX_GREEN,
                     ),
                   ),
-                  if (serverChangeLog.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    const Text("Nouveautés :",
-                        style:
-                            TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Text(serverChangeLog,
-                        style:
-                            const TextStyle(fontSize: 15, color: Colors.black87)),
-                  ]
+                  if (updateAvailable) ...[
+                    const SizedBox(height: 15),
+                    ElevatedButton.icon(
+                      onPressed: isUpdating ? null : () => _downloadUpdate(updates.first),
+                      icon: Icon(Icons.download, color: Globals.COLOR_TEXT_LIGHT),
+                      label: Text(
+                        "Télécharger la mise à jour",
+                        style: TextStyle(color: Globals.COLOR_TEXT_LIGHT),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Globals.COLOR_MOVIX,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 30),
-          ElevatedButton.icon(
-            onPressed: isUpdating ? null : _checkForUpdates,
-            icon: const Icon(Icons.system_update),
-            label: Text(isUpdating
-                ? "Mise à jour en cours..."
-                : updateAvailable
-                    ? "Télécharger la mise à jour"
-                    : "Vérifier les mises à jour"),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              backgroundColor: const Color(0xFF242957),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+          const SizedBox(height: 20),
+          
+          // Barre de téléchargement (toujours au-dessus de la liste)
+          Card(
+            elevation: 0,
+            color: Globals.COLOR_SURFACE,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isUpdating ? "Téléchargement en cours..." : "État du téléchargement",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Globals.COLOR_TEXT_DARK)
+                  ),
+                  const SizedBox(height: 15),
+                  LinearProgressIndicator(
+                      value: progress,
+                      backgroundColor: Globals.COLOR_TEXT_GRAY,
+                      color: Globals.COLOR_MOVIX),
+                  const SizedBox(height: 10),
+                  if (isUpdating) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("${(progress * 100).toStringAsFixed(0)}% téléchargé",
+                            style: TextStyle(color: Globals.COLOR_TEXT_DARK)),
+                        Text(
+                          "${(downloadedBytes / (1024 * 1024)).toStringAsFixed(1)} Mo / $formattedSpeed",
+                          style: TextStyle(color: Globals.COLOR_TEXT_DARK_SECONDARY),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: _cancelDownload,
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Globals.COLOR_MOVIX_RED,
+                            foregroundColor: Globals.COLOR_TEXT_LIGHT),
+                        child: Text("Annuler", style: TextStyle(color: Globals.COLOR_TEXT_LIGHT)),
+                      ),
+                    )
+                  ] else ...[
+                    Text(
+                      "Aucun téléchargement en cours",
+                      style: TextStyle(color: Globals.COLOR_TEXT_DARK_SECONDARY),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 20),
-          if (isUpdating) ...[
-            LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.grey[300],
-                color: const Color(0xFF242957)),
+          
+          // Liste des versions
+          if (updates.isNotEmpty) ...[
+            Text("Versions disponibles :",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Globals.COLOR_TEXT_DARK)),
             const SizedBox(height: 10),
-            Center(
-              child: Text("${(progress * 100).toStringAsFixed(0)}% téléchargé",
-                  style: const TextStyle(fontSize: 16)),
-            ),
-            const SizedBox(height: 10),
-            Center(
-              child: ElevatedButton(
-                onPressed: _cancelDownload,
-                child: const Text("Annuler"),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Globals.COLOR_MOVIX_RED,
-                    foregroundColor: Colors.white),
+            ...displayedUpdates.map((update) => Card(
+              elevation: 0,
+              color: Globals.COLOR_SURFACE,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                title: Text("Version ${update.version}",
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Globals.COLOR_TEXT_DARK)),
+                subtitle: Text("Publiée le ${DateService.formatDateTime(update.createdAt)}",
+                    style: TextStyle(color: Globals.COLOR_TEXT_DARK_SECONDARY)),
+                trailing: downloadingVersion == update.version
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Globals.COLOR_MOVIX),
+                        ),
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.download, color: Globals.COLOR_MOVIX),
+                        onPressed: isUpdating ? null : () => _downloadUpdate(update),
+                      ),
               ),
-            )
+            )),
+            
+            // Bouton "Afficher plus" ou "Afficher moins"
+            if (updates.length > 5) ...[
+              const SizedBox(height: 15),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      showAllVersions = !showAllVersions;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Globals.COLOR_MOVIX,
+                    foregroundColor: Globals.COLOR_TEXT_LIGHT,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    showAllVersions ? "Afficher moins" : "Afficher plus (${updates.length - 5} autres)",
+                    style: TextStyle(color: Globals.COLOR_TEXT_LIGHT),
+                  ),
+                ),
+              ),
+            ],
           ],
         ],
       ),
@@ -249,22 +495,21 @@ class _UpdatePageState extends State<UpdatePage> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Icon(Icons.info_outline, size: 80, color: Colors.blueAccent),
+        const Icon(Icons.info_outline, size: 80, color: Globals.COLOR_MOVIX),
         const SizedBox(height: 20),
-        const Text("Les mises à jour se font via TestFlight.",
+        Text("Les mises à jour se font via TestFlight.",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Globals.COLOR_TEXT_DARK)),
         const SizedBox(height: 20),
         ElevatedButton.icon(
           onPressed: _launchTestFlight,
-          icon: const Icon(Icons.open_in_new),
-          label: const Text("Ouvrir TestFlight"),
+          icon: Icon(Icons.open_in_new, color: Globals.COLOR_TEXT_LIGHT),
+          label: Text("Ouvrir TestFlight", style: TextStyle(color: Globals.COLOR_TEXT_LIGHT)),
           style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              backgroundColor: const Color(0xFF242957),
-              foregroundColor: Colors.white,
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              backgroundColor: Globals.COLOR_MOVIX,
+              foregroundColor: Globals.COLOR_TEXT_LIGHT,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
         ),
       ],
     );

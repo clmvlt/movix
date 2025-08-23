@@ -5,9 +5,9 @@ import 'package:movix/API/tour_fetcher.dart';
 import 'package:movix/Managers/CommandManager.dart';
 import 'package:movix/Models/Sound.dart';
 import 'package:movix/Models/Tour.dart';
+import 'package:movix/Scanning/Scan.dart';
 import 'package:movix/Services/affichage.dart';
 import 'package:movix/Services/globals.dart';
-import 'package:movix/Widgets/ScannerWidget.dart';
 
 class TourneesPage extends StatefulWidget {
   const TourneesPage({super.key});
@@ -18,27 +18,25 @@ class TourneesPage extends StatefulWidget {
 
 class _TourneesPageState extends State<TourneesPage> with RouteAware {
   bool _isLoading = false;
-  final GlobalKey<ScannerWidgetState> _scannerKey =
-      GlobalKey<ScannerWidgetState>();
 
   Future<ScanResult> validateCode(String code) async {
     bool assigned = await assignTour(code);
     if (assigned) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Récupération de la tournée.'),
+        SnackBar(
+          content: Text('Récupération de la tournée.', style: TextStyle(color: Globals.COLOR_TEXT_LIGHT)),
           backgroundColor: Globals.COLOR_MOVIX_GREEN,
-          duration: Duration(milliseconds: 800),
+          duration: const Duration(milliseconds: 800),
         ),
       );
       await _refreshTours();
-      return Globals.isScannerMode ? ScanResult.NOTHING : ScanResult.SCAN_SUCCESS;
+      return ScanResult.SCAN_SUCCESS;
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tournée introuvable.'),
+        SnackBar(
+          content: Text('Tournée introuvable.', style: TextStyle(color: Globals.COLOR_TEXT_LIGHT)),
           backgroundColor: Globals.COLOR_MOVIX_RED,
-          duration: Duration(milliseconds: 800),
+          duration: const Duration(milliseconds: 800),
         ),
       );
       return ScanResult.SCAN_ERROR;
@@ -59,215 +57,380 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware {
         updateCommandState(command, onPageUpdate, false);
       }
     }
-    setState(() {
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   String getSubtitle(Tour tour) {
-    if (tour.idStatus == "2") {
-      return '${tour.commands.values.where((command) => command.idStatus == "2" || command.idStatus == "6" || command.idStatus == "7").length}/${tour.commands.length}';
-    } else if (tour.idStatus == "3") {
-      return '${tour.commands.values.where((command) => command.idStatus == "3" || command.idStatus == "4" || command.idStatus == "5" || command.idStatus == "8" || command.idStatus == "9").length}/${tour.commands.values.where((command) => command.idStatus != "7").length}';
+    if (tour.status.id == 2) {
+      return '${tour.commands.values.where((command) => command.status.id == 2 || command.status.id == 6 || command.status.id == 7).length}/${tour.commands.length}';
+    } else if (tour.status.id == 3) {
+      return '${tour.commands.values.where((command) => command.status.id == 3 || command.status.id == 4 || command.status.id == 5 || command.status.id == 8 || command.status.id == 9).length}/${tour.commands.values.where((command) => command.status.id != 7).length}';
     }
     return '${tour.commands.length}/${tour.commands.length}';
+  }
+
+  Widget _buildLoadingState() {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: Globals.COLOR_SURFACE,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          CircularProgressIndicator(color: Globals.COLOR_MOVIX),
+          const SizedBox(height: 20),
+          Text(
+            'Chargement des tournées...',
+            style: TextStyle(
+              fontSize: 16,
+              color: Globals.COLOR_TEXT_SECONDARY,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: Globals.COLOR_SURFACE,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.inbox_outlined,
+              size: 48,
+              color: Globals.COLOR_TEXT_SECONDARY,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Aucune tournée disponible',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Globals.COLOR_TEXT_DARK,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tirez vers le bas pour actualiser',
+            style: TextStyle(
+              fontSize: 14,
+              color: Globals.COLOR_TEXT_SECONDARY,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernTourCard(Tour tour) {
+    final isChargement = tour.status.id == 2;
+    final statusColor = isChargement 
+        ? Globals.COLOR_MOVIX_YELLOW 
+        : Globals.COLOR_MOVIX_GREEN;
+    final statusText = getTourStatusText(tour.status.id);
+    final tourColor = Color(int.parse("0xff${tour.color.substring(1)}"));
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16, top: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Material(
+        color: Globals.COLOR_SURFACE,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () async {
+            if (tour.status.id == 2) {
+              context.go('/tour/chargement', extra: {'tour': tour});
+            } else if (tour.status.id == 3) {
+              context.go('/tour/livraison', extra: {'tour': tour});
+            } else {
+              Globals.showSnackbar(
+                'Erreur status de la tournée',
+                backgroundColor: Globals.COLOR_MOVIX_RED,
+              );
+              return;
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: tourColor.withOpacity(0.2),
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: tourColor,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            tour.name,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Globals.COLOR_TEXT_DARK,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            DateFormat('EEEE d MMMM yyyy', 'fr_FR')
+                                .format(DateTime.parse(tour.initialDate)),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Globals.COLOR_TEXT_DARK,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        statusText,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: statusColor,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Globals.COLOR_SURFACE_SECONDARY,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildStatChip(
+                        icon: Icons.assignment_outlined,
+                        label: 'Commandes',
+                        value: getSubtitle(tour),
+                        color: Globals.COLOR_MOVIX,
+                      ),
+                      const Spacer(),
+                      _buildStatChip(
+                        icon: Icons.inventory_2_outlined,
+                        label: 'Colis',
+                        value: tour.commands.values
+                            .fold<int>(0, (sum, command) => 
+                                sum + command.packages.length)
+                            .toString(),
+                        color: tourColor,
+                      ),
+                      const SizedBox(width: 16),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: tourColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.arrow_forward_ios,
+                          color: tourColor,
+                          size: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatChip({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Column(
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: color,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Globals.COLOR_TEXT_DARK,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: Globals.COLOR_TEXT_DARK,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Globals.COLOR_BACKGROUND,
       appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
         titleTextStyle: Globals.appBarTextStyle,
-        title: const Text(
-          "Tournées",
+        title: Text(
+          "Mes Tournées",
+          style: TextStyle(
+            color: Globals.COLOR_TEXT_LIGHT,
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+          ),
         ),
-        foregroundColor: Colors.white,
+        foregroundColor: Globals.COLOR_TEXT_LIGHT,
         backgroundColor: Globals.COLOR_MOVIX,
+        elevation: 0,
         automaticallyImplyLeading: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back_ios, color: Globals.COLOR_TEXT_LIGHT),
           onPressed: () {
             context.go('/home');
           },
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshTours,
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            child: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.refresh,
+                  color: Globals.COLOR_TEXT_LIGHT,
+                  size: 20,
+                ),
+              ),
+              onPressed: _refreshTours,
+            ),
           ),
         ],
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Globals.tours.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'Aucune tournée',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        itemCount: Globals.tours.values
-                            .where((tour) => ["2", "3"].contains(tour.idStatus))
-                            .length,
-                        itemBuilder: (context, index) {
-                          List<Tour> filteredTours = Globals.tours.values
-                              .where(
-                                  (tour) => ["2", "3"].contains(tour.idStatus))
+          RefreshIndicator(
+            onRefresh: _refreshTours,
+            color: Globals.COLOR_MOVIX,
+            backgroundColor: Globals.COLOR_SURFACE,
+            child: CustomScrollView(
+              slivers: [
+                if (_isLoading)
+                  SliverToBoxAdapter(
+                    child: _buildLoadingState(),
+                  )
+                else if (Globals.tours.values
+                    .where((tour) => [2, 3].contains(tour.status.id))
+                    .isEmpty)
+                  SliverToBoxAdapter(
+                    child: _buildEmptyState(),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final tours = Globals.tours.values
+                              .where((tour) => [2, 3].contains(tour.status.id))
                               .toList();
-                          Tour tour = filteredTours[index];
-
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                                vertical: 12, horizontal: 16),
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
-                              onTap: () async {
-                                if (tour.idStatus == "2") {
-                                  context.go('/tour/chargement',
-                                      extra: {
-                                        'tour': tour
-                                      });
-                                } else if (tour.idStatus == "3") {
-                                  context.go('/tour/livraison', extra: {
-                                    'tour': tour
-                                  });
-                                } else {
-                                  Globals.showSnackbar(
-                                    'Erreur status de la tournée',
-                                    backgroundColor: Globals.COLOR_MOVIX_RED,
-                                  );
-                                  return;
-                                }
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      width: 8,
-                                      height: 70,
-                                      decoration: BoxDecoration(
-                                        color: Color(int.parse(
-                                            "0xff${tour.color.substring(1)}")),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  tour.name,
-                                                  style: const TextStyle(
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 4),
-                                                decoration: BoxDecoration(
-                                                  color: tour.idStatus == "2"
-                                                      ? Colors.orange[100]
-                                                      : Colors.green[100],
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                                child: Text(
-                                                  getTourStatusText(
-                                                      tour.idStatus),
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: tour.idStatus == "2"
-                                                        ? Colors.orange[800]
-                                                        : Colors.green[800],
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            "📦 Commandes : ${getSubtitle(tour)}",
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey[800],
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            "📅 ${DateFormat('dd MMM yyyy').format(DateTime.parse(tour.initialDate))}",
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: Globals.COLOR_MOVIX,
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                          ),
-                                          child: Text(
-                                            "${tour.commands.values.fold<int>(0, (sum, command) => sum + command.packages.length)} 📦",
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        const Icon(
-                                          Icons.arrow_forward_ios_rounded,
-                                          size: 18,
-                                          color: Globals.COLOR_MOVIX,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
+                          return _buildModernTourCard(tours[index]);
                         },
+                        childCount: Globals.tours.values
+                            .where((tour) => [2, 3].contains(tour.status.id))
+                            .length,
                       ),
+                    ),
+                  ),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 120), // Space for scanner + margin
+                ),
+              ],
+            ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ScannerWidget(
-              key: _scannerKey,
-              validateCode: validateCode,
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ScannerWidget(
+                validateCode: validateCode,
+              ),
             ),
           ),
         ],

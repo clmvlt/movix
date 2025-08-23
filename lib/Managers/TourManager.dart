@@ -1,7 +1,8 @@
 import 'dart:convert';
+
 import 'package:hive/hive.dart';
-import 'package:movix/Models/Tour.dart';
 import 'package:movix/Managers/CommandManager.dart';
+import 'package:movix/Models/Tour.dart';
 import 'package:movix/Services/globals.dart';
 
 const String _toursBoxName = 'toursBox';
@@ -27,12 +28,12 @@ Future<void> loadToursFromHive() async {
     for (var key in box.keys) {
       String? jsonStr = box.get(key);
       if (jsonStr != null) {
-        Map<String, dynamic> tourData = jsonDecode(jsonStr);
+        Map<String, dynamic> tourData = jsonDecode(jsonStr) as Map<String, dynamic>;
         Tour tour = Tour.fromJson(tourData);
         for (var command in tour.commands.values) {
           updateCommandState(command, () {}, false);
         }
-        loadedTours[key] = tour;
+        loadedTours[key as String] = tour;
       }
     }
 

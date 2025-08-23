@@ -27,12 +27,10 @@ Widget customButton({
             fontWeight: FontWeight.w600,
           ),
           backgroundColor: color,
-          foregroundColor: Colors.white,
+          foregroundColor: Globals.COLOR_TEXT_LIGHT,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
-          elevation: 5,
-          shadowColor: Colors.black.withOpacity(0.1),
           splashFactory: InkRipple.splashFactory,
         ),
         child: Text(label),
@@ -57,12 +55,10 @@ Widget customToolButton({
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         backgroundColor: color,
-        foregroundColor: Colors.white,
+        foregroundColor: Globals.COLOR_TEXT_LIGHT,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
         ),
-        elevation: 5,
-        shadowColor: Colors.black.withOpacity(0.1),
         splashFactory: InkRipple.splashFactory,
       ),
       child: Row(
@@ -70,11 +66,11 @@ Widget customToolButton({
         children: [
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
-              color: Colors.white,
+              color: Globals.COLOR_TEXT_LIGHT,
             ),
           ),
           if (iconAssetPath != null || iconData != null) ...[
@@ -89,7 +85,7 @@ Widget customToolButton({
                 : Icon(
                     iconData,
                     size: height * 0.4,
-                    color: Colors.white,
+                    color: Globals.COLOR_TEXT_LIGHT,
                   ),
           ],
         ],
@@ -112,11 +108,9 @@ Widget customRoundIconButton({
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
-        foregroundColor: Colors.white,
+        foregroundColor: Globals.COLOR_TEXT_LIGHT,
         shape: const CircleBorder(),
         padding: EdgeInsets.all(size * 0.2),
-        elevation: 5,
-        shadowColor: Colors.black.withOpacity(0.1),
         splashFactory: InkRipple.splashFactory,
       ),
       child: iconAssetPath != null
@@ -129,7 +123,7 @@ Widget customRoundIconButton({
           : Icon(
               iconData,
               size: size * 0.45,
-              color: Colors.white,
+              color: Globals.COLOR_TEXT_LIGHT,
             ),
     ),
   );

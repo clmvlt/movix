@@ -1,234 +1,147 @@
+import 'package:movix/Models/Account.dart';
 import 'package:movix/Models/Package.dart';
+import 'package:movix/Models/Pharmacy.dart';
+import 'package:movix/Models/Profil.dart';
+import 'package:movix/Models/Status.dart';
+import 'package:movix/Models/Zone.dart';
 
 class Command {
-  String cip;
   String id;
-  String cNumberOfPackages;
-  String cCloseDate;
-  String cWeight;
-  String cVolume;
-  String cNumTransport;
+  String tourId;
+  String closeDate;
   int tourOrder;
-  String idTour;
-  String expDate;
-  String expCode;
-  String pharmacyCip;
-  String pharmacyName;
-  String pharmacyAddress1;
-  String pharmacyAddress2;
-  String pharmacyAddress3;
-  String pharmacyPostalCode;
-  String pharmacyCity;
-  String pharmacyCountry;
-  String pharmacyInformations;
-  String pharmacyPhone;
-  String pharmacyFax;
-  String pharmacyEmail;
-  String pharmacyLatitude;
-  String pharmacyLongitude;
-  String pharmacyQuality;
-  String pharmacyFirstName;
-  String pharmacyLastName;
-  String mezTourExpCode;
-  String mezTourExpName;
-  String mezTourExpAddress1;
-  String mezTourExpAddress2;
-  String mezTourExpAddress3;
-  String mezTourExpPostalCode;
-  String mezTourExpCity;
-  String mezTourExpCountry;
-  String mezTourExpInformations;
-  String mezTourExpPhone;
-  String mezTourExpFax;
-  String mezTourExpEmail;
-  String mezTourExpLatitude;
-  String mezTourExpLongitude;
-  String calculatedWeight;
-  String calculatedPackages;
-  String tourName;
   String tourColor;
-  String statusDate;
-  String statusName;
-  String idStatus;
-  bool pNew;
+  String expDate;
+  String comment;
+  bool newPharmacy;
+  double latitude;
+  double longitude;
   Map<String, Package> packages;
+  Pharmacy pharmacy;
+  Status status;
 
   Command({
-    this.cip = "",
-    this.id = "",
-    this.cNumberOfPackages = "",
-    this.cCloseDate = "",
-    this.cWeight = "",
-    this.cVolume = "",
-    this.cNumTransport = "",
+    required this.id,
+    this.tourId = '',
+    this.closeDate = '',
     this.tourOrder = 0,
-    this.idTour = "",
-    this.expDate = "",
-    this.expCode = "",
-    this.pharmacyCip = "",
-    this.pharmacyName = "",
-    this.pharmacyAddress1 = "",
-    this.pharmacyAddress2 = "",
-    this.pharmacyAddress3 = "",
-    this.pharmacyPostalCode = "",
-    this.pharmacyCity = "",
-    this.pharmacyCountry = "",
-    this.pharmacyInformations = "",
-    this.pharmacyPhone = "",
-    this.pharmacyFax = "",
-    this.pharmacyEmail = "",
-    this.pharmacyLatitude = "",
-    this.pharmacyLongitude = "",
-    this.pharmacyQuality = "",
-    this.pharmacyFirstName = "",
-    this.pharmacyLastName = "",
-    this.mezTourExpCode = "",
-    this.mezTourExpName = "",
-    this.mezTourExpAddress1 = "",
-    this.mezTourExpAddress2 = "",
-    this.mezTourExpAddress3 = "",
-    this.mezTourExpPostalCode = "",
-    this.mezTourExpCity = "",
-    this.mezTourExpCountry = "",
-    this.mezTourExpInformations = "",
-    this.mezTourExpPhone = "",
-    this.mezTourExpFax = "",
-    this.mezTourExpEmail = "",
-    this.mezTourExpLatitude = "",
-    this.mezTourExpLongitude = "",
-    this.calculatedWeight = "",
-    this.calculatedPackages = "",
-    this.tourName = "",
-    this.tourColor = "",
-    this.statusDate = "",
-    this.statusName = "",
-    this.idStatus = "",
-    this.pNew = false,
-    this.packages = const {},
-  });
+    this.tourColor = '',
+    this.expDate = '',
+    this.comment = '',
+    this.newPharmacy = false,
+    this.latitude = 0.0,
+    this.longitude = 0.0,
+    Map<String, Package>? packages,
+    Pharmacy? pharmacy,
+    Status? status,
+  }) : packages = packages ?? {},
+       pharmacy = pharmacy ?? Pharmacy(
+         cip: '',
+         name: '',
+         address1: '',
+         address2: '',
+         address3: '',
+         postalCode: '',
+         city: '',
+         country: '',
+         informations: '',
+         phone: '',
+         fax: '',
+         email: '',
+         latitude: 0.0,
+         longitude: 0.0,
+         quality: '',
+         firstName: '',
+         lastName: '',
+         neverOrdered: false,
+         zone: Zone(id: '', name: ''),
+         pictures: []
+       ),
+       status = status ?? Status(
+         id: 0,
+         name: '',
+         createdAt: '',
+         profil: Profil(
+           id: '',
+           identifiant: '',
+           firstName: '',
+           lastName: '',
+           birthday: '',
+           createdAt: '',
+           updatedAt: '',
+           isAdmin: false,
+           isWeb: false,
+           isMobile: false,
+           email: '',
+           isStock: false,
+           isAvtrans: false,
+           token: '',
+           passwordHash: '',
+           account: Account(
+             id: '',
+             societe: '',
+             address1: '',
+             address2: '',
+             isActive: false,
+             createdAt: '',
+             updatedAt: '',
+             latitude: 0.0,
+             longitude: 0.0,
+           ),
+         ),
+       );
 
   factory Command.fromJson(Map<String, dynamic> json) {
-    var packagesFromJson = json['packages'] as List<dynamic>? ?? {};
     Map<String, Package> packagesMap = {};
-    for (var value in packagesFromJson) {
-      packagesMap[value['barcode']] = Package.fromJson(value);
+    if (json['packages'] != null && json['packages'] is List) {
+      final packagesList = json['packages'] as List;
+      for (var package in packagesList) {
+        if (package is Map<String, dynamic>) {
+          package['commandId'] = json['id'];
+          if (package['barcode'] is String) {
+            packagesMap[package['barcode'] as String] = Package.fromJson(package);
+          }
+        }
+      }
     }
 
     return Command(
-      cip: json['cip'] ?? "",
-      id: json['id'] ?? "",
-      cNumberOfPackages: json['c_number_of_packages'] ?? "",
-      cCloseDate: json['close_date'] ?? "",
-      cWeight: json['c_weight'] ?? "",
-      cVolume: json['c_volume'] ?? "",
-      cNumTransport: json['c_num_transport'] ?? "",
-      tourOrder: json['tour_order'] is int
-      ? json['tour_order']
-      : int.tryParse(json['tour_order']?.toString() ?? '0') ?? 0,
-      idTour: json['id_tour'] ?? "",
-      expDate: json['exp_date'] ?? "",
-      expCode: json['exp_code'] ?? "",
-      pharmacyCip: json['pharmacy_cip'] ?? "",
-      pharmacyName: json['pharmacy_name'] ?? "",
-      pharmacyAddress1: json['pharmacy_address1'] ?? "",
-      pharmacyAddress2: json['pharmacy_address2'] ?? "",
-      pharmacyAddress3: json['pharmacy_address3'] ?? "",
-      pharmacyPostalCode: json['pharmacy_postal_code'] ?? "",
-      pharmacyCity: json['pharmacy_city'] ?? "",
-      pharmacyCountry: json['pharmacy_country'] ?? "",
-      pharmacyInformations: json['pharmacy_informations'] ?? "",
-      pharmacyPhone: json['pharmacy_phone'] ?? "",
-      pharmacyFax: json['pharmacy_fax'] ?? "",
-      pharmacyEmail: json['pharmacy_email'] ?? "",
-      pharmacyLatitude: json['pharmacy_latitude'] ?? "",
-      pharmacyLongitude: json['pharmacy_longitude'] ?? "",
-      pharmacyQuality: json['pharmacy_quality'] ?? "",
-      pharmacyFirstName: json['pharmacy_first_name'] ?? "",
-      pharmacyLastName: json['pharmacy_last_name'] ?? "",
-      mezTourExpCode: json['mez_tour_exp_code'] ?? "",
-      mezTourExpName: json['mez_tour_exp_name'] ?? "",
-      mezTourExpAddress1: json['mez_tour_exp_address1'] ?? "",
-      mezTourExpAddress2: json['mez_tour_exp_address2'] ?? "",
-      mezTourExpAddress3: json['mez_tour_exp_address3'] ?? "",
-      mezTourExpPostalCode: json['mez_tour_exp_postal_code'] ?? "",
-      mezTourExpCity: json['mez_tour_exp_city'] ?? "",
-      mezTourExpCountry: json['mez_tour_exp_country'] ?? "",
-      mezTourExpInformations: json['mez_tour_exp_informations'] ?? "",
-      mezTourExpPhone: json['mez_tour_exp_phone'] ?? "",
-      mezTourExpFax: json['mez_tour_exp_fax'] ?? "",
-      mezTourExpEmail: json['mez_tour_exp_email'] ?? "",
-      mezTourExpLatitude: json['mez_tour_exp_latitude'] ?? "",
-      mezTourExpLongitude: json['mez_tour_exp_longitude'] ?? "",
-      calculatedWeight: json['calculated_weight'] ?? "",
-      calculatedPackages: json['calculated_packages'] ?? "",
-      tourName: json['tour_name'] ?? "",
-      tourColor: json['tour_color'] ?? "",
-      statusDate: json['status_date'] ?? "",
-      statusName: json['status_name'] ?? "",
-      idStatus: json['id_status'] ?? "",
-      pNew: json['p_new'] ?? false,
+      id: (json['id'] is String) ? json['id'] as String : '',
+      tourId: (json['tourId'] is String) ? json['tourId'] as String : '',
+      closeDate: (json['closeDate'] is String) ? json['closeDate'] as String : '',
+      tourOrder: (json['tourOrder'] is int) ? json['tourOrder'] as int : 0,
+      tourColor: (json['tourColor'] is String) ? json['tourColor'] as String : '',
+      expDate: (json['expDate'] is String) ? json['expDate'] as String : '',
+      comment: (json['comment'] is String) ? json['comment'] as String : '',
+      newPharmacy: (json['newPharmacy'] is bool) ? json['newPharmacy'] as bool : false,
+      latitude: (json['latitude'] is double) ? json['latitude'] as double : 0.0,
+      longitude: (json['longitude'] is double) ? json['longitude'] as double : 0.0,
       packages: packagesMap,
+      pharmacy: Pharmacy.fromJson(json['pharmacy'] is Map<String, dynamic> ? json['pharmacy'] as Map<String, dynamic> : {}),
+      status: Status.fromJson(json['status'] is Map<String, dynamic> ? json['status'] as Map<String, dynamic> : {}),
     );
   }
 
   Map<String, dynamic> toJson() {
-    List<Map<String, dynamic>> packagesJson = [];
-    packages.forEach((key, package) {
-      packagesJson.add(package.toJson());
+    List<Map<String, dynamic>> packagesList = [];
+    packages.forEach((barcode, package) {
+      packagesList.add(package.toJson());
     });
 
     return {
-      'cip': cip,
       'id': id,
-      'c_number_of_packages': cNumberOfPackages,
-      'close_date': cCloseDate,
-      'c_weight': cWeight,
-      'c_volume': cVolume,
-      'c_num_transport': cNumTransport,
-      'tour_order': tourOrder,
-      'id_tour': idTour,
-      'exp_date': expDate,
-      'exp_code': expCode,
-      'pharmacy_cip': pharmacyCip,
-      'pharmacy_name': pharmacyName,
-      'pharmacy_address1': pharmacyAddress1,
-      'pharmacy_address2': pharmacyAddress2,
-      'pharmacy_address3': pharmacyAddress3,
-      'pharmacy_postal_code': pharmacyPostalCode,
-      'pharmacy_city': pharmacyCity,
-      'pharmacy_country': pharmacyCountry,
-      'pharmacy_informations': pharmacyInformations,
-      'pharmacy_phone': pharmacyPhone,
-      'pharmacy_fax': pharmacyFax,
-      'pharmacy_email': pharmacyEmail,
-      'pharmacy_latitude': pharmacyLatitude,
-      'pharmacy_longitude': pharmacyLongitude,
-      'pharmacy_quality': pharmacyQuality,
-      'pharmacy_first_name': pharmacyFirstName,
-      'pharmacy_last_name': pharmacyLastName,
-      'mez_tour_exp_code': mezTourExpCode,
-      'mez_tour_exp_name': mezTourExpName,
-      'mez_tour_exp_address1': mezTourExpAddress1,
-      'mez_tour_exp_address2': mezTourExpAddress2,
-      'mez_tour_exp_address3': mezTourExpAddress3,
-      'mez_tour_exp_postal_code': mezTourExpPostalCode,
-      'mez_tour_exp_city': mezTourExpCity,
-      'mez_tour_exp_country': mezTourExpCountry,
-      'mez_tour_exp_informations': mezTourExpInformations,
-      'mez_tour_exp_phone': mezTourExpPhone,
-      'mez_tour_exp_fax': mezTourExpFax,
-      'mez_tour_exp_email': mezTourExpEmail,
-      'mez_tour_exp_latitude': mezTourExpLatitude,
-      'mez_tour_exp_longitude': mezTourExpLongitude,
-      'calculated_weight': calculatedWeight,
-      'calculated_packages': calculatedPackages,
-      'tour_name': tourName,
-      'tour_color': tourColor,
-      'status_date': statusDate,
-      'status_name': statusName,
-      'id_status': idStatus,
-      'p_new': pNew,
-      'packages': packagesJson,
+      'tourId': tourId,
+      'closeDate': closeDate,
+      'tourOrder': tourOrder,
+      'tourColor': tourColor,
+      'expDate': expDate,
+      'comment': comment,
+      'newPharmacy': newPharmacy,
+      'latitude': latitude,
+      'longitude': longitude,
+      'packages': packagesList,
+      'pharmacy': pharmacy.toJson(),
+      'status': status.toJson(),
     };
   }
 }

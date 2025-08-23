@@ -1,13 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:movix/Managers/ChargementManager.dart';
+import 'package:movix/Models/Command.dart';
 import 'package:movix/Models/PackageSearcher.dart';
-import 'package:movix/Widgets/CustomButton.dart';
 import 'package:movix/Models/Tour.dart';
-import 'package:movix/Services/affichage.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Widgets/AnomalieMenu.dart';
+import 'package:movix/Widgets/CommandWidget.dart';
+import 'package:movix/Widgets/CustomButton.dart';
+import 'package:movix/Widgets/PackagesWidget.dart';
 
 class ChargementPage extends StatefulWidget {
   final Tour tour;
@@ -18,13 +22,188 @@ class ChargementPage extends StatefulWidget {
   _ChargementPage createState() => _ChargementPage();
 }
 
-class _ChargementPage extends State<ChargementPage> {
+class _ChargementPage extends State<ChargementPage>
+    with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late String selectedId;
   late PackageSearcher packageSearcher;
+  final Map<String, AnimationController> _cardAnimations = {};
 
   void onUpdate() {
     setState(() {});
+  }
+
+  Widget _buildProgressHeader() {
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildModernCommandCard(Command command, bool isSelected, int index) {
+    return AnimatedBuilder(
+      animation: _cardAnimations[command.id]!,
+      builder: (context, child) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                setState(() {
+                  if (selectedId == command.id) {
+                    selectedId = "";
+                  } else {
+                    selectedId = command.id;
+                  }
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isSelected 
+                      ? Globals.COLOR_SURFACE 
+                      : Globals.COLOR_SURFACE.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected 
+                        ? Globals.COLOR_TEXT_GRAY.withOpacity(0.3)
+                        : Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    customCardHeader(command, false, false),
+                                    const SizedBox(height: 6),
+                                    customCity(command),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                      child: isSelected
+                          ? Container(
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                              decoration: BoxDecoration(
+                                color: Globals.COLOR_SURFACE_SECONDARY.withOpacity(0.5),
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(20),
+                                  bottomRight: Radius.circular(20),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  const Divider(height: 1),
+                                  const SizedBox(height: 16),
+                                  CustomListePackages(
+                                    command: command,
+                                    isLivraison: false,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _buildModernActionButton(
+                                          label: "Non chargé",
+                                          size: 12,
+                                          icon: FontAwesomeIcons.xmark,
+                                          color: Globals.COLOR_MOVIX_RED,
+                                          onPressed: () {
+                                            ShowChargementAnomalieManu(
+                                              context,
+                                              command,
+                                              onUpdate,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: _buildModernActionButton(
+                                          label: "Scanner",
+                                          icon: Icons.qr_code_scanner,
+                                          color: Globals.COLOR_MOVIX,
+                                          onPressed: () {
+                                            context.push(
+                                              "/tour/fschargement",
+                                              extra: {
+                                                "onUpdate": onUpdate,
+                                                'tour': widget.tour,
+                                                'packageSearcher': packageSearcher,
+                                                "command": command
+                                              },
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildModernActionButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+    double size = 14
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        label: Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: size,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+      ),
+    );
   }
 
   @override
@@ -36,247 +215,134 @@ class _ChargementPage extends State<ChargementPage> {
     }
 
     packageSearcher = PackageSearcher(widget.tour.commands);
+    
+    // Initialize animations for each command
+    for (var command in widget.tour.commands.values) {
+      _cardAnimations[command.id] = AnimationController(
+        duration: const Duration(milliseconds: 300),
+        vsync: this,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    for (var controller in _cardAnimations.values) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Globals.COLOR_BACKGROUND,
       appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
         titleTextStyle: Globals.appBarTextStyle,
-        title: Text(
-          widget.tour.name,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.tour.name,
+              style: TextStyle(
+                color: Globals.COLOR_TEXT_LIGHT,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+            ),
+            Text(
+              'Chargement en cours',
+              style: TextStyle(
+                color: Globals.COLOR_TEXT_LIGHT.withOpacity(0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
         backgroundColor: Globals.COLOR_MOVIX,
-        foregroundColor: Colors.white,
+        foregroundColor: Globals.COLOR_TEXT_LIGHT,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back_ios, color: Globals.COLOR_TEXT_LIGHT),
           onPressed: () {
             context.go('/tours');
           },
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 20.0),
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Text(
               '${countValidCommands(widget.tour)}/${widget.tour.commands.length}',
+              style: TextStyle(
+                color: Globals.COLOR_TEXT_LIGHT,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
             ),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: widget.tour.commands.length,
-                itemBuilder: (context, index) {
-                  final command = widget.tour.commands.values
-                      .elementAt(widget.tour.commands.length - 1 - index);
-                  final isSelected = selectedId == command.id;
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProgressHeader(),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(top: 8, bottom: 120, left: 8, right: 8),
+                  itemCount: widget.tour.commands.length,
+                  itemBuilder: (context, index) {
+                    final command = widget.tour.commands.values
+                        .elementAt(widget.tour.commands.length - 1 - index);
+                    final isSelected = selectedId == command.id;
+                  
+                    if (isSelected) {
+                      _cardAnimations[command.id]?.forward();
+                    } else {
+                      _cardAnimations[command.id]?.reverse();
+                    }
 
-                  return Card(
-                    margin:
-                        const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Material(
-                      color: isSelected ? Colors.white : const Color.fromARGB(255, 240, 240, 240),
-                      borderRadius: BorderRadius.circular(14),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        splashColor: Colors.grey[300],
-                        onTap: () {
-                          setState(() {
-                            selectedId = command.id;
-                          });
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 70),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  GetChargementIconCommandStatus(command, 24),
-                                  const SizedBox(width: 7),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          command.pharmacyName,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (command.pNew) ...[
-                                    newBadge(),
-                                    const SizedBox(width: 2),
-                                  ],
-                                  Column(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: Globals.COLOR_MOVIX,
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        child: Text(
-                                          "${command.packages.length} 📦",
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                "${command.pharmacyAddress1} ${command.pharmacyAddress2} ${command.pharmacyAddress3}"
-                                    .trim(),
-                                style: const TextStyle(
-                                  fontSize: 12, color: Colors.black54),
-                              ),
-                              Text(
-                                "${command.pharmacyPostalCode} ${command.pharmacyCity}",
-                                style: const TextStyle(
-                                  fontSize: 12, color: Colors.black54),
-                              ),
-                              if (isSelected &&
-                                  command.packages.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: command.packages.length,
-                                  itemBuilder: (context, index) {
-                                    final package = command.packages.values
-                                        .elementAt(index);
-                                    final zoneName = package.zoneName.isEmpty
-                                        ? "00"
-                                        : package.zoneName;
-
-                                    return Padding(
-                                      padding: const EdgeInsets.only(top: 6.0),
-                                      child: Row(
-                                        children: [
-                                          getIconPackageStatus(package, 16),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            package.barcode,
-                                            style:
-                                                const TextStyle(fontSize: 12),
-                                          ),
-                                          const Spacer(),
-                                          Text(
-                                            zoneName,
-                                            style:
-                                                const TextStyle(fontSize: 12),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                )
-                              ],
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 70),
-                                transitionBuilder: (child, animation) {
-                                  return SizeTransition(
-                                    sizeFactor: animation,
-                                    axisAlignment: -1,
-                                    child: FadeTransition(
-                                      opacity: animation,
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: isSelected
-                                    ? Column(
-                                        key: ValueKey("actions_$index"),
-                                        children: [
-                                          const Divider(),
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceAround,
-                                            children: [
-                                              customToolButton(
-                                                color: Globals.COLOR_MOVIX_RED,
-                                                iconData:
-                                                    FontAwesomeIcons.xmark,
-                                                text: "Non chargé",
-                                                onPressed: () {
-                                                  ShowChargementAnomalieManu(
-                                                    context,
-                                                    command,
-                                                    onUpdate,
-                                                  );
-                                                },
-                                              ),
-                                              customToolButton(
-                                                color: Globals.COLOR_MOVIX,
-                                                iconAssetPath:
-                                                    'assets/svg/barcode.svg',
-                                                text: "Scanner",
-                                                onPressed: () {
-                                                  context.push(
-                                                      "/tour/fschargement",
-                                                      extra: {
-                                                        "onUpdate": onUpdate,
-                                                        'tour': widget.tour,
-                                                        'packageSearcher':
-                                                            packageSearcher,
-                                                        "command": command
-                                                      });
-                                                },
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      )
-                                    : const SizedBox.shrink(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                controller: _scrollController,
-                cacheExtent: 1000,
+                    return _buildModernCommandCard(command, isSelected, index);
+                  },
+                  controller: _scrollController,
+                  cacheExtent: 1000,
+                ),
               ),
-            ),
-            if (isChargementComplet(widget.tour))
-              customButton(
-                label: "Valider le chargement",
-                onPressed: () {
-                  context.go('/tour/validateChargement', extra: {
-                    'packageSearcher': packageSearcher,
-                    'tour': widget.tour
-                  });
-                },
+            ],
+          ),
+          if (isChargementComplet(widget.tour))
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: Platform.isIOS ? 16 : 0,
+              child: AnimatedSlide(
+                duration: const Duration(milliseconds: 300),
+                offset: Offset.zero,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  opacity: 1.0,
+                  child: customButton(
+                    label: "Valider le chargement",
+                    onPressed: () {
+                      context.go('/tour/validateChargement', extra: {
+                        'packageSearcher': packageSearcher,
+                        'tour': widget.tour
+                      });
+                    },
+                  ),
+                ),
               ),
-          ],
-        ),
+            )
+        ],
       ),
     );
   }

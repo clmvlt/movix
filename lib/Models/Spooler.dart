@@ -1,29 +1,26 @@
+import 'dart:convert';
+
 import 'package:hive/hive.dart';
 
-part 'Spooler.g.dart';
-
-@HiveType(typeId: 0)
 class Spooler extends HiveObject {
-  @HiveField(0)
   final String url;
-
-  @HiveField(1)
   final Map<String, String> headers;
-
-  @HiveField(2)
   final Map<String, dynamic> body;
+  final String? formType;
 
   Spooler({
     required this.url,
     required this.headers,
     required this.body,
+    required this.formType,
   });
 
   factory Spooler.fromJson(Map<String, dynamic> json) {
     return Spooler(
-      url: json['url'],
-      headers: Map<String, String>.from(json['headers'] ?? {}),
-      body: Map<String, dynamic>.from(json['body'] ?? {}),
+      url: (json['url'] is String) ? json['url'] as String : '',
+      headers: (json['headers'] is Map) ? Map<String, String>.from(json['headers'] as Map) : {},
+      body: (json['body'] is Map) ? Map<String, dynamic>.from(json['body'] as Map) : {},
+      formType: (json['formType'] is String) ? json['formType'] as String : 'post',
     );
   }
 
@@ -31,5 +28,11 @@ class Spooler extends HiveObject {
         'url': url,
         'headers': headers,
         'body': body,
+        'formType': formType,
       };
+
+  @override
+  String toString() {
+    return jsonEncode(toJson());
+  }
 }
