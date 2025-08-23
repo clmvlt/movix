@@ -9,6 +9,7 @@
 .history
 .svn/
 migrate_working_dir/
+._*
 
 # IntelliJ related
 *.iml
@@ -43,3 +44,7 @@ app.*.map.json
 /android/app/release
 
 .env
+pubspec.lock
+emu.vbs
+build_and_upload_apk.py
+CLAUDE.md
