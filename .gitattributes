@@ -1,0 +1,17 @@
+# Forcer LF partout
+* text=auto eol=lf
+
+# Garder les binaires inchangés
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.mp3 binary
+*.mp4 binary
+*.wav binary
+*.ico binary
+*.pdf binary
+*.ttf binary
+*.otf binary
+*.exe binary
+*.dll binary
