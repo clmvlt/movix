@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:movix/Managers/ChargementManager.dart';
 import 'package:movix/Managers/PackageManager.dart';
@@ -10,12 +7,9 @@ import 'package:movix/Models/Package.dart';
 import 'package:movix/Models/PackageSearcher.dart';
 import 'package:movix/Models/Sound.dart';
 import 'package:movix/Models/Tour.dart';
-import 'package:movix/Scanning/Scan.dart';
 import 'package:movix/Services/affichage.dart';
 import 'package:movix/Services/globals.dart';
-import 'package:movix/Widgets/AnomalieMenu.dart';
-import 'package:movix/Widgets/CommandWidget.dart';
-import 'package:movix/Widgets/PackagesWidget.dart';
+import 'package:movix/Widgets/Chargement/index.dart';
 
 class FSChargementPage extends StatefulWidget {
   final Tour tour;
@@ -35,11 +29,13 @@ class FSChargementPage extends StatefulWidget {
   _FSChargementPageState createState() => _FSChargementPageState();
 }
 
-class _FSChargementPageState extends State<FSChargementPage> {
+class _FSChargementPageState extends State<FSChargementPage>
+    with TickerProviderStateMixin {
   String inputLog = "";
   late List<String> listIds = [];
   int currentIndex = 0;
   late Command command;
+  late AnimationController _animationController;
 
   void onUpdate() {
     setState(() {});
@@ -130,157 +126,31 @@ class _FSChargementPageState extends State<FSChargementPage> {
 
     listIds = widget.tour.commands.keys.toList();
     currentIndex = listIds.indexOf(command.id);
+    
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
   }
 
   Widget _buildModernCommandCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Globals.COLOR_SURFACE,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Globals.COLOR_TEXT_GRAY.withOpacity(0.3),
-              width: 2,
-            ),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              customCardHeader(command, false, true),
-                              const SizedBox(height: 6),
-                              customCity(command),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                decoration: BoxDecoration(
-                  color: Globals.COLOR_SURFACE_SECONDARY.withOpacity(0.5),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    const Divider(height: 1),
-                    const SizedBox(height: 16),
-                    CustomListePackages(
-                      command: command,
-                      isLivraison: false,
-                    ),
-                    const SizedBox(height: 20),
-                    _buildModernActionButton(
-                      label: "Non chargé",
-                      size: 12,
-                      icon: FontAwesomeIcons.xmark,
-                      color: Globals.COLOR_MOVIX_RED,
-                      onPressed: () {
-                        ShowChargementAnomalieManu(
-                          context, command, onUpdate);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return ModernCommandCardWidget(
+      command: command,
+      isSelected: true,
+      isFullScreenMode: true,
+      onTap: () {},
+      onUpdate: onUpdate,
+      animationController: _animationController,
     );
   }
 
-  Widget _buildModernActionButton({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onPressed,
-    double size = 12
-  }) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 18),
-        label: Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: size,
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
-        ),
-      ),
-    );
-  }
 
-  Widget _buildModernNavigationButton({
-    required IconData icon,
-    required VoidCallback? onPressed,
-    required bool isEnabled,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onPressed,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isEnabled 
-                  ? Globals.COLOR_MOVIX
-                  : Globals.COLOR_TEXT_SECONDARY.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              icon,
-              color: isEnabled 
-                  ? Colors.white
-                  : Globals.COLOR_TEXT_SECONDARY,
-              size: 24,
-            ),
-          ),
-        ),
-      ),
-    );
+
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -366,84 +236,21 @@ class _FSChargementPageState extends State<FSChargementPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ScannerWidget(
-                      validateCode: validateCode
-                    ),
+                  ScannerSectionWidget(
+                    validateCode: validateCode,
                   ),
                   _buildModernCommandCard(),
                   const SizedBox(height: 120),
                 ],
               ),
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: Platform.isIOS ? 16 : 0,
-              child: Container(
-                margin: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _buildModernNavigationButton(
-                      icon: Icons.arrow_back_ios,
-                      onPressed: currentIndex < widget.tour.commands.length - 1
-                          ? () => navigateToCommand(currentIndex + 1)
-                          : null,
-                      isEnabled: currentIndex < widget.tour.commands.length - 1,
-                    ),
-                    Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16),
-                        child: isChargementComplet(widget.tour)
-                            ? Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    context.go('/tour/validateChargement', extra: {
-                                      'packageSearcher': widget.packageSearcher,
-                                      'tour': widget.tour
-                                    });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Globals.COLOR_MOVIX,
-                                    foregroundColor: Colors.white,
-                                    minimumSize: const Size(double.infinity, 58),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: const Text(
-                                    'Valider chargement',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ),
-                    _buildModernNavigationButton(
-                      icon: Icons.arrow_forward_ios,
-                      onPressed: currentIndex > 0
-                          ? () => navigateToCommand(currentIndex - 1)
-                          : null,
-                      isEnabled: currentIndex > 0,
-                    ),
-                  ],
-                ),
-              ),
+            NavigationBottomBarWidget(
+              tour: widget.tour,
+              packageSearcher: widget.packageSearcher,
+              currentIndex: currentIndex,
+              totalCommands: widget.tour.commands.length,
+              onNext: () => navigateToCommand(currentIndex + 1),
+              onPrevious: () => navigateToCommand(currentIndex - 1),
             ),
           ],
         ),

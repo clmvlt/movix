@@ -4,7 +4,8 @@
       "Bash(flutter:*)",
       "WebFetch(domain:api.movix.fr)",
       "Bash(rm:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(del \"lib\\Widgets\\AnomalieMenu_backup.dart\")"
     ],
     "deny": [],
     "ask": []

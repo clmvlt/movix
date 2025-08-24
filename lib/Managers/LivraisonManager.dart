@@ -15,6 +15,192 @@ import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/location.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+Future<String?> _showMissingPackagesTourDialog(BuildContext context, int commandCount) async {
+  final TextEditingController commentController = TextEditingController();
+  
+  return showDialog<String>(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return PopScope(
+        canPop: false,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            decoration: BoxDecoration(
+              color: Globals.COLOR_SURFACE,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: Globals.COLOR_MOVIX_YELLOW.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                        child: Icon(
+                          Icons.warning_outlined,
+                          color: Globals.COLOR_MOVIX_YELLOW,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Validation de la tournée',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: Globals.COLOR_TEXT_DARK,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$commandCount commande(s) ont des colis manquants ou non livrés. Veuillez préciser la raison globale.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Globals.COLOR_TEXT_DARK.withOpacity(0.7),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Globals.COLOR_BACKGROUND,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: commentController,
+                          maxLines: 3,
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            hintText: 'Décrivez la raison des colis manquants/non livrés...',
+                            hintStyle: TextStyle(
+                              color: Globals.COLOR_TEXT_DARK.withOpacity(0.5),
+                              fontWeight: FontWeight.normal,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                              horizontal: 16,
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Globals.COLOR_TEXT_DARK,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.pop(context, null);
+                            },
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(20),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Text(
+                                'Annuler',
+                                style: TextStyle(
+                                  color: Globals.COLOR_TEXT_DARK.withOpacity(0.8),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: 1,
+                        height: 56,
+                        color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                      ),
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              String comment = commentController.text.trim();
+                              if (comment.isEmpty) {
+                                Globals.showSnackbar(
+                                  'Veuillez renseigner une raison',
+                                  backgroundColor: Globals.COLOR_MOVIX_RED,
+                                );
+                                return;
+                              }
+                              
+                              Navigator.pop(context, comment);
+                            },
+                            borderRadius: const BorderRadius.only(
+                              bottomRight: Radius.circular(20),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Text(
+                                'Valider la tournée',
+                                style: TextStyle(
+                                  color: Globals.COLOR_MOVIX_GREEN,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
 void ValidLivraisonAnomalie(
     List<String> picturesBase64,
     String? selectedReasonCode,
@@ -47,7 +233,7 @@ void ValidLivraisonCommand(
     Command command, List<String> base64images, VoidCallback onUpdate) async {
   final globalSpooler = SpoolerManager();
   final String token = Globals.profil?.token ?? "";
-  const String apiUrl = Globals.API_URL;
+  final String apiUrl = Globals.API_URL;
   final String timestamp = Globals.getSqlDate();
 
   final List<Spooler> tasks = [];
@@ -85,16 +271,22 @@ void ValidLivraisonCommand(
   final locationService = locator<LocationService>();
   final location = locationService.currentLocation;
 
+  Map<String, dynamic> commandStateBody = {
+    "commandIds": [command.id],
+    "statusId": command.status.id,
+    "createdAt": timestamp,
+    "latitude": location?.latitude ?? 0.0,
+    "longitude": location?.longitude ?? 0.0,
+  };
+  
+  if (command.deliveryComment.isNotEmpty) {
+    commandStateBody["comment"] = command.deliveryComment;
+  }
+  
   tasks.add(Spooler(
     url: "$apiUrl/commands/state",
     headers: {'Authorization': token, "Content-Type": "application/json"},
-    body: {
-      "commandIds": [command.id],
-      "statusId": command.status.id,
-      "createdAt": timestamp,
-      "latitude": location?.latitude ?? 0.0,
-      "longitude": location?.longitude ?? 0.0,
-    },
+    body: commandStateBody,
     formType: 'put',
   ));
 
@@ -111,6 +303,35 @@ Future<void> ValidLivraisonTour(
         'Impossible de valider la tourner car il reste des élements dans le spooler.',
         backgroundColor: Globals.COLOR_MOVIX_RED);
   } else {
+    // Check for missing packages across all commands
+    List<Command> commandsWithMissingPackages = [];
+    for (var command in tour.commands.values) {
+      bool hasMissingPackages = false;
+      for (var package in command.packages.values) {
+        if (package.status.id == 4 || package.status.id == 5 || package.status.id == 8 || package.status.id == 9) {
+          hasMissingPackages = true;
+          break;
+        }
+      }
+      if (hasMissingPackages) {
+        commandsWithMissingPackages.add(command);
+      }
+    }
+
+    // If there are missing packages, ask for a comment
+    String? missingPackagesComment;
+    if (commandsWithMissingPackages.isNotEmpty) {
+      missingPackagesComment = await _showMissingPackagesTourDialog(context, commandsWithMissingPackages.length);
+      if (missingPackagesComment == null) {
+        return; // User cancelled
+      }
+      
+      // Apply the comment to all commands with missing packages
+      for (var command in commandsWithMissingPackages) {
+        command.deliveryComment = missingPackagesComment;
+      }
+    }
+
     int? endkm = await askForKilometers(context);
     tour.endKm = endkm ?? 0;
     DateTime now = DateTime.now();
@@ -715,7 +936,7 @@ void sendPharmacyInformations(String comment, bool invalidGeocodage,
     List<String> bases64, Command command) {
   final globalSpooler = SpoolerManager();
   final String token = Globals.profil?.token ?? "";
-  const String apiUrl = Globals.API_URL;
+  final String apiUrl = Globals.API_URL;
 
   final task = Spooler(
     url: "$apiUrl/pharmacy-infos",

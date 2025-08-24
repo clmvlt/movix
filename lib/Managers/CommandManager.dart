@@ -9,7 +9,7 @@ void updateCommandState(Command command, VoidCallback onUpdate, bool online) {
     command.status.id = 2; // Chargé
     onUpdate();
     if (online) {
-      API.setCommandState(command.id, command.status.id).then((res) {
+      API.setCommandState(command.id, command.status.id, comment: command.deliveryComment).then((res) {
         if (!res) {
           Globals.showSnackbar(
               "Impossible de mettre à jour le status de la commande ${command.id}.",
@@ -52,7 +52,7 @@ void updateCommandState(Command command, VoidCallback onUpdate, bool online) {
 
   onUpdate();
   if (online) {
-    API.setCommandState(command.id, command.status.id).then((res) {
+    API.setCommandState(command.id, command.status.id, comment: command.deliveryComment).then((res) {
       if (!res) {
         command.status.id = saveId;
         onUpdate();

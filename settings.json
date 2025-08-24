@@ -1,0 +1,6 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "powershell -NoProfile -Command \"$inputData = [Console]::In.ReadToEnd() | ConvertFrom-Json; $modelName = $inputData.model.display_name; $projectName = if ($inputData.workspace.current_dir) { Split-Path -Path $inputData.workspace.current_dir -Leaf } else { 'Projet' }; Write-Output ('🤖 {0} | 📁 {1} | 🔢 Tokens actuels: Information non disponible | ⏰ Limite 5h: En attente' -f $modelName, $projectName)\""
+  }
+}

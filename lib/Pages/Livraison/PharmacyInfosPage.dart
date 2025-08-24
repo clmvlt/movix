@@ -8,6 +8,7 @@ import 'package:movix/Widgets/CustomButton.dart';
 import 'package:movix/Widgets/Common/AppBarWidget.dart';
 import 'package:movix/Widgets/Common/StateWidgets.dart';
 import 'package:movix/Widgets/Common/ImageGalleryWidget.dart';
+import 'package:movix/Widgets/Livraison/ModernCardWidget.dart';
 
 class PharmacyInfosPage extends StatefulWidget {
   final Command command;
@@ -150,156 +151,62 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> {
 
 
   Widget _buildModernInstructionsCard(String informations) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Globals.COLOR_SURFACE,
-            Globals.COLOR_SURFACE.withOpacity(0.95),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Globals.COLOR_TEXT_GRAY.withOpacity(0.3),
-          width: 2,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Globals.COLOR_MOVIX.withOpacity(0.15),
-                        Globals.COLOR_MOVIX.withOpacity(0.08),
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.info_outline,
-                    color: Globals.COLOR_MOVIX,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    "Instructions de livraison",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Globals.COLOR_TEXT_DARK,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ),
-              ],
+    return ModernCardWidget(
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ModernCardHeader(
+            icon: Icons.info_outline,
+            iconColor: Globals.COLOR_MOVIX,
+            title: "Instructions de livraison",
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Globals.COLOR_SURFACE_SECONDARY.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
             ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Globals.COLOR_SURFACE_SECONDARY.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: RichText(
-                text: parseText(informations),
-                softWrap: true,
-              ),
+            child: RichText(
+              text: parseText(informations),
+              softWrap: true,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildModernPhotosCard(Pharmacy pharmacy) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Globals.COLOR_SURFACE,
-            Globals.COLOR_SURFACE.withOpacity(0.95),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Globals.COLOR_TEXT_GRAY.withOpacity(0.3),
-          width: 2,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Globals.COLOR_MOVIX_GREEN.withOpacity(0.15),
-                        Globals.COLOR_MOVIX_GREEN.withOpacity(0.08),
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.photo_library_outlined,
-                    color: Globals.COLOR_MOVIX_GREEN,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    "Photos (${pharmacy.pictures.length})",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Globals.COLOR_TEXT_DARK,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ),
-              ],
+    return ModernCardWidget(
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ModernCardHeader(
+            icon: Icons.photo_library_outlined,
+            iconColor: Globals.COLOR_MOVIX_GREEN,
+            title: "Photos (${pharmacy.pictures.length})",
+          ),
+          const SizedBox(height: 20),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1,
             ),
-            const SizedBox(height: 20),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1,
-              ),
-              itemCount: pharmacy.pictures.length,
-              itemBuilder: (context, index) {
-                return _buildModernPhotoItem(
-                  pharmacy.pictures[index].imagePath, 
-                  index, 
-                  pharmacy.pictures.map((p) => p.imagePath).toList(),
-                );
-              },
-            ),
-          ],
-        ),
+            itemCount: pharmacy.pictures.length,
+            itemBuilder: (context, index) {
+              return _buildModernPhotoItem(
+                pharmacy.pictures[index].imagePath, 
+                index, 
+                pharmacy.pictures.map((p) => p.imagePath).toList(),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

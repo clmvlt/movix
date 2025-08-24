@@ -4,6 +4,8 @@ import 'package:movix/Models/Command.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Widgets/CustomButton.dart';
 import 'package:movix/Widgets/PhotoPickerWidget.dart';
+import 'package:movix/Widgets/Livraison/ModernCardWidget.dart';
+import 'package:movix/Widgets/Livraison/FormFieldWidget.dart';
 
 class AddInfosPharmacyPage extends StatefulWidget {
   final Command command;
@@ -89,216 +91,68 @@ class _AddInfosPharmacyPageState extends State<AddInfosPharmacyPage> {
   }
 
   Widget _buildModernCommentAndOptionsCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Globals.COLOR_SURFACE,
-            Globals.COLOR_SURFACE.withOpacity(0.95),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Globals.COLOR_TEXT_GRAY.withOpacity(0.3),
-          width: 2,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Globals.COLOR_MOVIX.withOpacity(0.15),
-                        Globals.COLOR_MOVIX.withOpacity(0.08),
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.info_outlined,
-                    color: Globals.COLOR_MOVIX,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    "Informations complémentaires",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Globals.COLOR_TEXT_DARK,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ),
-              ],
+    return ModernCardWidget(
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ModernCardHeader(
+            icon: Icons.info_outlined,
+            iconColor: Globals.COLOR_MOVIX,
+            title: "Informations complémentaires",
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "Commentaire",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Globals.COLOR_TEXT_DARK,
             ),
-            const SizedBox(height: 20),
-            Text(
-              "Commentaire",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Globals.COLOR_TEXT_DARK,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _commentController,
-              maxLines: 4,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(
-                    color: Globals.COLOR_TEXT_GRAY.withOpacity(0.3),
-                    width: 1.5,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(
-                    color: Globals.COLOR_TEXT_GRAY.withOpacity(0.3),
-                    width: 1.5,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(
-                    color: Globals.COLOR_MOVIX,
-                    width: 2,
-                  ),
-                ),
-                hintText: "Ajouter un commentaire détaillé...",
-                hintStyle: TextStyle(
-                  color: Globals.COLOR_TEXT_GRAY.withOpacity(0.7),
-                ),
-                filled: true,
-                fillColor: Globals.COLOR_SURFACE_SECONDARY.withOpacity(0.3),
-                contentPadding: const EdgeInsets.all(16),
-              ),
-              style: TextStyle(
-                color: Globals.COLOR_TEXT_DARK,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Container(
-              decoration: BoxDecoration(
-                color: Globals.COLOR_SURFACE_SECONDARY.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: CheckboxListTile(
-                value: _invalidGeocodage,
-                onChanged: (val) => setState(() => _invalidGeocodage = val!),
-                title: Text(
-                  "Position GPS incorrecte",
-                  style: TextStyle(
-                    color: Globals.COLOR_TEXT_DARK,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(
-                  "Cocher si le point GPS de la pharmacie ne correspond pas à sa localisation réelle",
-                  style: TextStyle(
-                    color: Globals.COLOR_TEXT_GRAY,
-                    fontSize: 12,
-                  ),
-                ),
-                activeColor: Globals.COLOR_MOVIX,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          ModernTextFieldWidget(
+            controller: _commentController,
+            labelText: "Commentaire",
+            hintText: "Ajouter un commentaire détaillé...",
+            maxLines: 4,
+          ),
+          const SizedBox(height: 20),
+          ModernCheckboxWidget(
+            value: _invalidGeocodage,
+            onChanged: (val) => setState(() => _invalidGeocodage = val!),
+            title: "Position GPS incorrecte",
+            subtitle: "Cocher si le point GPS de la pharmacie ne correspond pas à sa localisation réelle",
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildModernPhotosCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Globals.COLOR_SURFACE,
-            Globals.COLOR_SURFACE.withOpacity(0.95),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Globals.COLOR_TEXT_GRAY.withOpacity(0.3),
-          width: 2,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Globals.COLOR_MOVIX_GREEN.withOpacity(0.15),
-                        Globals.COLOR_MOVIX_GREEN.withOpacity(0.08),
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.photo_camera_outlined,
-                    color: Globals.COLOR_MOVIX_GREEN,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    "Photos (${_photosBase64.length})",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Globals.COLOR_TEXT_DARK,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ),
-              ],
+    return ModernCardWidget(
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ModernCardHeader(
+            icon: Icons.photo_camera_outlined,
+            iconColor: Globals.COLOR_MOVIX_GREEN,
+            title: "Photos (${_photosBase64.length})",
+          ),
+          const SizedBox(height: 20),
+          Container(
+            height: 200,
+            decoration: BoxDecoration(
+              color: Globals.COLOR_SURFACE_SECONDARY.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
             ),
-            const SizedBox(height: 20),
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: Globals.COLOR_SURFACE_SECONDARY.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: PhotoPickerWidget(
-                base64Images: _photosBase64,
-                onImagesChanged: _onImagesChanged,
-                isRequired: false,
-                emptyMessage: "Aucune photo prise",
-              ),
+            child: PhotoPickerWidget(
+              base64Images: _photosBase64,
+              onImagesChanged: _onImagesChanged,
+              isRequired: false,
+              emptyMessage: "Aucune photo prise",
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -6,7 +6,7 @@ class PhotoSectionWidget extends StatelessWidget {
   final String title;
   final String subtitle;
   final List<String> photosBase64;
-  final Function(List<String>) onImagesChanged;
+  final void Function(List<String>) onImagesChanged;
   final bool isRequired;
   final String emptyMessage;
   final double height;

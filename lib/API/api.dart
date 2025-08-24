@@ -10,8 +10,8 @@ import 'pharmacy_fetcher.dart' as _pharmacy;
 import 'tour_fetcher.dart' as _tour;
 
 class API {
-  static Future<bool> setCommandState(String id, int status) {
-    return _command.setCommandState(id, status);
+  static Future<bool> setCommandState(String id, int status, {String? comment}) {
+    return _command.setCommandState(id, status, comment: comment);
   }
 
   static Future<bool> setPackageState(String barcode, int status) {

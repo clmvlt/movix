@@ -13,6 +13,7 @@ class Command {
   String tourColor;
   String expDate;
   String comment;
+  String deliveryComment;
   bool newPharmacy;
   double latitude;
   double longitude;
@@ -28,6 +29,7 @@ class Command {
     this.tourColor = '',
     this.expDate = '',
     this.comment = '',
+    this.deliveryComment = '',
     this.newPharmacy = false,
     this.latitude = 0.0,
     this.longitude = 0.0,
@@ -113,6 +115,7 @@ class Command {
       tourColor: (json['tourColor'] is String) ? json['tourColor'] as String : '',
       expDate: (json['expDate'] is String) ? json['expDate'] as String : '',
       comment: (json['comment'] is String) ? json['comment'] as String : '',
+      deliveryComment: (json['deliveryComment'] is String) ? json['deliveryComment'] as String : '',
       newPharmacy: (json['newPharmacy'] is bool) ? json['newPharmacy'] as bool : false,
       latitude: (json['latitude'] is double) ? json['latitude'] as double : 0.0,
       longitude: (json['longitude'] is double) ? json['longitude'] as double : 0.0,
@@ -136,6 +139,7 @@ class Command {
       'tourColor': tourColor,
       'expDate': expDate,
       'comment': comment,
+      'deliveryComment': deliveryComment,
       'newPharmacy': newPharmacy,
       'latitude': latitude,
       'longitude': longitude,

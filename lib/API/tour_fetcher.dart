@@ -64,7 +64,10 @@ Future<bool> setTourData(String id, Map<String, dynamic> data) async {
 Future<Map<String, dynamic>> validateLoading(Tour tour) async {
   try {
     final commandList = tour.commands.values.map((command) {
-      return {
+      // Check if this command has missing packages (status 5)
+      bool hasMissingPackages = command.packages.values.any((package) => package.status.id == 5);
+      
+      Map<String, dynamic> commandData = {
         'commandId': command.id,
         'status': {'id': command.status.id},
         'packages': command.packages.values.map((package) {
@@ -74,6 +77,13 @@ Future<Map<String, dynamic>> validateLoading(Tour tour) async {
           };
         }).toList(),
       };
+      
+      // Add comment if command has missing packages and comment is available
+      if (hasMissingPackages && command.deliveryComment.isNotEmpty) {
+        commandData['comment'] = command.deliveryComment;
+      }
+      
+      return commandData;
     }).toList();
 
     final response = await ApiBase.post(

@@ -19,15 +19,21 @@ Future<bool> setPackageState(String barcode, int status) async {
   }
 }
 
-Future<bool> setCommandState(String id, int status) async {
+Future<bool> setCommandState(String id, int status, {String? comment}) async {
   try {
+    Map<String, dynamic> body = {
+      "commandIds": [id],
+      "statusId": status,
+      "createdAt": Globals.getSqlDate(),
+    };
+    
+    if (comment != null && comment.isNotEmpty) {
+      body["comment"] = comment;
+    }
+    
     final response = await ApiBase.put(
       '/commands/state',
-      {
-        "commandIds": [id],
-        "statusId": status,
-        "createdAt": Globals.getSqlDate(),
-      },
+      body,
     );
 
     return ApiBase.isSuccess(response.statusCode);

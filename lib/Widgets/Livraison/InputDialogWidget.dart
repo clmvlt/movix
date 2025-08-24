@@ -1,52 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:movix/Services/globals.dart';
 
-class InputDialogWidget extends StatefulWidget {
+class InputDialogWidget extends StatelessWidget {
   final String title;
-  final String subtitle;
+  final String description;
   final String hintText;
+  final void Function(String) onConfirm;
   final String? initialValue;
-  final IconData? icon;
-  final void Function(String)? onConfirm;
+  final bool autofocus;
 
   const InputDialogWidget({
     super.key,
     required this.title,
-    required this.subtitle,
+    required this.description,
     required this.hintText,
+    required this.onConfirm,
     this.initialValue,
-    this.icon = Icons.qr_code_scanner_outlined,
-    this.onConfirm,
+    this.autofocus = true,
   });
 
   @override
-  _InputDialogWidgetState createState() => _InputDialogWidgetState();
-}
-
-class _InputDialogWidgetState extends State<InputDialogWidget> {
-  late TextEditingController _controller;
-  late FocusNode _focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue ?? '');
-    _focusNode = FocusNode();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final TextEditingController controller = TextEditingController(text: initialValue);
+    final FocusNode focusNode = FocusNode();
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
-        _focusNode.unfocus();
+        focusNode.unfocus();
       },
       child: Dialog(
         backgroundColor: Colors.transparent,
@@ -79,14 +60,14 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                         borderRadius: BorderRadius.circular(32),
                       ),
                       child: Icon(
-                        widget.icon,
+                        Icons.qr_code_scanner_outlined,
                         color: Globals.COLOR_MOVIX,
                         size: 32,
                       ),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      widget.title,
+                      title,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
@@ -96,7 +77,7 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      widget.subtitle,
+                      description,
                       style: TextStyle(
                         fontSize: 14,
                         color: Globals.COLOR_TEXT_DARK.withOpacity(0.7),
@@ -114,9 +95,9 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                         ),
                       ),
                       child: TextField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        autofocus: true,
+                        controller: controller,
+                        focusNode: focusNode,
+                        autofocus: autofocus,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 18,
@@ -125,7 +106,7 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                           letterSpacing: 1.5,
                         ),
                         decoration: InputDecoration(
-                          hintText: widget.hintText,
+                          hintText: hintText,
                           hintStyle: TextStyle(
                             color: Globals.COLOR_TEXT_DARK.withOpacity(0.5),
                             fontWeight: FontWeight.normal,
@@ -159,7 +140,7 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {
-                            _focusNode.unfocus();
+                            focusNode.unfocus();
                             Navigator.of(context).pop();
                           },
                           borderRadius: const BorderRadius.only(
@@ -190,10 +171,10 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {
-                            String code = _controller.text.trim();
+                            String code = controller.text.trim();
                             if (code.isNotEmpty) {
-                              widget.onConfirm?.call(code);
-                              _focusNode.unfocus();
+                              onConfirm(code);
+                              focusNode.unfocus();
                               Navigator.of(context).pop();
                             }
                           },
@@ -224,27 +205,27 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
       ),
     );
   }
-}
 
-void showInputDialog({
-  required BuildContext context,
-  required String title,
-  required String subtitle,
-  required String hintText,
-  String? initialValue,
-  IconData? icon,
-  void Function(String)? onConfirm,
-}) {
-  showDialog<String>(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => InputDialogWidget(
-      title: title,
-      subtitle: subtitle,
-      hintText: hintText,
-      initialValue: initialValue,
-      icon: icon,
-      onConfirm: onConfirm,
-    ),
-  );
+  static Future<void> show({
+    required BuildContext context,
+    required String title,
+    required String description,
+    required String hintText,
+    required void Function(String) onConfirm,
+    String? initialValue,
+    bool autofocus = true,
+  }) {
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => InputDialogWidget(
+        title: title,
+        description: description,
+        hintText: hintText,
+        onConfirm: onConfirm,
+        initialValue: initialValue,
+        autofocus: autofocus,
+      ),
+    );
+  }
 }

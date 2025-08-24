@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:movix/Models/Profil.dart';
@@ -6,7 +7,9 @@ import 'package:movix/Services/scanner.dart';
 import 'package:movix/Services/sound.dart';
 
 class Globals {
-  static const String API_URL = "https://api.movix.fr";
+  static String get API_URL => kDebugMode 
+    ? "http://192.168.1.15:8081"
+    : "https://api.movix.fr";
 
   static bool DARK_MODE = true;
   static final ValueNotifier<bool> darkModeNotifier = ValueNotifier<bool>(DARK_MODE);

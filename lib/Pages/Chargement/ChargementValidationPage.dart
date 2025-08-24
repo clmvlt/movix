@@ -4,7 +4,7 @@ import 'package:movix/Managers/ChargementManager.dart';
 import 'package:movix/Models/PackageSearcher.dart';
 import 'package:movix/Models/Tour.dart';
 import 'package:movix/Services/globals.dart';
-import 'package:movix/Widgets/CustomButton.dart';
+import 'package:movix/Widgets/Chargement/index.dart';
 
 class ChargementValidationPage extends StatefulWidget {
   final Tour tour;
@@ -54,19 +54,52 @@ class _ChargementValidationPageState extends State<ChargementValidationPage> {
     }
 
     if (packagesStatusCount[5] != 0) {
-      setState(() {
-        final count = packagesStatusCount[5] ?? -1;
-        errors =
-            "$count colis ${count > 1 ? 'ont' : 'a'} été renseigné${count > 1 ? 's' : ''} comme MANQUANT, êtes-vous sûr de vouloir valider la tournée ?";
-
-        isLoading = false;
-        isValid = false;
-        canForceValidation = true;
-      });
+      // Show dialog to get comment for missing packages
+      final comment = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return MissingPackagesDialogWidget(
+            missingCount: packagesStatusCount[5] ?? 0,
+            dialogType: 'validation',
+          );
+        },
+      );
+      
+      if (comment == null) {
+        // User cancelled, go back
+        context.pop();
+        return;
+      }
+      
+      // Add comment to all commands that have missing packages
+      _addCommentToCommandsWithMissingPackages(comment);
+      
+      // Continue with validation
+      validate();
       return;
     }
 
     validate();
+  }
+
+
+  void _addCommentToCommandsWithMissingPackages(String comment) {
+    for (final command in widget.tour.commands.values) {
+      // Check if this command has any missing packages (status 5)
+      bool hasMissingPackages = false;
+      for (final package in command.packages.values) {
+        if (package.status.id == 5) {
+          hasMissingPackages = true;
+          break;
+        }
+      }
+      
+      // Add comment to command if it has missing packages
+      if (hasMissingPackages) {
+        command.deliveryComment = comment;
+      }
+    }
   }
 
   Future<void> validate() async {
@@ -103,130 +136,48 @@ Widget build(BuildContext context) {
     appBar: AppBar(
       toolbarTextStyle: Globals.appBarTextStyle,
       titleTextStyle: Globals.appBarTextStyle,
-      title: const Text('Validation en cours'),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Validation de la tournée',
+            style: TextStyle(
+              color: Globals.COLOR_TEXT_LIGHT,
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (widget.tour.id.isNotEmpty)
+            Text(
+              'Tournée ${widget.tour.id}',
+              style: TextStyle(
+                color: Globals.COLOR_TEXT_LIGHT.withOpacity(0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+        ],
+      ),
       backgroundColor: Globals.COLOR_MOVIX,
       foregroundColor: Globals.COLOR_TEXT_LIGHT,
-      elevation: 3,
-      centerTitle: true,
+      elevation: 0,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios, color: Globals.COLOR_TEXT_LIGHT),
+        onPressed: () {
+          context.pop();
+        },
+      ),
     ),
-    body: Center(
+    body: SafeArea(
       child: isLoading
-          ? Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Globals.COLOR_MOVIX),
-                  strokeWidth: 4,
-                ),
-                const SizedBox(height: 30),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: Text(
-                    'Validation de la tournée en cours...\nMerci de patienter.',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Globals.COLOR_TEXT_DARK,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-            )
+          ? ValidationViewsWidget.loading()
           : isValid
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.check_circle_outline,
-                        color: Globals.COLOR_MOVIX_GREEN,
-                        size: 100,
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        "Tournée validée avec succès",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Globals.COLOR_MOVIX_GREEN,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 40),
-                      customButton(
-                        onPressed: () => context.go('/tours'),
-                        label: 'Voir les tournées',
-                      ),
-                    ],
-                  ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: Globals.COLOR_MOVIX_RED,
-                        size: 100,
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        "Impossible de valider la tournée",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Globals.COLOR_MOVIX_RED,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 25),
-                      Card(
-                        color: Globals.COLOR_SURFACE,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        margin: const EdgeInsets.symmetric(vertical: 10),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(16),
-                          leading: const Icon(
-                            Icons.warning_amber_rounded,
-                            color: Globals.COLOR_MOVIX_RED,
-                          ),
-                          title: Text(
-                            errors,
-                            style: const TextStyle(
-                              color: Globals.COLOR_MOVIX_RED,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      if (canForceValidation)
-                        customButton(
-                          label: 'Forcer la validation',
-                          onPressed: () => validate(),
-                          color: Globals.COLOR_MOVIX_RED
-                        ),
-                      const SizedBox(height: 20),
-                      customButton(
-                        label: 'Retour au chargement',
-                        onPressed: () {
-                          context.go('/tour/chargement', extra: {
-                            'packageSearcher': widget.packageSearcher,
-                            'tour': widget.tour,
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+              ? ValidationViewsWidget.success()
+              : ValidationViewsWidget.error(errors, widget.tour, widget.packageSearcher),
     ),
   );
 }
+
 
 }

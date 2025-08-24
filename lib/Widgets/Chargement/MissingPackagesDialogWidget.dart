@@ -1,53 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:movix/Services/globals.dart';
 
-class InputDialogWidget extends StatefulWidget {
-  final String title;
-  final String subtitle;
-  final String hintText;
-  final String? initialValue;
-  final IconData? icon;
-  final void Function(String)? onConfirm;
+class MissingPackagesDialogWidget extends StatefulWidget {
+  final int missingCount;
+  final String dialogType;
 
-  const InputDialogWidget({
+  const MissingPackagesDialogWidget({
     super.key,
-    required this.title,
-    required this.subtitle,
-    required this.hintText,
-    this.initialValue,
-    this.icon = Icons.qr_code_scanner_outlined,
-    this.onConfirm,
+    required this.missingCount,
+    this.dialogType = 'validation',
   });
 
   @override
-  _InputDialogWidgetState createState() => _InputDialogWidgetState();
+  State<MissingPackagesDialogWidget> createState() => _MissingPackagesDialogWidgetState();
 }
 
-class _InputDialogWidgetState extends State<InputDialogWidget> {
-  late TextEditingController _controller;
-  late FocusNode _focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue ?? '');
-    _focusNode = FocusNode();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
+class _MissingPackagesDialogWidgetState extends State<MissingPackagesDialogWidget> {
+  final TextEditingController commentController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        _focusNode.unfocus();
-      },
       child: Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -75,18 +49,18 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(
-                        color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                        color: _getIconColor().withOpacity(0.1),
                         borderRadius: BorderRadius.circular(32),
                       ),
                       child: Icon(
-                        widget.icon,
-                        color: Globals.COLOR_MOVIX,
+                        Icons.warning_outlined,
+                        color: _getIconColor(),
                         size: 32,
                       ),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      widget.title,
+                      _getTitle(),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
@@ -96,7 +70,7 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      widget.subtitle,
+                      _getDescription(),
                       style: TextStyle(
                         fontSize: 14,
                         color: Globals.COLOR_TEXT_DARK.withOpacity(0.7),
@@ -114,29 +88,24 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                         ),
                       ),
                       child: TextField(
-                        controller: _controller,
-                        focusNode: _focusNode,
+                        controller: commentController,
+                        maxLines: 3,
                         autofocus: true,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Globals.COLOR_TEXT_DARK,
-                          letterSpacing: 1.5,
-                        ),
                         decoration: InputDecoration(
-                          hintText: widget.hintText,
+                          hintText: 'Décrivez la raison des colis manquants...',
                           hintStyle: TextStyle(
                             color: Globals.COLOR_TEXT_DARK.withOpacity(0.5),
                             fontWeight: FontWeight.normal,
-                            letterSpacing: 0,
                           ),
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
-                            vertical: 20,
+                            vertical: 16,
                             horizontal: 16,
                           ),
-                          counterText: "",
+                        ),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Globals.COLOR_TEXT_DARK,
                         ),
                       ),
                     ),
@@ -159,8 +128,7 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {
-                            _focusNode.unfocus();
-                            Navigator.of(context).pop();
+                            Navigator.pop(context, null);
                           },
                           borderRadius: const BorderRadius.only(
                             bottomLeft: Radius.circular(20),
@@ -168,7 +136,7 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             child: Text(
-                              "Annuler",
+                              'Annuler',
                               style: TextStyle(
                                 color: Globals.COLOR_TEXT_DARK.withOpacity(0.8),
                                 fontSize: 16,
@@ -190,12 +158,16 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {
-                            String code = _controller.text.trim();
-                            if (code.isNotEmpty) {
-                              widget.onConfirm?.call(code);
-                              _focusNode.unfocus();
-                              Navigator.of(context).pop();
+                            String comment = commentController.text.trim();
+                            if (comment.isEmpty) {
+                              Globals.showSnackbar(
+                                'Veuillez renseigner une raison',
+                                backgroundColor: Globals.COLOR_MOVIX_RED,
+                              );
+                              return;
                             }
+                            
+                            Navigator.pop(context, comment);
                           },
                           borderRadius: const BorderRadius.only(
                             bottomRight: Radius.circular(20),
@@ -203,9 +175,9 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             child: Text(
-                              "Valider",
+                              'Continuer',
                               style: TextStyle(
-                                color: Globals.COLOR_TEXT_DARK,
+                                color: _getContinueButtonColor(),
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -224,27 +196,37 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
       ),
     );
   }
-}
 
-void showInputDialog({
-  required BuildContext context,
-  required String title,
-  required String subtitle,
-  required String hintText,
-  String? initialValue,
-  IconData? icon,
-  void Function(String)? onConfirm,
-}) {
-  showDialog<String>(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => InputDialogWidget(
-      title: title,
-      subtitle: subtitle,
-      hintText: hintText,
-      initialValue: initialValue,
-      icon: icon,
-      onConfirm: onConfirm,
-    ),
-  );
+  Color _getIconColor() {
+    return widget.dialogType == 'validation'
+        ? Globals.COLOR_MOVIX_RED
+        : Globals.COLOR_MOVIX_YELLOW;
+  }
+
+  String _getTitle() {
+    return widget.dialogType == 'validation'
+        ? 'Colis manquants'
+        : 'Colis non chargés';
+  }
+
+  String _getDescription() {
+    if (widget.dialogType == 'validation') {
+      return '${widget.missingCount} colis ${widget.missingCount > 1 ? 'ont été renseignés' : 'a été renseigné'} comme MANQUANT. Veuillez préciser la raison.';
+    } else {
+      return 'Tous les colis non scannés seront marqués comme manquants. Veuillez préciser la raison.';
+    }
+  }
+
+  Color _getContinueButtonColor() {
+    return widget.dialogType == 'validation'
+        ? Globals.COLOR_TEXT_DARK
+        : Globals.COLOR_MOVIX_RED;
+  }
+
+
+  @override
+  void dispose() {
+    commentController.dispose();
+    super.dispose();
+  }
 }

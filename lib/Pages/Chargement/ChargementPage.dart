@@ -1,17 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:movix/Managers/ChargementManager.dart';
 import 'package:movix/Models/Command.dart';
 import 'package:movix/Models/PackageSearcher.dart';
 import 'package:movix/Models/Tour.dart';
 import 'package:movix/Services/globals.dart';
-import 'package:movix/Widgets/AnomalieMenu.dart';
-import 'package:movix/Widgets/CommandWidget.dart';
 import 'package:movix/Widgets/CustomButton.dart';
-import 'package:movix/Widgets/PackagesWidget.dart';
+import 'package:movix/Widgets/Chargement/index.dart';
 
 class ChargementPage extends StatefulWidget {
   final Tour tour;
@@ -38,173 +35,25 @@ class _ChargementPage extends State<ChargementPage>
   }
 
   Widget _buildModernCommandCard(Command command, bool isSelected, int index) {
-    return AnimatedBuilder(
-      animation: _cardAnimations[command.id]!,
-      builder: (context, child) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () {
-                setState(() {
-                  if (selectedId == command.id) {
-                    selectedId = "";
-                  } else {
-                    selectedId = command.id;
-                  }
-                });
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isSelected 
-                      ? Globals.COLOR_SURFACE 
-                      : Globals.COLOR_SURFACE.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected 
-                        ? Globals.COLOR_TEXT_GRAY.withOpacity(0.3)
-                        : Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
-                    width: isSelected ? 2 : 1,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    customCardHeader(command, false, false),
-                                    const SizedBox(height: 6),
-                                    customCity(command),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeInOut,
-                      child: isSelected
-                          ? Container(
-                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                              decoration: BoxDecoration(
-                                color: Globals.COLOR_SURFACE_SECONDARY.withOpacity(0.5),
-                                borderRadius: const BorderRadius.only(
-                                  bottomLeft: Radius.circular(20),
-                                  bottomRight: Radius.circular(20),
-                                ),
-                              ),
-                              child: Column(
-                                children: [
-                                  const Divider(height: 1),
-                                  const SizedBox(height: 16),
-                                  CustomListePackages(
-                                    command: command,
-                                    isLivraison: false,
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _buildModernActionButton(
-                                          label: "Non chargé",
-                                          size: 12,
-                                          icon: FontAwesomeIcons.xmark,
-                                          color: Globals.COLOR_MOVIX_RED,
-                                          onPressed: () {
-                                            ShowChargementAnomalieManu(
-                                              context,
-                                              command,
-                                              onUpdate,
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _buildModernActionButton(
-                                          label: "Scanner",
-                                          icon: Icons.qr_code_scanner,
-                                          color: Globals.COLOR_MOVIX,
-                                          onPressed: () {
-                                            context.push(
-                                              "/tour/fschargement",
-                                              extra: {
-                                                "onUpdate": onUpdate,
-                                                'tour': widget.tour,
-                                                'packageSearcher': packageSearcher,
-                                                "command": command
-                                              },
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
+    return ModernCommandCardWidget(
+      command: command,
+      isSelected: isSelected,
+      onTap: () {
+        setState(() {
+          if (selectedId == command.id) {
+            selectedId = "";
+          } else {
+            selectedId = command.id;
+          }
+        });
       },
+      onUpdate: onUpdate,
+      animationController: _cardAnimations[command.id]!,
+      tour: widget.tour,
+      packageSearcher: packageSearcher,
     );
   }
 
-  Widget _buildModernActionButton({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onPressed,
-    double size = 14
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 18),
-        label: Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: size,
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
-        ),
-      ),
-    );
-  }
 
   @override
   void initState() {
@@ -304,7 +153,8 @@ class _ChargementPage extends State<ChargementPage>
                     final command = widget.tour.commands.values
                         .elementAt(widget.tour.commands.length - 1 - index);
                     final isSelected = selectedId == command.id;
-                  
+                    
+                    // Trigger animations
                     if (isSelected) {
                       _cardAnimations[command.id]?.forward();
                     } else {
