@@ -254,7 +254,7 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
                   left: 8,
                   right: 8,
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       // Flash button
                       GestureDetector(
@@ -273,6 +273,8 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
                           ),
                         ),
                       ),
+                      
+                      const SizedBox(width: 8),
                       
                       // Fullscreen button
                       GestureDetector(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-import 'package:movix/Managers/LivraisonManager.dart';
 import 'package:movix/Managers/PackageManager.dart';
 import 'package:movix/Models/Command.dart';
 import 'package:movix/Models/Sound.dart';
@@ -93,7 +93,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
 
     setPackageStateOffline(widget.command, package, 3, onUpdate);
 
-    return isAllScanned(widget.command)
+    return _isAllScanned(widget.command)
         ? ScanResult.SCAN_FINISH
         : ScanResult.SCAN_SUCCESS;
   }
@@ -108,6 +108,12 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
           command: command,
           subtitle: 'Livraison des colis',
           actions: [
+            if (kDebugMode)
+              IconButton(
+                icon: Icon(Icons.qr_code_scanner, color: Globals.COLOR_TEXT_LIGHT),
+                onPressed: () => _debugScanAllPackages(),
+                tooltip: 'Debug: Scanner tous les colis',
+              ),
             PharmacyInfoActionWidget(command: command),
           ],
         ),
@@ -128,6 +134,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
           BottomValidationButtonWidget(
             label: 'Valider la livraison',
             onPressed: () => confirmValidation(command),
+            allPackagesScanned: _isAllScanned(command),
           ),
         ]));
   }
@@ -166,5 +173,37 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
       cipScanned: CIPScanned,
       onUpdate: onUpdate,
     );
+  }
+
+  void _debugScanAllPackages() async {
+    if (!kDebugMode) return;
+    
+    // Scanner d'abord le CIP si nécessaire
+    if (!CIPScanned) {
+      ScanResult cipResult = await validateCode(widget.command.pharmacy.cip);
+      if (cipResult != ScanResult.SCAN_SUCCESS) {
+        Globals.showSnackbar(
+          "Debug: Impossible de scanner le CIP",
+          backgroundColor: Globals.COLOR_MOVIX_RED,
+        );
+        return;
+      }
+    }
+    
+    for (var packageId in widget.command.packages.keys) {
+      var package = widget.command.packages[packageId];
+      if (package != null) {
+        ScanResult result = await validateCode(packageId);
+        if (result == ScanResult.SCAN_SUCCESS || result == ScanResult.SCAN_FINISH) {
+        }
+      }
+    }
+  }
+
+  bool _isAllScanned(Command command) {
+    for (var p in command.packages.values) {
+      if (p.status.id != 3) return false;
+    }
+    return true;
   }
 }

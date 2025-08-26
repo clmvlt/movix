@@ -5,7 +5,9 @@
       "WebFetch(domain:api.movix.fr)",
       "Bash(rm:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(del \"lib\\Widgets\\AnomalieMenu_backup.dart\")"
+      "Bash(del \"lib\\Widgets\\AnomalieMenu_backup.dart\")",
+      "Bash(grep:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

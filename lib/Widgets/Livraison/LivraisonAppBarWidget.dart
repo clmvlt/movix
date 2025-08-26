@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:movix/Models/Tour.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Widgets/Livraison/LivraisonPopupMenuWidget.dart';
-import 'package:movix/Managers/LivraisonManager.dart';
 
 class LivraisonAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final Tour tour;
@@ -62,7 +61,7 @@ class LivraisonAppBarWidget extends StatelessWidget implements PreferredSizeWidg
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
-            '${countValidCommands(tour)}/${countTotalCommands(tour)}',
+            '${_countValidCommands(tour)}/${_countTotalCommands(tour)}',
             style: TextStyle(
               color: Globals.COLOR_TEXT_LIGHT,
               fontWeight: FontWeight.w700,
@@ -75,5 +74,26 @@ class LivraisonAppBarWidget extends StatelessWidget implements PreferredSizeWidg
         ),
       ],
     );
+  }
+
+  int _countValidCommands(Tour tour) {
+    int count = 0;
+    for (var command in tour.commands.values) {
+      var s = command.status.id;
+      if (s == 3 || s == 4 || s == 5 || s == 8 || s == 9) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  int _countTotalCommands(Tour tour) {
+    int count = 0;
+    for (var command in tour.commands.values) {
+      if (command.status.id != 7) {
+        count++;
+      }
+    }
+    return count;
   }
 }

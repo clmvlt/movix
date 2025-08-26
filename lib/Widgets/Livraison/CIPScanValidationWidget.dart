@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:movix/Managers/PackageManager.dart';
-import 'package:movix/Managers/LivraisonManager.dart';
 import 'package:movix/Models/Command.dart';
 import 'package:movix/Models/Sound.dart';
 import 'package:movix/Services/globals.dart';
@@ -52,9 +51,16 @@ class CIPScanValidationWidget extends StatelessWidget {
 
     setPackageStateOffline(command, package, 3, onUpdate);
 
-    return isAllScanned(command)
+    return _isAllScanned(command)
         ? ScanResult.SCAN_FINISH
         : ScanResult.SCAN_SUCCESS;
+  }
+
+  bool _isAllScanned(Command command) {
+    for (var p in command.packages.values) {
+      if (p.status.id != 3) return false;
+    }
+    return true;
   }
 
   @override

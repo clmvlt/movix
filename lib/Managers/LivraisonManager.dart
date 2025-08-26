@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:movix/API/tour_fetcher.dart';
@@ -318,22 +319,13 @@ Future<void> ValidLivraisonTour(
       }
     }
 
-    // If there are missing packages, ask for a comment
-    String? missingPackagesComment;
-    if (commandsWithMissingPackages.isNotEmpty) {
-      missingPackagesComment = await _showMissingPackagesTourDialog(context, commandsWithMissingPackages.length);
-      if (missingPackagesComment == null) {
-        return; // User cancelled
-      }
-      
-      // Apply the comment to all commands with missing packages
-      for (var command in commandsWithMissingPackages) {
-        command.deliveryComment = missingPackagesComment;
-      }
-    }
+    // Skip asking for comment on missing packages - directly proceed
 
-    int? endkm = await askForKilometers(context);
-    tour.endKm = endkm ?? 0;
+    int? endkm = await askForKilometers(context, startKm: tour.startKm > 0 ? tour.startKm : null);
+    if (endkm == null) {
+      return; // L'utilisateur a fermé la popup, ne pas valider la tournée
+    }
+    tour.endKm = endkm;
     DateTime now = DateTime.now();
     String sqlDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
     tour.endDate = sqlDate;
@@ -539,7 +531,14 @@ Future<String?> askForImmat(BuildContext context) async {
                           autofocus: true,
                           maxLength: 7,
                           textCapitalization: TextCapitalization.characters,
+                          inputFormatters: [
+                            TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) {
+                              return newValue.copyWith(text: newValue.text.toUpperCase());
+                            }),
+                          ],
                           textAlign: TextAlign.center,
+                          autocorrect: false,
+                          enableSuggestions: false,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -688,14 +687,17 @@ Future<String?> askForImmat(BuildContext context) async {
   );
 }
 
-Future<int?> askForKilometers(BuildContext context) async {
+Future<int?> askForKilometers(BuildContext context, {int? startKm}) async {
   TextEditingController kmController = TextEditingController();
   FocusNode focusNode = FocusNode();
+  bool showError = false;
 
   return showDialog<int>(
     context: context,
     barrierDismissible: false,
     builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
       return PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, result) {
@@ -717,29 +719,30 @@ Future<int?> askForKilometers(BuildContext context) async {
                 ),
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: Globals.COLOR_MOVIX.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(32),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(32),
+                          ),
+                          child: const Icon(
+                            Icons.speed_outlined,
+                            color: Globals.COLOR_MOVIX,
+                            size: 32,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.speed_outlined,
-                          color: Globals.COLOR_MOVIX,
-                          size: 32,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        "Kilométrage du véhicule",
+                        const SizedBox(height: 16),
+                        Text(
+                          "Kilométrage du véhicule",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 20,
@@ -756,6 +759,39 @@ Future<int?> askForKilometers(BuildContext context) async {
                         ),
                         textAlign: TextAlign.center,
                       ),
+                      if (startKm != null) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Globals.COLOR_MOVIX.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: Globals.COLOR_MOVIX,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Km de début: ${startKm.toString()} km",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Globals.COLOR_MOVIX,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 24),
                       Container(
                         decoration: BoxDecoration(
@@ -801,6 +837,46 @@ Future<int?> askForKilometers(BuildContext context) async {
                     ],
                   ),
                 ),
+                if (showError) ...[
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Globals.COLOR_MOVIX_RED.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Globals.COLOR_MOVIX_RED.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 16,
+                            color: Globals.COLOR_MOVIX_RED,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              startKm != null 
+                                  ? "Les kilomètres de fin doivent être supérieurs à $startKm km"
+                                  : "Veuillez saisir des kilomètres valides",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Globals.COLOR_MOVIX_RED,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 Container(
                   decoration: BoxDecoration(
                     border: Border(
@@ -851,9 +927,13 @@ Future<int?> askForKilometers(BuildContext context) async {
                             onTap: () {
                               String kmText = kmController.text.trim();
                               int? km = int.tryParse(kmText);
-                              if (km != null) {
+                              if (km != null && (startKm == null || km > startKm)) {
                                 focusNode.unfocus();
                                 Navigator.pop(context, km);
+                              } else {
+                                setState(() {
+                                  showError = true;
+                                });
                               }
                             },
                             borderRadius: const BorderRadius.only(
@@ -878,9 +958,12 @@ Future<int?> askForKilometers(BuildContext context) async {
                   ),
                 ),
               ],
+              ),
             ),
           ),
         ),
+      );
+        },
       );
     },
   );

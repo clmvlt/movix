@@ -64,25 +64,23 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Globals.COLOR_BACKGROUND,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Container(
-            height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+    return GestureDetector(
+      onTap: () {
+        // Ferme le clavier quand on clique en dehors des champs
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        backgroundColor: Globals.COLOR_BACKGROUND,
+        resizeToAvoidBottomInset: false,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildLoginCard(),
-                      ],
-                    ),
-                  ),
-                ),
+                const Spacer(),
+                _buildLoginCard(),
+                const Spacer(),
                 _buildFooter(),
               ],
             ),
@@ -113,34 +111,41 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          Text(
-            'Connexion',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Globals.COLOR_TEXT_DARK,
-              letterSpacing: -0.5,
+      child: AutofillGroup(
+        child: Column(
+          children: [
+            Text(
+              'Connexion',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: Globals.COLOR_TEXT_DARK,
+                letterSpacing: -0.5,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          _buildModernTextField(
-            controller: _emailController,
-            label: 'Identifiant',
-            icon: Icons.person_outline,
-          ),
-          const SizedBox(height: 24),
-          _buildModernTextField(
-            controller: _passwordController,
-            label: 'Mot de passe',
-            icon: Icons.lock_outline,
-            obscureText: true,
-          ),
-          const SizedBox(height: 32),
-          _buildModernLoginButton(),
-        ],
+            const SizedBox(height: 32),
+            _buildModernTextField(
+              controller: _emailController,
+              label: 'Identifiant',
+              icon: Icons.person_outline,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.username, AutofillHints.email],
+              onEditingComplete: () => FocusScope.of(context).nextFocus(),
+            ),
+            const SizedBox(height: 24),
+            _buildModernTextField(
+              controller: _passwordController,
+              label: 'Mot de passe',
+              icon: Icons.lock_outline,
+              obscureText: true,
+              autofillHints: const [AutofillHints.password],
+              onEditingComplete: _handleLogin,
+            ),
+            const SizedBox(height: 32),
+            _buildModernLoginButton(),
+          ],
+        ),
       ),
     );
   }
@@ -165,6 +170,9 @@ class _LoginPageState extends State<LoginPage> {
     required String label,
     required IconData icon,
     bool obscureText = false,
+    TextInputType? keyboardType,
+    List<String>? autofillHints,
+    VoidCallback? onEditingComplete,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -180,14 +188,17 @@ class _LoginPageState extends State<LoginPage> {
       child: TextField(
         controller: controller,
         obscureText: obscureText,
+        keyboardType: keyboardType ?? (obscureText ? TextInputType.visiblePassword : TextInputType.text),
+        autofillHints: autofillHints,
+        onEditingComplete: onEditingComplete,
         style: TextStyle(
           color: Globals.COLOR_TEXT_DARK,
           fontSize: 16,
           fontWeight: FontWeight.w500,
         ),
         autocorrect: false,
-        enableSuggestions: false,
-        textInputAction: TextInputAction.done,
+        enableSuggestions: !obscureText,
+        textInputAction: obscureText ? TextInputAction.done : TextInputAction.next,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(

@@ -68,7 +68,7 @@ class _DepotActionsWidgetState extends State<DepotActionsWidget> {
                   icon: FontAwesomeIcons.flagCheckered,
                   color: Globals.COLOR_MOVIX,
                   onPressed: () async {
-                    if (isTourComplet(widget.tour)) {
+                    if (_isTourComplet(widget.tour)) {
                       setState(() {
                         validationLoading = true;
                       });
@@ -89,5 +89,15 @@ class _DepotActionsWidgetState extends State<DepotActionsWidget> {
         ),
       ],
     );
+  }
+
+  bool _isTourComplet(Tour tour) {
+    for (var command in tour.commands.values) {
+      var s = command.status.id;
+      if (s != 3 && s != 4 && s != 5 && s != 7 && s != 8 && s != 9) {
+        return false;
+      }
+    }
+    return true;
   }
 }

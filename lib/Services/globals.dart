@@ -8,7 +8,7 @@ import 'package:movix/Services/sound.dart';
 
 class Globals {
   static String get API_URL => kDebugMode 
-    ? "http://192.168.1.15:8081"
+    ? "http://192.168.1.120:8081"
     : "https://api.movix.fr";
 
   static bool DARK_MODE = true;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:movix/Managers/ChargementManager.dart';
 import 'package:movix/Managers/PackageManager.dart';
@@ -89,12 +90,12 @@ class _FSChargementPageState extends State<FSChargementPage>
       return ScanResult.SCAN_SWITCH;
     }
 
-    bool? confirmation = await showDialog<bool>(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (BuildContext context) => getColisConfirm(context),
     );
 
-    if (confirmation == true) {
+    if (result != null && result['confirmed'] == true) {
       for (var package in this.command.packages.values) {
         if (package.status.id == 1) {
           setPackageState(this.command, package, 5, onUpdate);
@@ -144,6 +145,19 @@ class _FSChargementPageState extends State<FSChargementPage>
     );
   }
 
+  void _debugScanAllPackages() async {
+    if (!kDebugMode) return;
+    
+    for (var packageId in command.packages.keys) {
+      var package = command.packages[packageId];
+      if (package != null) {
+        ScanResult result = await validateCode(package.barcode);
+        if (result == ScanResult.SCAN_SUCCESS || result == ScanResult.SCAN_FINISH) {
+        }
+      }
+    }
+  }
+
 
 
 
@@ -158,12 +172,12 @@ class _FSChargementPageState extends State<FSChargementPage>
     return WillPopScope(
       onWillPop: () async {
         if (isChargementCommandUncomplet(command)) {
-          bool? shouldLeave = await showDialog<bool>(
+          final result = await showDialog<Map<String, dynamic>>(
             context: context,
             builder: (BuildContext context) => getColisConfirm(context),
           );
 
-          if (shouldLeave ?? false) {
+          if (result != null && result['confirmed'] == true) {
             for (var package in command.packages.values) {
               if (package.status.id == 1) {
                 setPackageState(command, package, 5, onUpdate);
@@ -171,7 +185,7 @@ class _FSChargementPageState extends State<FSChargementPage>
             }
           }
 
-          return shouldLeave ?? false;
+          return result != null && result['confirmed'] == true;
         }
         return true;
       },
@@ -211,6 +225,12 @@ class _FSChargementPageState extends State<FSChargementPage>
             },
           ),
           actions: [
+            if (kDebugMode)
+              IconButton(
+                icon: Icon(Icons.qr_code_scanner, color: Globals.COLOR_TEXT_LIGHT),
+                onPressed: () => _debugScanAllPackages(),
+                tooltip: 'Debug: Scanner tous les colis',
+              ),
             Container(
               margin: const EdgeInsets.only(right: 16),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

@@ -110,6 +110,7 @@ Widget GetChargementIconCommandStatus(Command command, double size) {
 }
 
 Widget getColisConfirm(BuildContext context) {
+  final TextEditingController commentController = TextEditingController();
   return Dialog(
     backgroundColor: Colors.transparent,
     elevation: 0,
@@ -166,6 +167,37 @@ Widget getColisConfirm(BuildContext context) {
                   ),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: 'Commentaire obligatoire',
+                      hintText: 'Expliquez pourquoi certains colis sont manquants...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Globals.COLOR_TEXT_SECONDARY.withOpacity(0.3),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Globals.COLOR_MOVIX,
+                          width: 2,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Globals.COLOR_SURFACE_SECONDARY,
+                      labelStyle: TextStyle(
+                        color: Globals.COLOR_TEXT_DARK,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -184,7 +216,7 @@ Widget getColisConfirm(BuildContext context) {
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () => Navigator.of(context).pop(false),
+                      onTap: () => Navigator.of(context).pop({'confirmed': false}),
                       borderRadius: const BorderRadius.only(
                         bottomLeft: Radius.circular(20),
                       ),
@@ -212,7 +244,19 @@ Widget getColisConfirm(BuildContext context) {
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () => Navigator.of(context).pop(true),
+                      onTap: () {
+                        if (commentController.text.trim().isEmpty) {
+                          Globals.showSnackbar(
+                            'Veuillez ajouter un commentaire',
+                            backgroundColor: Globals.COLOR_MOVIX_RED,
+                          );
+                          return;
+                        }
+                        Navigator.of(context).pop({
+                          'confirmed': true,
+                          'comment': commentController.text.trim(),
+                        });
+                      },
                       borderRadius: const BorderRadius.only(
                         bottomRight: Radius.circular(20),
                       ),

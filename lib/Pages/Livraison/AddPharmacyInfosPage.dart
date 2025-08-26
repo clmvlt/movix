@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:movix/Managers/LivraisonManager.dart';
+import 'package:movix/Managers/LivraisonManager.dart' show sendPharmacyInformations;
 import 'package:movix/Models/Command.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Widgets/CustomButton.dart';
