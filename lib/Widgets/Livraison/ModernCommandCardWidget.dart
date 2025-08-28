@@ -59,7 +59,7 @@ class ModernCommandCardWidget extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 if (showCommandDetails) ...[
-                                  customCardHeader(command, true, true),
+                                  customCardHeader(command, true, false),
                                   const SizedBox(height: 6),
                                   customCity(command),
                                 ],

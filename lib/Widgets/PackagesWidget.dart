@@ -61,8 +61,8 @@ class _CustomListePackagesState extends State<CustomListePackages> {
                                 Text(
                                   zoneName,
                                   style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w400,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
                                     color: Globals.COLOR_TEXT_GRAY,
                                   ),
                                 ),
