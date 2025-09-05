@@ -47,8 +47,8 @@ class _LivraisonPage extends State<LivraisonPage> with TickerProviderStateMixin 
     widget.tour.commands.forEach((key, command) {
       final status = command.status.id;
       if (isShowEnded
-          ? status != 7
-          : (status == 1 || status == 2 || status == 6)) {
+          ? true  // Afficher toutes les commandes quand showEnded est true
+          : (status != 7 && status != 5 && status != 6)) {  // Masquer 5, 6, 7 quand showEnded est false
         filteredMap[key] = command;
       }
     });
@@ -72,7 +72,7 @@ class _LivraisonPage extends State<LivraisonPage> with TickerProviderStateMixin 
     }
 
     for (var command in commands.values) {
-      if (command.status.id != 7) {
+      if (command.status.id != 7 && command.status.id != 5 && command.status.id != 6) {
         selectedId = command.id;
         break;
       }

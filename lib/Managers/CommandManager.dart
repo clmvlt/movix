@@ -4,9 +4,12 @@ import 'package:movix/Models/Command.dart';
 import 'package:movix/Services/globals.dart';
 
 void updateCommandState(Command command, VoidCallback onUpdate, bool online) {
-  // Si la commande n'a aucun package, elle est automatiquement validée comme "Chargé"
   if (command.packages.isEmpty) {
-    command.status.id = 2; // Chargé
+    if (command.status.id == 1) {
+    command.status.id = 2;
+    } else {
+      command.status.id = 3;
+    }
     onUpdate();
     if (online) {
       API.setCommandState(command.id, command.status.id, comment: command.deliveryComment).then((res) {
@@ -44,7 +47,11 @@ void updateCommandState(Command command, VoidCallback onUpdate, bool online) {
   } else if (allStatusesEqual(9)) {
     command.status.id = 9; // non livré instructions invalides
   } else if (anyStatusEqual(2) && anyStatusEqual(5)) {
-    command.status.id = 6; // chargé incomplet
+    if (anyStatusEqual(3)) {
+    command.status.id = 5; // chargé incomplet
+    } else {
+    command.status.id = 6; // livré incomplet
+    }
   } else if (anyStatusEqual(3) && !allStatusesEqual(3)) {
   } else if (anyStatusEqual(6) && !allStatusesEqual(6)) {
     command.status.id = 5; // livré incomplet car anomalie

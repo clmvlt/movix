@@ -54,12 +54,13 @@ bool isChargementComplet(Tour tour) {
 }
 
 bool isChargementCommandUncomplet(Command command) {
-  bool hasScannedPackages =
-      command.packages.values.any((p) => p.status.id == 1);
-  bool hasUnscannedPackages =
-      command.packages.values.any((p) => p.status.id != 1);
-
-  return hasScannedPackages && hasUnscannedPackages;
+  // Une commande est incomplète seulement si elle a à la fois:
+  // - au moins un colis avec status 1 (non scanné)
+  // - au moins un colis avec status 2 (scanné)
+  bool hasUnscannedPackages = command.packages.values.any((p) => p.status.id == 1);
+  bool hasScannedPackages = command.packages.values.any((p) => p.status.id == 2);
+  
+  return hasUnscannedPackages && hasScannedPackages;
 }
 
 Future<void> showDialogs(BuildContext context, Tour tour) async {

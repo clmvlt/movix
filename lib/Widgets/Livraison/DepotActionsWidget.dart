@@ -94,7 +94,7 @@ class _DepotActionsWidgetState extends State<DepotActionsWidget> {
   bool _isTourComplet(Tour tour) {
     for (var command in tour.commands.values) {
       var s = command.status.id;
-      if (s != 3 && s != 4 && s != 5 && s != 7 && s != 8 && s != 9) {
+      if (s != 3 && s != 4 && s != 5 && s != 6 && s != 7 && s != 8 && s != 9) {
         return false;
       }
     }
