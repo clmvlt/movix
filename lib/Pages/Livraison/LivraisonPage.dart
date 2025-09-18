@@ -48,7 +48,7 @@ class _LivraisonPage extends State<LivraisonPage> with TickerProviderStateMixin 
       final status = command.status.id;
       if (isShowEnded
           ? true  // Afficher toutes les commandes quand showEnded est true
-          : (status != 7 && status != 5 && status != 6)) {  // Masquer 5, 6, 7 quand showEnded est false
+          : (status != 7 && status != 5 && status != 3)) {  // Masquer 5, 6, 7 quand showEnded est false
         filteredMap[key] = command;
       }
     });
@@ -72,7 +72,7 @@ class _LivraisonPage extends State<LivraisonPage> with TickerProviderStateMixin 
     }
 
     for (var command in commands.values) {
-      if (command.status.id != 7 && command.status.id != 5 && command.status.id != 6) {
+      if (command.status.id != 7 && command.status.id != 5 && command.status.id != 3) {
         selectedId = command.id;
         break;
       }

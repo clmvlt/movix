@@ -15,6 +15,9 @@ import 'package:movix/Services/settings.dart';
 import 'package:movix/Services/sound.dart';
 import 'package:movix/Services/update_service.dart';
 import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:movix/Pages/Others/UpdatePage.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -30,6 +33,144 @@ class _SplashPageState extends State<SplashPage> {
   void initState() {
     super.initState();
     _initializeApp();
+  }
+
+  Future<void> _checkAndShowUpdateDialog() async {
+    if (!Platform.isAndroid) return;
+
+    final currentVersion = await getAppVersion();
+    final downloadableVersion = await getDownloadableVersion();
+
+    if (downloadableVersion != null && downloadableVersion != currentVersion) {
+      if (mounted) {
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: Globals.COLOR_SURFACE,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.system_update, color: Globals.COLOR_MOVIX, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    "Mise à jour disponible",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Globals.COLOR_TEXT_DARK,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            "Version actuelle : ",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Globals.COLOR_TEXT_DARK_SECONDARY,
+                            ),
+                          ),
+                          Text(
+                            currentVersion,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Globals.COLOR_TEXT_DARK,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            "Nouvelle version : ",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Globals.COLOR_TEXT_DARK_SECONDARY,
+                            ),
+                          ),
+                          Text(
+                            downloadableVersion,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Globals.COLOR_MOVIX_GREEN,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "Une nouvelle version de l'application est disponible avec des améliorations et corrections de bugs.",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Globals.COLOR_TEXT_DARK,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                  "Plus tard",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Globals.COLOR_TEXT_DARK_SECONDARY,
+                  ),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) => const UpdatePage(),
+                    ),
+                  );
+                },
+                icon: Icon(Icons.download, size: 18),
+                label: const Text("Mettre à jour"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Globals.COLOR_MOVIX,
+                  foregroundColor: Globals.COLOR_TEXT_LIGHT,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _initializeApp() async {
@@ -79,11 +220,13 @@ class _SplashPageState extends State<SplashPage> {
       }
     }
 
+    setState(() => _loadingText = "Vérification des mises à jour...");
+
     if (!mounted) return;
 
     if (logged) {
-      showUpdateDialog(context);
-      context.go('/home');
+      await _checkAndShowUpdateDialog();
+      if (mounted) context.go('/home');
     } else {
       context.go('/login');
     }

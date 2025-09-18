@@ -503,9 +503,121 @@ class HomePage extends StatelessWidget {
         onPressed: () async {
           final token = Globals.profil?.token;
           final url = 'https://avtrans-concept.com/admin/log/$token';
-          if (await canLaunchUrl(Uri.parse(url))) {
-            await launchUrl(Uri.parse(url),
-                mode: LaunchMode.externalApplication);
+          final uri = Uri.parse(url);
+
+          try {
+            // Essayer directement de lancer l'URL sans vérifier canLaunchUrl
+            // car sur certains Android, canLaunchUrl retourne false même avec un navigateur installé
+            bool launched = false;
+
+            // Essayer d'abord avec le mode externe (ouvre dans le navigateur par défaut)
+            try {
+              launched = await launchUrl(
+                uri,
+                mode: LaunchMode.externalApplication,
+              );
+              if (launched) {
+                debugPrint('URL lancée avec succès en mode externe');
+                return;
+              }
+            } catch (e) {
+              debugPrint('Échec du mode externalApplication: $e');
+            }
+
+            // Si ça échoue, essayer avec platformDefault
+            if (!launched) {
+              try {
+                launched = await launchUrl(
+                  uri,
+                  mode: LaunchMode.platformDefault,
+                );
+                if (launched) {
+                  debugPrint('URL lancée avec succès en mode platformDefault');
+                  return;
+                }
+              } catch (e) {
+                debugPrint('Échec du mode platformDefault: $e');
+              }
+            }
+
+            // En dernier recours, essayer avec le navigateur in-app
+            if (!launched) {
+              try {
+                launched = await launchUrl(
+                  uri,
+                  mode: LaunchMode.inAppWebView,
+                  webViewConfiguration: const WebViewConfiguration(
+                    enableJavaScript: true,
+                    enableDomStorage: true,
+                  ),
+                );
+                if (launched) {
+                  debugPrint('URL lancée avec succès en mode inAppWebView');
+                  return;
+                }
+              } catch (e) {
+                debugPrint('Échec du mode inAppWebView: $e');
+              }
+            }
+
+            // Si tous les modes échouent, afficher un message d'erreur détaillé
+            if (!launched) {
+              showDialog<void>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: Globals.COLOR_SURFACE,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  title: Row(
+                    children: [
+                      Icon(Icons.warning_amber_outlined, color: Globals.COLOR_MOVIX_YELLOW),
+                      const SizedBox(width: 8),
+                      Text('Impossible d\'ouvrir le lien', style: TextStyle(color: Globals.COLOR_TEXT_DARK)),
+                    ],
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Le lien n\'a pas pu être ouvert automatiquement.',
+                        style: TextStyle(color: Globals.COLOR_TEXT_DARK),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'URL:',
+                        style: TextStyle(color: Globals.COLOR_TEXT_DARK_SECONDARY, fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                      SelectableText(
+                        url,
+                        style: TextStyle(color: Globals.COLOR_MOVIX, fontSize: 14),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Vous pouvez copier cette URL et l\'ouvrir manuellement dans votre navigateur.',
+                        style: TextStyle(color: Globals.COLOR_TEXT_DARK_SECONDARY, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('OK', style: TextStyle(color: Globals.COLOR_MOVIX)),
+                    ),
+                  ],
+                ),
+              );
+            }
+          } catch (e) {
+            // Gestion d'erreur générale
+            debugPrint('Erreur lors du lancement de l\'URL: $e');
+            Globals.showSnackbar(
+              "Erreur lors de l'ouverture du navigateur: ${e.toString()}",
+              backgroundColor: Globals.COLOR_MOVIX_RED,
+              icon: Icons.error_outline,
+            );
           }
         },
       ));
