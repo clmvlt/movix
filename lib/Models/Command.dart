@@ -89,6 +89,8 @@ class Command {
              updatedAt: '',
              latitude: 0.0,
              longitude: 0.0,
+             isScanCIP: false,
+             autoSendAnomalieEmails: false
            ),
          ),
        );

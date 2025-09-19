@@ -43,24 +43,65 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware {
     }
   }
 
+  bool _updating = false;
+  
   void onPageUpdate() {
-    setState(() {});
+    if (_updating || !mounted) return;
+    _updating = true;
+    
+    Future.microtask(() {
+      if (mounted) {
+        setState(() {});
+        _updating = false;
+      }
+    });
   }
 
   Future<void> _refreshTours() async {
+    if (_isLoading) return; // Éviter les appels multiples
+    
     setState(() {
       _isLoading = true;
     });
-    await getProfilTours();
-    for (var tour in Globals.tours.values) {
-      for (var command in tour.commands.values) {
-        updateCommandState(command, onPageUpdate, false);
+    
+    try {
+      final previousTours = Map<String, Tour>.from(Globals.tours);
+      bool success = await getProfilTours();
+      
+      if (!success) {
+        // Restaurer seulement si les tours ont été vidées
+        if (Globals.tours.isEmpty && previousTours.isNotEmpty) {
+          Globals.tours = previousTours;
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erreur de connexion lors du rafraîchissement', style: TextStyle(color: Globals.COLOR_TEXT_LIGHT)),
+              backgroundColor: Globals.COLOR_MOVIX_RED,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
       }
-    }
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
+      
+      // Mettre à jour les états des commandes seulement si on a des tours
+      if (Globals.tours.isNotEmpty) {
+        for (var tour in Globals.tours.values) {
+          if (tour.status.id == 2) {
+          for (var command in tour.commands.values) {
+            updateCommandState(command, onPageUpdate, false);
+          }
+          }
+        }
+      }
+    } catch (e) {
+      print('Erreur lors du refresh: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -83,7 +124,7 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware {
       ),
       child: Column(
         children: [
-          CircularProgressIndicator(color: Globals.COLOR_MOVIX),
+          const CircularProgressIndicator(color: Globals.COLOR_MOVIX),
           const SizedBox(height: 20),
           Text(
             'Chargement des tournées...',

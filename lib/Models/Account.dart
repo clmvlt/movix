@@ -8,6 +8,8 @@ class Account {
   String updatedAt;
   double latitude;
   double longitude;
+  bool isScanCIP;
+  bool autoSendAnomalieEmails;
 
   Account({
     required this.id,
@@ -19,6 +21,8 @@ class Account {
     required this.updatedAt,
     required this.latitude,
     required this.longitude,
+    required this.isScanCIP,
+    required this.autoSendAnomalieEmails,
   });
 
   factory Account.fromJson(Map<String, dynamic> json) {
@@ -32,6 +36,8 @@ class Account {
       updatedAt: (json['updatedAt'] is String) ? json['updatedAt'] as String : '',
       latitude: (json['latitude'] is num) ? (json['latitude'] as num).toDouble() : 0.0,
       longitude: (json['longitude'] is num) ? (json['longitude'] as num).toDouble() : 0.0,
+      isScanCIP: (json['isScanCIP'] is bool) ? json['isScanCIP'] as bool : false,
+      autoSendAnomalieEmails: (json['autoSendAnomalieEmails'] is bool) ? json['autoSendAnomalieEmails'] as bool : false,
     );
   }
 
@@ -46,6 +52,8 @@ class Account {
       'updatedAt': updatedAt,
       'latitude': latitude,
       'longitude': longitude,
+      'isScanCIP': isScanCIP,
+      'autoSendAnomalieEmails': autoSendAnomalieEmails,
     };
   }
 } 

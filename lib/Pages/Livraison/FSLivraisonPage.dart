@@ -27,6 +27,8 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
   final TextEditingController _manCIP = TextEditingController();
   bool _isPageActive = true;
 
+  bool get _isCIPRequired => Globals.profil?.account.isScanCIP ?? false;
+
   void onUpdate() {
     setState(() {});
     widget.onUpdate();
@@ -98,7 +100,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
       return ScanResult.SCAN_ERROR;
     }
 
-    if (!CIPScanned) {
+    if (_isCIPRequired && !CIPScanned) {
       if (code == widget.command.pharmacy.cip) {
         setState(() => CIPScanned = true);
         return ScanResult.SCAN_SUCCESS;
@@ -163,7 +165,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
                   validateCode: validateCode,
                   isActive: _isPageActive,
                 ),
-                _buildCIPStatusButton(),
+                if (_isCIPRequired) _buildCIPStatusButton(),
                 _buildModernCommandCard(command),
                 const SizedBox(height: 120),
               ],
@@ -180,7 +182,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
   void _showInputDialog(BuildContext context) {
     ScanInputDialogWidget.show(
       context: context,
-      cipScanned: CIPScanned,
+      cipScanned: _isCIPRequired ? CIPScanned : true,
       onConfirm: (code) {
         validateCode(code);
         _manCIP.clear();
@@ -208,7 +210,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
     await LivraisonValidationLogicWidget.confirmValidation(
       context: context,
       command: command,
-      cipScanned: CIPScanned,
+      cipScanned: _isCIPRequired ? CIPScanned : true,
       onUpdate: onUpdate,
     );
   }
@@ -217,7 +219,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
     if (!kDebugMode) return;
     
     // Scanner d'abord le CIP si nécessaire
-    if (!CIPScanned) {
+    if (_isCIPRequired && !CIPScanned) {
       ScanResult cipResult = await validateCode(widget.command.pharmacy.cip);
       if (cipResult != ScanResult.SCAN_SUCCESS) {
         Globals.showSnackbar(
