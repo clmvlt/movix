@@ -40,7 +40,10 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (widget.command.newPharmacy) {
+      // Attendre un délai pour que la caméra soit initialisée
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+      
+      if (mounted && widget.command.newPharmacy) {
         bool? res = await showConfirmationPopup(
             context: context,
             title: "Nouvelle pharmacie",
@@ -51,6 +54,17 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
         if (res == true) {
           await context.push('/pharmacy', extra: {"command": widget.command});
         }
+      }
+      
+      // Afficher le commentaire de la commande s'il existe
+      if (mounted && widget.command.comment.isNotEmpty) {
+        await showInfoPopup(
+          context: context,
+          title: "Commentaire de la commande",
+          content: Text(widget.command.comment),
+          buttonText: "Fermer",
+          icon: Icons.comment_outlined,
+        );
       }
     });
   }

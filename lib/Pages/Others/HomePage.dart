@@ -1,12 +1,166 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:movix/Pages/Others/UpdatePage.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/login.dart';
+import 'package:movix/Services/update_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _checkAndShowUpdateDialog();
+    });
+  }
+
+  Future<void> _checkAndShowUpdateDialog() async {
+    if (!Platform.isAndroid) return;
+
+    final currentVersion = await getAppVersion();
+    final downloadableVersion = await getDownloadableVersion();
+
+    if (downloadableVersion != null && downloadableVersion != currentVersion) {
+      if (mounted) {
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: Globals.COLOR_SURFACE,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.system_update, color: Globals.COLOR_MOVIX, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    "Mise à jour disponible",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Globals.COLOR_TEXT_DARK,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            "Version actuelle : ",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Globals.COLOR_TEXT_DARK_SECONDARY,
+                            ),
+                          ),
+                          Text(
+                            currentVersion,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Globals.COLOR_TEXT_DARK,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            "Nouvelle version : ",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Globals.COLOR_TEXT_DARK_SECONDARY,
+                            ),
+                          ),
+                          Text(
+                            downloadableVersion,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Globals.COLOR_MOVIX_GREEN,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "Une nouvelle version de l'application est disponible avec des améliorations et corrections de bugs.",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Globals.COLOR_TEXT_DARK,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                  "Plus tard",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Globals.COLOR_TEXT_DARK_SECONDARY,
+                  ),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) => const UpdatePage(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.download, size: 18),
+                label: const Text("Mettre à jour"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Globals.COLOR_MOVIX,
+                  foregroundColor: Globals.COLOR_TEXT_LIGHT,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

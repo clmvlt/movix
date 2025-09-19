@@ -21,6 +21,9 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
   bool _isWidgetVisible = true;
   late AnimationController _animationController;
   final Map<String, DateTime> _recentScannedCodes = {};
+  int _retryCount = 0;
+  final int _maxRetries = 3;
+  bool _isRetrying = false;
 
   @override
   void initState() {
@@ -45,6 +48,8 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
       if (mounted) {
         setState(() {
           isInitialized = true;
+          _retryCount = 0;
+          _isRetrying = false;
         });
       }
     } catch (e) {
@@ -53,6 +58,27 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
         setState(() {
           isInitialized = false;
         });
+        _handleCameraError();
+      }
+    }
+  }
+
+  void _handleCameraError() async {
+    if (_retryCount < _maxRetries && !_isRetrying && mounted) {
+      _isRetrying = true;
+      _retryCount++;
+      
+      final delayMs = 1000 * _retryCount;
+      
+      if (mounted) {
+        setState(() {});
+      }
+      
+      await Future<void>.delayed(Duration(milliseconds: delayMs));
+      
+      if (mounted) {
+        print('Tentative de reconnexion de la caméra ($_retryCount/$_maxRetries)');
+        _initializeCamera();
       }
     }
   }
@@ -207,17 +233,19 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
                     fit: BoxFit.cover,
                   )
                 else
-                  const Center(
+                  Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(
+                        const CircularProgressIndicator(
                           color: Colors.white,
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         Text(
-                          'Initialisation de la caméra...',
-                          style: TextStyle(
+                          _isRetrying 
+                            ? 'Tentative de reconnexion ($_retryCount/$_maxRetries)...'
+                            : 'Initialisation de la caméra...',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
                           ),
