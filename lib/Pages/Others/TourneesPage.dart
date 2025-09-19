@@ -430,6 +430,7 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware {
               padding: const EdgeInsets.all(8.0),
               child: ScannerWidget(
                 validateCode: validateCode,
+                isActive: true,
               ),
             ),
           ),

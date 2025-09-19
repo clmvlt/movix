@@ -25,6 +25,7 @@ class FSLivraisonPage extends StatefulWidget {
 class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingObserver, RouteAware {
   bool CIPScanned = false;
   final TextEditingController _manCIP = TextEditingController();
+  bool _isPageActive = true;
 
   void onUpdate() {
     setState(() {});
@@ -60,7 +61,43 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      setState(() {
+        _isPageActive = false;
+      });
+    } else if (state == AppLifecycleState.resumed) {
+      setState(() {
+        _isPageActive = true;
+      });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Utiliser un délai pour vérifier si on a une nouvelle route au-dessus
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final route = ModalRoute.of(context);
+        final isActive = route?.isCurrent == true;
+
+        if (_isPageActive != isActive) {
+          setState(() {
+            _isPageActive = isActive;
+          });
+        }
+      }
+    });
+  }
+
   Future<ScanResult> validateCode(String code) async {
+    // Ne traiter les scans que si la page est active et visible
+    if (!_isPageActive || !mounted) {
+      return ScanResult.SCAN_ERROR;
+    }
+
     if (!CIPScanned) {
       if (code == widget.command.pharmacy.cip) {
         setState(() => CIPScanned = true);
@@ -124,6 +161,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
               children: [
                 ScannerContainerWidget(
                   validateCode: validateCode,
+                  isActive: _isPageActive,
                 ),
                 _buildCIPStatusButton(),
                 _buildModernCommandCard(command),

@@ -12,10 +12,12 @@ import 'package:movix/Services/sound.dart';
 
 class ScannerWidget extends StatefulWidget {
   final Future<ScanResult> Function(String) validateCode;
+  final bool isActive;
 
   const ScannerWidget({
     super.key,
     required this.validateCode,
+    this.isActive = true,
   });
 
   @override
@@ -52,6 +54,7 @@ class _ScannerWidgetState extends State<ScannerWidget> {
       case ScanMode.Scanneur:
         scannerWidget = IntentScanner(
           onScanResult: handleResult,
+          isActive: widget.isActive,
         );
         break;
       case ScanMode.Text:

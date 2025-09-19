@@ -51,6 +51,7 @@ class _PageAwareScannerWidgetState extends State<PageAwareScannerWidget>
   Widget build(BuildContext context) {
     return ScannerWidget(
       validateCode: widget.validateCode,
+      isActive: widget.isPageActive,
     );
   }
 }

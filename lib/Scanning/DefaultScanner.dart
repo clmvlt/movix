@@ -41,26 +41,45 @@ class ScanReceiver {
 
 class IntentScanner extends StatefulWidget {
   final void Function(String) onScanResult;
+  final bool isActive;
 
   const IntentScanner({
     super.key,
     required this.onScanResult,
+    this.isActive = true,
   });
 
   @override
   State<IntentScanner> createState() => _IntentScannerState();
 }
 
-class _IntentScannerState extends State<IntentScanner> {
+class _IntentScannerState extends State<IntentScanner> with WidgetsBindingObserver {
   StreamSubscription<String>? _subscription;
   bool _isActive = true;
   final FocusNode _focusNode = FocusNode();
 
   @override
+  void didUpdateWidget(IntentScanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive != oldWidget.isActive) {
+      _isActive = widget.isActive;
+      if (_isActive) {
+        _startListening();
+      } else {
+        _stopListening();
+      }
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _focusNode.addListener(_handleFocusChange);
-    _startListening();
+    _isActive = widget.isActive;
+    if (_isActive) {
+      _startListening();
+    }
   }
 
   @override
@@ -68,13 +87,12 @@ class _IntentScannerState extends State<IntentScanner> {
     super.didChangeDependencies();
     GoRouterState.of(context);
     _isActive = true;
-    if (_focusNode.hasFocus) {
-      _startListening();
-    }
+    _startListening();
   }
 
   void _handleFocusChange() {
-    if (_focusNode.hasFocus && _isActive) {
+    // Le scanner reste actif même sans focus pour permettre le scan pendant la saisie de texte
+    if (_isActive) {
       _startListening();
     } else {
       _stopListening();
@@ -82,10 +100,12 @@ class _IntentScannerState extends State<IntentScanner> {
   }
 
   void _startListening() {
+    if (!_isActive || !widget.isActive) return;
+
     _subscription?.cancel();
     _subscription = ScanReceiver.onScanned.listen(
       (result) {
-        if (_isActive && _focusNode.hasFocus) {
+        if (_isActive && widget.isActive && mounted) {
           widget.onScanResult(result);
         }
       },
@@ -102,10 +122,24 @@ class _IntentScannerState extends State<IntentScanner> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _stopListening();
     _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _isActive = false;
+      _stopListening();
+    } else if (state == AppLifecycleState.resumed) {
+      _isActive = true;
+      if (mounted) {
+        _startListening();
+      }
+    }
   }
 
   @override

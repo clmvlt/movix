@@ -20,8 +20,8 @@ class ScannerSectionWidget extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
       ),
-      child: isPageActive 
-          ? ScannerWidget(validateCode: validateCode)
+      child: isPageActive
+          ? ScannerWidget(validateCode: validateCode, isActive: isPageActive)
           : Container(
               height: 120,
               decoration: BoxDecoration(

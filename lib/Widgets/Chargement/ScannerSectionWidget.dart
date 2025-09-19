@@ -19,6 +19,7 @@ class ScannerSectionWidget extends StatelessWidget {
       ),
       child: ScannerWidget(
         validateCode: validateCode,
+        isActive: true,
       ),
     );
   }

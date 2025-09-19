@@ -5,11 +5,13 @@ import 'package:movix/Scanning/Scan.dart';
 class ScannerContainerWidget extends StatelessWidget {
   final Future<ScanResult> Function(String) validateCode;
   final EdgeInsetsGeometry? margin;
+  final bool isActive;
 
   const ScannerContainerWidget({
     super.key,
     required this.validateCode,
     this.margin,
+    this.isActive = true,
   });
 
   @override
@@ -21,6 +23,7 @@ class ScannerContainerWidget extends StatelessWidget {
       ),
       child: ScannerWidget(
         validateCode: validateCode,
+        isActive: isActive,
       ),
     );
   }
