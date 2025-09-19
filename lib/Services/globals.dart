@@ -7,7 +7,7 @@ import 'package:movix/Services/scanner.dart';
 import 'package:movix/Services/sound.dart';
 
 class Globals {
-  static String get API_URL => !kDebugMode 
+  static String get API_URL => kDebugMode 
     ? "http://192.168.1.120:8081"
     : "https://api.movix.fr";
 
