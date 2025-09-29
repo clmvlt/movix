@@ -108,9 +108,9 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
     });
   }
 
-  Future<ScanResult> validateCode(String code) async {
-    // Ne traiter les scans que si la page est active et visible
-    if (!_isPageActive || !mounted) {
+  Future<ScanResult> validateCode(String code, {bool isManualInput = false}) async {
+    // Ne pas bloquer si c'est une saisie manuelle
+    if (!isManualInput && (!_isPageActive || !mounted)) {
       return ScanResult.SCAN_ERROR;
     }
 
@@ -197,9 +197,14 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
     ScanInputDialogWidget.show(
       context: context,
       cipScanned: _isCIPRequired ? CIPScanned : true,
-      onConfirm: (code) {
-        validateCode(code);
+      onConfirm: (code) async {
+        ScanResult result = await validateCode(code, isManualInput: true);
         _manCIP.clear();
+
+        // Si le scan a réussi, mettre à jour l'état
+        if (result == ScanResult.SCAN_SUCCESS || result == ScanResult.SCAN_FINISH) {
+          setState(() {});
+        }
       },
       initialValue: _manCIP.text,
     );
@@ -234,7 +239,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
     
     // Scanner d'abord le CIP si nécessaire
     if (_isCIPRequired && !CIPScanned) {
-      ScanResult cipResult = await validateCode(widget.command.pharmacy.cip);
+      ScanResult cipResult = await validateCode(widget.command.pharmacy.cip, isManualInput: true);
       if (cipResult != ScanResult.SCAN_SUCCESS) {
         Globals.showSnackbar(
           "Debug: Impossible de scanner le CIP",
@@ -243,11 +248,11 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
         return;
       }
     }
-    
+
     for (var packageId in widget.command.packages.keys) {
       var package = widget.command.packages[packageId];
       if (package != null) {
-        ScanResult result = await validateCode(packageId);
+        ScanResult result = await validateCode(packageId, isManualInput: true);
         if (result == ScanResult.SCAN_SUCCESS || result == ScanResult.SCAN_FINISH) {
         }
       }
