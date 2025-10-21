@@ -15,6 +15,7 @@ class Command {
   String comment;
   String deliveryComment;
   bool newPharmacy;
+  bool isForced;
   double latitude;
   double longitude;
   Map<String, Package> packages;
@@ -31,6 +32,7 @@ class Command {
     this.comment = '',
     this.deliveryComment = '',
     this.newPharmacy = false,
+    this.isForced = false,
     this.latitude = 0.0,
     this.longitude = 0.0,
     Map<String, Package>? packages,
@@ -119,6 +121,7 @@ class Command {
       comment: (json['comment'] is String) ? json['comment'] as String : '',
       deliveryComment: (json['deliveryComment'] is String) ? json['deliveryComment'] as String : '',
       newPharmacy: (json['newPharmacy'] is bool) ? json['newPharmacy'] as bool : false,
+      isForced: (json['isForced'] is bool) ? json['isForced'] as bool : false,
       latitude: (json['latitude'] is double) ? json['latitude'] as double : 0.0,
       longitude: (json['longitude'] is double) ? json['longitude'] as double : 0.0,
       packages: packagesMap,
@@ -143,6 +146,7 @@ class Command {
       'comment': comment,
       'deliveryComment': deliveryComment,
       'newPharmacy': newPharmacy,
+      'isForced': isForced,
       'latitude': latitude,
       'longitude': longitude,
       'packages': packagesList,

@@ -39,6 +39,12 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Valider auto le CIP si la commande est forcée
+    if (widget.command.isForced) {
+      CIPScanned = true;
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Attendre un délai pour que la caméra soit initialisée
       await Future<void>.delayed(const Duration(milliseconds: 1500));

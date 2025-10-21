@@ -67,8 +67,13 @@ class _ChargementValidationPageState extends State<ChargementValidationPage> {
       );
       
       if (comment == null) {
-        // User cancelled, go back
-        context.pop();
+        // User cancelled, show error
+        setState(() {
+          errors = "Validation annulée. Veuillez justifier les colis manquants pour continuer.";
+          isLoading = false;
+          isValid = false;
+          canForceValidation = false;
+        });
         return;
       }
       

@@ -9,7 +9,6 @@ import 'package:movix/Models/Package.dart';
 import 'package:movix/Models/PackageSearcher.dart';
 import 'package:movix/Models/Sound.dart';
 import 'package:movix/Models/Tour.dart';
-import 'package:movix/Services/affichage.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Widgets/Chargement/index.dart';
 
@@ -310,7 +309,7 @@ class _FSChargementPageState extends State<FSChargementPage>
         if (isChargementCommandUncomplet(command)) {
           final result = await showDialog<Map<String, dynamic>>(
             context: context,
-            builder: (BuildContext context) => getColisConfirm(context),
+            builder: (BuildContext context) => _getChargementConfirmDialog(context),
           );
 
           if (result != null && result['confirmed'] == true) {
@@ -362,7 +361,7 @@ class _FSChargementPageState extends State<FSChargementPage>
               if (isChargementCommandUncomplet(command)) {
                 final result = await showDialog<Map<String, dynamic>>(
                   context: context,
-                  builder: (BuildContext context) => getColisConfirm(context),
+                  builder: (BuildContext context) => _getChargementConfirmDialog(context),
                 );
 
                 if (result != null && result['confirmed'] == true) {
