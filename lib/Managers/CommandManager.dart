@@ -48,11 +48,12 @@ void updateCommandState(Command command, VoidCallback onUpdate, bool online) {
     command.status.id = 9; // non livré instructions invalides
   } else if (anyStatusEqual(2) && anyStatusEqual(5)) {
     if (anyStatusEqual(3)) {
-    command.status.id = 5; // chargé incomplet
+    command.status.id = 5; // livré incomplet
     } else {
-    command.status.id = 6; // livré incomplet
+    command.status.id = 6; // chargé incomplet
     }
   } else if (anyStatusEqual(3) && !allStatusesEqual(3)) {
+    command.status.id = 5;
   } else if (anyStatusEqual(6) && !allStatusesEqual(6)) {
     command.status.id = 5; // livré incomplet car anomalie
   }
