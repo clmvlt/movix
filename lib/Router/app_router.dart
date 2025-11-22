@@ -22,6 +22,7 @@ import 'package:movix/Pages/Others/SpoolerPage.dart';
 import 'package:movix/Pages/Others/TestPage.dart';
 import 'package:movix/Pages/Others/TourneesPage.dart';
 import 'package:movix/Pages/Others/UpdatePage.dart';
+import 'package:movix/Pages/Others/ProfilePage.dart';
 import 'package:movix/Services/globals.dart';
 
 CustomTransitionPage<Widget> buildPageWithTransition(Widget child) {
@@ -67,6 +68,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/spooler', pageBuilder: (_, __) => buildPageWithTransition(const SpoolerPage())),
     GoRoute(path: '/update', pageBuilder: (_, __) => buildPageWithTransition(const UpdatePage())),
     GoRoute(path: '/test', pageBuilder: (_, __) => buildPageWithTransition(const SoundTestPage())),
+    GoRoute(path: '/profile', pageBuilder: (_, __) => buildPageWithTransition(const ProfilePage())),
     GoRoute(path: '/tours', pageBuilder: (_, __) => buildPageWithTransition(const TourneesPage())),
     GoRoute(
       path: '/mapbox',

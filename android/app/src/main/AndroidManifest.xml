@@ -43,6 +43,7 @@
         <service
             android:name="com.lyokone.location.FlutterLocationService"
             android:foregroundServiceType="location" />
+
     </application>
 
     <queries>

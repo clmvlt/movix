@@ -500,15 +500,14 @@ class _HomePageState extends State<HomePage> {
 
     final hour = DateTime.now().hour;
     String greeting = 'Bonsoir';
-    IconData greetingIcon = Icons.nights_stay;
-    
+
     if (hour >= 5 && hour < 12) {
       greeting = 'Bonjour';
-      greetingIcon = Icons.wb_sunny;
     } else if (hour >= 12 && hour < 17) {
       greeting = 'Bon après-midi';
-      greetingIcon = Icons.wb_sunny_outlined;
     }
+
+    final hasProfilPicture = profil.profilPicture.isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.all(20),
@@ -533,16 +532,41 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              greetingIcon,
-              size: 32,
-              color: Colors.white,
+          GestureDetector(
+            onTap: () async {
+              await context.push('/profile');
+              if (mounted) setState(() {});
+            },
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 2,
+                ),
+              ),
+              child: ClipOval(
+                child: hasProfilPicture
+                    ? Image.network(
+                        '${Globals.API_URL}/${profil.profilPicture.replaceAll('\\', '/').replaceFirst(RegExp(r'^/+'), '')}',
+                        fit: BoxFit.cover,
+                        width: 64,
+                        height: 64,
+                        errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.person,
+                          size: 32,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.person,
+                        size: 32,
+                        color: Colors.white,
+                      ),
+              ),
             ),
           ),
           const SizedBox(width: 20),
@@ -791,6 +815,19 @@ class _HomePageState extends State<HomePage> {
         },
       ));
     }
+
+    // Bouton Mon Profil (toujours affiché)
+    buttons.add(_buildModernButton(
+      context: context,
+      title: 'Mon Profil',
+      subtitle: 'Modifier mes infos',
+      icon: Icons.person,
+      color: Globals.COLOR_MOVIX_GREEN,
+      onPressed: () async {
+        await context.push('/profile');
+        if (mounted) setState(() {});
+      },
+    ));
 
     // Bouton Paramètres (toujours affiché)
     buttons.add(_buildModernButton(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:movix/Pages/Others/SoundPackPage.dart';
-import 'package:movix/Pages/Others/ChangePasswordPage.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/scanner.dart';
 import 'package:movix/Services/sound.dart';
@@ -136,15 +135,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 setMapApp(value);
               });
             },
-          ),
-          const SizedBox(height: 20),
-          _buildSectionHeader('Compte'),
-          const SizedBox(height: 8),
-          _buildActionCard(
-            context,
-            title: 'Changer le mot de passe',
-            icon: Icons.lock_outline,
-            onTap: () => _openChangePasswordPage(),
           ),
         ],
       ),
@@ -379,51 +369,4 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildActionCard(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 0,
-      color: Globals.COLOR_SURFACE,
-      margin: EdgeInsets.zero,
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Globals.COLOR_MOVIX.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: Globals.COLOR_MOVIX, size: 20),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-            color: Globals.COLOR_TEXT_DARK,
-          ),
-        ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: Globals.COLOR_TEXT_GRAY,
-          size: 20,
-        ),
-      ),
-    );
-  }
-
-  void _openChangePasswordPage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute<Widget>(
-        builder: (context) => const ChangePasswordPage(),
-      ),
-    );
-  }
 }

@@ -7,9 +7,20 @@ import 'package:movix/Services/scanner.dart';
 import 'package:movix/Services/sound.dart';
 
 class Globals {
-  static String get API_URL => kDebugMode 
-    ? "http://192.168.1.120:8081"
-    : "https://api.movix.fr";
+  static const List<String> _BETA_ACCOUNT_IDS = [
+    "6bce8203-058c-43d4-8c92-fc5cad90acc9",
+    "09aec7e6-586a-41bb-b6df-52b986a908a6",
+  ];
+
+  static String get API_URL {
+    if (kDebugMode) {
+      return "http://192.168.1.120:8081";
+    }
+    if (_BETA_ACCOUNT_IDS.contains(profil?.account.id)) {
+      return "https://api.beta.movix.fr";
+    }
+    return "https://api.movix.fr";
+  }
 
   static bool DARK_MODE = true;
   static final ValueNotifier<bool> darkModeNotifier = ValueNotifier<bool>(DARK_MODE);

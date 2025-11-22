@@ -4,8 +4,63 @@ import requests
 import sys
 from datetime import datetime
 
-apiUrl = "http://192.168.1.155:8081/"
-apiUrl = "https://api.movix.fr/"
+# Configuration des environnements
+ENVIRONMENTS = {
+    "1": {
+        "name": "beta",
+        "url": "https://api.beta.movix.fr/",
+        "requires_confirmation": False
+    },
+    "2": {
+        "name": "demo",
+        "url": "https://api.demo.movix.fr/",
+        "requires_confirmation": True
+    },
+    "3": {
+        "name": "prod",
+        "url": "https://api.movix.fr/",
+        "requires_confirmation": True
+    }
+}
+
+# Variable globale pour l'environnement sélectionné
+selected_env = None
+
+def select_environment():
+    """Affiche le menu de sélection d'environnement et retourne la configuration"""
+    global selected_env
+
+    print("\n" + "=" * 50)
+    print("SELECTION DE L'ENVIRONNEMENT DE DEPLOIEMENT")
+    print("=" * 50)
+    print("\n1: beta   (api.beta.movix.fr)")
+    print("2: demo   (api.demo.movix.fr)")
+    print("3: prod   (api.movix.fr)")
+    print()
+
+    while True:
+        choice = input("Choisissez l'environnement (1/2/3): ").strip()
+
+        if choice not in ENVIRONMENTS:
+            print("Choix invalide. Veuillez entrer 1, 2 ou 3.")
+            continue
+
+        env = ENVIRONMENTS[choice]
+
+        # Demander confirmation pour demo et prod
+        if env["requires_confirmation"]:
+            print(f"\n ATTENTION: Vous allez deployer sur {env['name'].upper()}")
+            confirm = input(f"Etes-vous sur de vouloir deployer sur {env['name']}? (oui/non): ").strip().lower()
+
+            if confirm not in ["oui", "o", "yes", "y"]:
+                print("Deploiement annule.")
+                sys.exit(0)
+
+        selected_env = env
+        print(f"\nEnvironnement selectionne: {env['name']}")
+        print(f"   URL: {env['url']}")
+        return env
+
 
 def get_flutter_path():
     """Trouve le chemin vers l'exécutable Flutter"""
@@ -47,7 +102,9 @@ def get_apk_path():
 
 def upload_apk(version, apk_path):
     """Envoie l'APK à l'API"""
-    url = f"{apiUrl}updates/{version}"
+    global selected_env
+    api_url = selected_env["url"]
+    url = f"{api_url}updates/{version}"
     
     try:
         with open(apk_path, 'rb') as apk_file:
@@ -72,26 +129,35 @@ def upload_apk(version, apk_path):
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python build_and_upload_apk.py <version>")
-        print("Example: python build_and_upload_apk.py 1.0.0")
+        print("Usage: python upload.py <version>")
+        print("Example: python upload.py 1.0.0")
         sys.exit(1)
 
     version = sys.argv[1]
-    
-    print("Début de la construction de l'APK...")
+
+    print("=" * 50)
+    print("DEPLOIEMENT APK MOVIX")
+    print("=" * 50)
+
+    # Sélection de l'environnement
+    select_environment()
+
+    print("\nDebut de la construction de l'APK...")
     if not build_apk():
         sys.exit(1)
-    
-    print("APK construit avec succès!")
-    
+
+    print("APK construit avec succes!")
+
     try:
         apk_path = get_apk_path()
-        print(f"APK trouvé à: {apk_path}")
-        
-        print("Début du téléchargement de l'APK...")
+        print(f"APK trouve a: {apk_path}")
+
+        print(f"\nDebut du telechargement de l'APK vers {selected_env['name'].upper()}...")
         if not upload_apk(version, apk_path):
             sys.exit(1)
-            
+
+        print(f"\nDeploiement sur {selected_env['name'].upper()} termine avec succes!")
+
     except FileNotFoundError as e:
         print(e)
         sys.exit(1)

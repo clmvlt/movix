@@ -14,8 +14,10 @@ class Profil {
   String email;
   bool isStock;
   bool isAvtrans;
+  bool isActive;
   String token;
   String passwordHash;
+  String profilPicture;
   Account account;
 
   Profil({
@@ -32,8 +34,10 @@ class Profil {
     required this.email,
     required this.isStock,
     required this.isAvtrans,
+    required this.isActive,
     required this.token,
     required this.passwordHash,
+    required this.profilPicture,
     required this.account,
   });
 
@@ -52,8 +56,10 @@ class Profil {
       email: (json['email'] is String) ? json['email'] as String : '',
       isStock: (json['isStock'] is bool) ? json['isStock'] as bool : false,
       isAvtrans: (json['isAvtrans'] is bool) ? json['isAvtrans'] as bool : false,
+      isActive: (json['isActive'] is bool) ? json['isActive'] as bool : false,
       token: (json['token'] is String) ? json['token'] as String : '',
       passwordHash: (json['passwordHash'] is String) ? json['passwordHash'] as String : '',
+      profilPicture: (json['profilPicture'] is String) ? json['profilPicture'] as String : '',
       account: Account.fromJson(json['account'] is Map<String, dynamic> ? json['account'] as Map<String, dynamic> : {}),
     );
   }
@@ -73,8 +79,10 @@ class Profil {
       'email': email,
       'isStock': isStock,
       'isAvtrans': isAvtrans,
+      'isActive': isActive,
       'token': token,
       'passwordHash': passwordHash,
+      'profilPicture': profilPicture,
       'account': account.toJson(),
     };
   }
