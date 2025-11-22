@@ -24,7 +24,6 @@ class FSLivraisonPage extends StatefulWidget {
 
 class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingObserver, RouteAware {
   bool CIPScanned = false;
-  final TextEditingController _manCIP = TextEditingController();
   bool _isPageActive = true;
 
   bool get _isCIPRequired => Globals.profil?.account.isScanCIP ?? false;
@@ -79,7 +78,6 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _manCIP.dispose();
     super.dispose();
   }
 
@@ -199,27 +197,10 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
         ]));
   }
 
-  void _showInputDialog(BuildContext context) {
-    ScanInputDialogWidget.show(
-      context: context,
-      cipScanned: _isCIPRequired ? CIPScanned : true,
-      onConfirm: (code) async {
-        ScanResult result = await validateCode(code, isManualInput: true);
-        _manCIP.clear();
-
-        // Si le scan a réussi, mettre à jour l'état
-        if (result == ScanResult.SCAN_SUCCESS || result == ScanResult.SCAN_FINISH) {
-          setState(() {});
-        }
-      },
-      initialValue: _manCIP.text,
-    );
-  }
-
   Widget _buildCIPStatusButton() {
     return CIPStatusButtonWidget(
       cipScanned: CIPScanned,
-      onPressed: () => _showInputDialog(context),
+      onPressed: () {}, // Saisie manuelle désactivée
     );
   }
 
