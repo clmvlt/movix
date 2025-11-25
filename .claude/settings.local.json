@@ -7,7 +7,19 @@
       "mcp__ide__getDiagnostics",
       "Bash(del \"lib\\Widgets\\AnomalieMenu_backup.dart\")",
       "Bash(grep:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(xcrun simctl:*)",
+      "Bash(open:*)",
+      "Bash(killall:*)",
+      "Bash(defaults delete:*)",
+      "Bash(pod deintegrate:*)",
+      "Bash(pod install)",
+      "Bash(xcodebuild -version:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(xcode-select:*)",
+      "Bash(export LANG=en_US.UTF-8:*)",
+      "Bash(cat:*)",
+      "Bash(defaults read:*)"
     ],
     "deny": [],
     "ask": []

@@ -59,5 +59,11 @@
 	<string>Movix a besoin de votre position pour enregistrer le lieu de livraison et assurer la traçabilité des colis.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Movix a besoin de votre position pour enregistrer le lieu de livraison et assurer la traçabilité des colis.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Movix utilise le réseau local pour la communication avec les appareils à proximité.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartVmService._tcp</string>
+	</array>
 </dict>
 </plist>

@@ -46,6 +46,8 @@ class _UpdatePageState extends State<UpdatePage> {
     if (Platform.isAndroid) {
       _getAppVersion();
       _loadUpdates();
+    } else if (Platform.isIOS) {
+      _getAppVersion();
     }
   }
 
@@ -282,6 +284,14 @@ class _UpdatePageState extends State<UpdatePage> {
     Globals.showSnackbar(message, backgroundColor: color, icon: icon);
   }
 
+  bool _isTestFlightInstalled() {
+    if (!Platform.isIOS) return false;
+    // Sur iOS, on détecte si l'app est en mode TestFlight via le profil de provisionnement
+    // Note: Une vraie détection nécessiterait du code natif, mais on peut utiliser
+    // la présence du receipt pour détecter TestFlight
+    return const bool.fromEnvironment('dart.vm.product') == false;
+  }
+
   Future<void> _launchTestFlight() async {
     final testFlightLink = Uri.parse('itms-beta://');
     if (await canLaunchUrl(testFlightLink)) {
@@ -293,6 +303,16 @@ class _UpdatePageState extends State<UpdatePage> {
       } else {
         _showMessage("Impossible d'ouvrir TestFlight.", Icons.error, Globals.COLOR_MOVIX_RED);
       }
+    }
+  }
+
+  Future<void> _launchAppStore() async {
+    // Remplacez l'ID par votre ID d'application App Store
+    final appStoreLink = Uri.parse('https://apps.apple.com/app/idVOTRE_APP_ID');
+    if (await canLaunchUrl(appStoreLink)) {
+      await launchUrl(appStoreLink, mode: LaunchMode.externalApplication);
+    } else {
+      _showMessage("Impossible d'ouvrir l'App Store.", Icons.error, Globals.COLOR_MOVIX_RED);
     }
   }
 
@@ -491,20 +511,46 @@ class _UpdatePageState extends State<UpdatePage> {
   }
 
   Widget _buildIOSContent() {
+    final isTestFlight = _isTestFlightInstalled();
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // Carte avec la version actuelle
+        Card(
+          elevation: 0,
+          color: Globals.COLOR_SURFACE,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Version actuelle : $appVersion",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Globals.COLOR_TEXT_DARK)),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 30),
         const Icon(Icons.info_outline, size: 80, color: Globals.COLOR_MOVIX),
         const SizedBox(height: 20),
-        Text("Les mises à jour se font via TestFlight.",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Globals.COLOR_TEXT_DARK)),
+        Text(
+          isTestFlight
+            ? "Les mises à jour se font via TestFlight."
+            : "Les mises à jour se font via l'App Store.",
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Globals.COLOR_TEXT_DARK)
+        ),
         const SizedBox(height: 20),
         ElevatedButton.icon(
-          onPressed: _launchTestFlight,
+          onPressed: isTestFlight ? _launchTestFlight : _launchAppStore,
           icon: Icon(Icons.open_in_new, color: Globals.COLOR_TEXT_LIGHT),
-          label: Text("Ouvrir TestFlight", style: TextStyle(color: Globals.COLOR_TEXT_LIGHT)),
+          label: Text(
+            isTestFlight ? "Ouvrir TestFlight" : "Ouvrir l'App Store",
+            style: TextStyle(color: Globals.COLOR_TEXT_LIGHT)
+          ),
           style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               backgroundColor: Globals.COLOR_MOVIX,

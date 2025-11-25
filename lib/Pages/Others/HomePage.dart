@@ -203,7 +203,11 @@ class _HomePageState extends State<HomePage> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 8,
-                offset: const Offset(0, 8),
+                position: PopupMenuPosition.under,
+                constraints: const BoxConstraints(
+                  minWidth: 280,
+                  maxWidth: 320,
+                ),
                 onSelected: (value) {
                   if (value == 'deconnexion') {
                     logout().then((out) {
@@ -226,248 +230,50 @@ class _HomePageState extends State<HomePage> {
                 itemBuilder: (BuildContext context) => [
                   PopupMenuItem<String>(
                     value: 'settings',
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Globals.COLOR_MOVIX.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              Icons.settings,
-                              color: Globals.COLOR_MOVIX,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Paramètres',
-                                  style: TextStyle(
-                                    color: Globals.COLOR_TEXT_DARK,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Configuration de l\'app',
-                                  style: TextStyle(
-                                    color: Globals.COLOR_TEXT_SECONDARY,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: _buildPopupMenuItem(
+                      icon: Icons.settings,
+                      iconColor: Globals.COLOR_MOVIX,
+                      title: 'Paramètres',
+                      subtitle: 'Configuration de l\'app',
                     ),
                   ),
                   PopupMenuItem<String>(
                     value: 'spooler',
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Globals.COLOR_MOVIX_YELLOW.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              Icons.list_alt,
-                              color: Globals.COLOR_MOVIX_YELLOW,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Voir le spooler',
-                                  style: TextStyle(
-                                    color: Globals.COLOR_TEXT_DARK,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Actions en attente',
-                                  style: TextStyle(
-                                    color: Globals.COLOR_TEXT_SECONDARY,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: _buildPopupMenuItem(
+                      icon: Icons.list_alt,
+                      iconColor: Globals.COLOR_MOVIX_YELLOW,
+                      title: 'Voir le spooler',
+                      subtitle: 'Actions en attente',
                     ),
                   ),
                   PopupMenuItem<String>(
                     value: 'update',
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Globals.COLOR_MOVIX_GREEN.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              Icons.system_update,
-                              color: Globals.COLOR_MOVIX_GREEN,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Mise à jour',
-                                  style: TextStyle(
-                                    color: Globals.COLOR_TEXT_DARK,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Vérifier les mises à jour',
-                                  style: TextStyle(
-                                    color: Globals.COLOR_TEXT_SECONDARY,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: _buildPopupMenuItem(
+                      icon: Icons.system_update,
+                      iconColor: Globals.COLOR_MOVIX_GREEN,
+                      title: 'Mise à jour',
+                      subtitle: 'Vérifier les mises à jour',
                     ),
                   ),
                   if (kDebugMode)
                     PopupMenuItem<String>(
                       value: 'test',
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.purple.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                Icons.deblur_rounded,
-                                color: Colors.purple,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Page de test',
-                                    style: TextStyle(
-                                      color: Globals.COLOR_TEXT_DARK,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Mode développeur',
-                                    style: TextStyle(
-                                      color: Globals.COLOR_TEXT_SECONDARY,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: _buildPopupMenuItem(
+                        icon: Icons.deblur_rounded,
+                        iconColor: Colors.purple,
+                        title: 'Page de test',
+                        subtitle: 'Mode développeur',
                       ),
                     ),
-                  // Séparateur visuel
-                  PopupMenuItem<String>(
-                    height: 1,
-                    enabled: false,
-                    child: Container(
-                      height: 1,
-                      color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                    ),
-                  ),
+                  const PopupMenuDivider(),
                   PopupMenuItem<String>(
                     value: 'deconnexion',
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Globals.COLOR_MOVIX_RED.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              Icons.logout,
-                              color: Globals.COLOR_MOVIX_RED,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Déconnexion',
-                                  style: TextStyle(
-                                    color: Globals.COLOR_MOVIX_RED,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Se déconnecter de l\'app',
-                                  style: TextStyle(
-                                    color: Globals.COLOR_TEXT_SECONDARY,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: _buildPopupMenuItem(
+                      icon: Icons.logout,
+                      iconColor: Globals.COLOR_MOVIX_RED,
+                      title: 'Déconnexion',
+                      subtitle: 'Se déconnecter de l\'app',
+                      titleColor: Globals.COLOR_MOVIX_RED,
                     ),
                   ),
                 ],
@@ -491,6 +297,59 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPopupMenuItem({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    Color? titleColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: iconColor,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: titleColor ?? Globals.COLOR_TEXT_DARK,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Globals.COLOR_TEXT_SECONDARY,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

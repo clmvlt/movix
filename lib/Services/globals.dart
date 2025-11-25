@@ -53,7 +53,7 @@ class Globals {
 
   static Color get COLOR_TEXT_SECONDARY => darkModeNotifier.value
     ? const Color.fromARGB(255, 180, 180, 180)
-    : const Color.fromARGB(255, 212, 212, 212);
+    : const Color.fromARGB(255, 120, 120, 120);
 
   static Color get COLOR_SHADOW => darkModeNotifier.value
     ? const Color.fromARGB(255, 0, 0, 0)
