@@ -13,12 +13,8 @@ import 'package:movix/Services/login.dart';
 import 'package:movix/Services/scanner.dart';
 import 'package:movix/Services/settings.dart';
 import 'package:movix/Services/sound.dart';
-import 'package:movix/Services/update_service.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import 'dart:async';
-import 'package:movix/Pages/Others/UpdatePage.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});

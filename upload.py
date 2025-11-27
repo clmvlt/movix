@@ -36,13 +36,27 @@ def select_environment():
     print("\n1: beta   (api.beta.movix.fr)")
     print("2: demo   (api.demo.movix.fr)")
     print("3: prod   (api.movix.fr)")
+    print("4: all    (beta + demo + prod)")
     print()
 
     while True:
-        choice = input("Choisissez l'environnement (1/2/3): ").strip()
+        choice = input("Choisissez l'environnement (1/2/3/4): ").strip()
+
+        # Option "all" - déployer sur les 3 environnements
+        if choice == "4":
+            print("\n ATTENTION: Vous allez deployer sur TOUS les environnements (beta, demo, prod)")
+            confirm = input("Etes-vous sur de vouloir deployer sur TOUS les environnements? (oui/non): ").strip().lower()
+
+            if confirm not in ["oui", "o", "yes", "y"]:
+                print("Deploiement annule.")
+                sys.exit(0)
+
+            all_envs = [ENVIRONMENTS["1"], ENVIRONMENTS["2"], ENVIRONMENTS["3"]]
+            print("\nEnvironnements selectionnes: beta, demo, prod")
+            return all_envs
 
         if choice not in ENVIRONMENTS:
-            print("Choix invalide. Veuillez entrer 1, 2 ou 3.")
+            print("Choix invalide. Veuillez entrer 1, 2, 3 ou 4.")
             continue
 
         env = ENVIRONMENTS[choice]
@@ -127,6 +141,34 @@ def upload_apk(version, apk_path):
         print(f"Erreur lors de l'envoi de l'APK: {e}")
         return False
 
+def upload_to_env(env, version, apk_path):
+    """Upload l'APK vers un environnement spécifique"""
+    api_url = env["url"]
+    url = f"{api_url}updates/{version}"
+
+    print(f"\nTelechargement vers {env['name'].upper()} ({env['url']})...")
+
+    try:
+        with open(apk_path, 'rb') as apk_file:
+            apk_bytes = apk_file.read()
+            headers = {
+                'Authorization': '123456789clement',
+                'Content-Type': 'application/octet-stream'
+            }
+            response = requests.post(url, data=apk_bytes, headers=headers)
+
+            if response.status_code == 201:
+                print(f"  APK telecharge avec succes sur {env['name']}!")
+                return True
+            else:
+                print(f"  Erreur lors du telechargement sur {env['name']}: {response.status_code}")
+                print(f"  Message: {response.text}")
+                return False
+    except Exception as e:
+        print(f"  Erreur lors de l'envoi de l'APK sur {env['name']}: {e}")
+        return False
+
+
 def main():
     if len(sys.argv) != 2:
         print("Usage: python upload.py <version>")
@@ -140,7 +182,7 @@ def main():
     print("=" * 50)
 
     # Sélection de l'environnement
-    select_environment()
+    env_selection = select_environment()
 
     print("\nDebut de la construction de l'APK...")
     if not build_apk():
@@ -152,11 +194,38 @@ def main():
         apk_path = get_apk_path()
         print(f"APK trouve a: {apk_path}")
 
-        print(f"\nDebut du telechargement de l'APK vers {selected_env['name'].upper()}...")
-        if not upload_apk(version, apk_path):
-            sys.exit(1)
+        # Déploiement sur un ou plusieurs environnements
+        if isinstance(env_selection, list):
+            # Déploiement sur tous les environnements
+            failed_envs = []
+            success_envs = []
 
-        print(f"\nDeploiement sur {selected_env['name'].upper()} termine avec succes!")
+            for env in env_selection:
+                if upload_to_env(env, version, apk_path):
+                    success_envs.append(env['name'])
+                else:
+                    failed_envs.append(env['name'])
+
+            # Résumé
+            print("\n" + "=" * 50)
+            print("RESUME DU DEPLOIEMENT")
+            print("=" * 50)
+
+            if success_envs:
+                print(f"Deploiements reussis: {', '.join(success_envs)}")
+            if failed_envs:
+                print(f"Deploiements echoues: {', '.join(failed_envs)}")
+                sys.exit(1)
+        else:
+            # Déploiement sur un seul environnement
+            global selected_env
+            selected_env = env_selection
+
+            print(f"\nDebut du telechargement de l'APK vers {selected_env['name'].upper()}...")
+            if not upload_apk(version, apk_path):
+                sys.exit(1)
+
+            print(f"\nDeploiement sur {selected_env['name'].upper()} termine avec succes!")
 
     except FileNotFoundError as e:
         print(e)
