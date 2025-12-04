@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:movix/API/tour_fetcher.dart';
 import 'package:movix/Managers/CommandManager.dart';
+import 'package:movix/Managers/SpoolerManager.dart';
 import 'package:movix/Models/Sound.dart';
 import 'package:movix/Models/Tour.dart';
 import 'package:movix/Scanning/Scan.dart';
@@ -16,8 +17,160 @@ class TourneesPage extends StatefulWidget {
   _TourneesPageState createState() => _TourneesPageState();
 }
 
-class _TourneesPageState extends State<TourneesPage> with RouteAware {
+class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTickerProviderStateMixin {
   bool _isLoading = false;
+  final SpoolerManager _spoolerManager = SpoolerManager();
+  late AnimationController _shimmerController;
+  late Animation<double> _shimmerAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+
+    _shimmerAnimation = Tween<double>(
+      begin: -2,
+      end: 2,
+    ).animate(CurvedAnimation(
+      parent: _shimmerController,
+      curve: Curves.easeInOutSine,
+    ));
+
+    _checkSpoolerAndRefresh();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkSpoolerAndRefresh() async {
+    // Vérifier si le spooler est vide
+    if (_spoolerManager.getTasksCount() == 0) {
+      // Si vide, actualiser automatiquement
+      await _refreshTours();
+    }
+  }
+
+  Future<bool> _showSpoolerWarningDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Globals.COLOR_SURFACE,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Globals.COLOR_MOVIX_YELLOW,
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Attention',
+                style: TextStyle(
+                  color: Globals.COLOR_TEXT_DARK,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Vous avez ${_spoolerManager.getTasksCount()} élément(s) en attente dans le spooler.',
+                style: TextStyle(
+                  color: Globals.COLOR_TEXT_DARK,
+                  fontSize: 15,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Globals.COLOR_MOVIX_YELLOW.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Globals.COLOR_MOVIX_YELLOW.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  'Actualiser maintenant risque de causer des décalages avec les données en attente d\'envoi.',
+                  style: TextStyle(
+                    color: Globals.COLOR_TEXT_DARK,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Voulez-vous continuer ?',
+                style: TextStyle(
+                  color: Globals.COLOR_TEXT_DARK,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: Text(
+                'Annuler',
+                style: TextStyle(
+                  color: Globals.COLOR_TEXT_SECONDARY,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Globals.COLOR_MOVIX_YELLOW,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Actualiser quand même',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+  }
 
   Future<ScanResult> validateCode(String code) async {
     bool assigned = await assignTour(code);
@@ -59,20 +212,27 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware {
 
   Future<void> _refreshTours() async {
     if (_isLoading) return; // Éviter les appels multiples
-    
+
+    // Vérifier si le spooler contient des éléments avant d'actualiser
+    if (_spoolerManager.getTasksCount() > 0) {
+      bool shouldContinue = await _showSpoolerWarningDialog();
+      if (!shouldContinue) return;
+    }
+
     setState(() {
       _isLoading = true;
     });
-    
+
+    // Sauvegarder les tournées actuelles avant l'actualisation
+    final previousTours = Map<String, Tour>.from(Globals.tours);
+
     try {
-      final previousTours = Map<String, Tour>.from(Globals.tours);
       bool success = await getProfilTours();
-      
+
       if (!success) {
-        // Restaurer seulement si les tours ont été vidées
-        if (Globals.tours.isEmpty && previousTours.isNotEmpty) {
-          Globals.tours = previousTours;
-        }
+        // Restaurer les anciennes tournées en cas d'erreur réseau
+        Globals.tours = previousTours;
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -82,20 +242,32 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware {
             ),
           );
         }
-      }
-      
-      // Mettre à jour les états des commandes seulement si on a des tours
-      if (Globals.tours.isNotEmpty) {
-        for (var tour in Globals.tours.values) {
-          if (tour.status.id == 2) {
-          for (var command in tour.commands.values) {
-            updateCommandState(command, onPageUpdate, false);
-          }
+      } else {
+        // Succès de l'actualisation
+        // Mettre à jour les états des commandes seulement si on a des tours
+        if (Globals.tours.isNotEmpty) {
+          for (var tour in Globals.tours.values) {
+            if (tour.status.id == 2) {
+              for (var command in tour.commands.values) {
+                updateCommandState(command, onPageUpdate, false);
+              }
+            }
           }
         }
       }
     } catch (e) {
-      print('Erreur lors du refresh: $e');
+      // En cas d'exception, restaurer les anciennes tournées
+      Globals.tours = previousTours;
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de l\'actualisation: ${e.toString()}', style: TextStyle(color: Globals.COLOR_TEXT_LIGHT)),
+            backgroundColor: Globals.COLOR_MOVIX_RED,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -114,27 +286,175 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware {
     return '${tour.commands.length}/${tour.commands.length}';
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildShimmerBox({
+    required double height,
+    required double width,
+    required BorderRadius borderRadius,
+  }) {
+    return AnimatedBuilder(
+      animation: _shimmerAnimation,
+      builder: (context, child) {
+        return Container(
+          height: height,
+          width: width,
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
+                Globals.COLOR_TEXT_SECONDARY.withOpacity(0.2),
+                Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
+              ],
+              stops: [
+                0.0,
+                _shimmerAnimation.value.clamp(0.0, 1.0),
+                1.0,
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSkeletonCard() {
     return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(40),
+      margin: const EdgeInsets.only(bottom: 16, top: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Globals.COLOR_SURFACE,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
+          width: 1.5,
+        ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CircularProgressIndicator(color: Globals.COLOR_MOVIX),
+          Row(
+            children: [
+              // Barre de couleur skeleton
+              _buildShimmerBox(
+                height: 40,
+                width: 6,
+                borderRadius: BorderRadius.circular(3),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Titre skeleton
+                    _buildShimmerBox(
+                      height: 18,
+                      width: double.infinity,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    const SizedBox(height: 8),
+                    // Date skeleton
+                    _buildShimmerBox(
+                      height: 14,
+                      width: 180,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ],
+                ),
+              ),
+              // Badge status skeleton
+              _buildShimmerBox(
+                height: 28,
+                width: 90,
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ],
+          ),
           const SizedBox(height: 20),
-          Text(
-            'Chargement des tournées...',
-            style: TextStyle(
-              fontSize: 16,
-              color: Globals.COLOR_TEXT_SECONDARY,
-              fontWeight: FontWeight.w500,
+          // Stats container skeleton
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Globals.COLOR_SURFACE_SECONDARY,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                // Stat 1 skeleton
+                Column(
+                  children: [
+                    _buildShimmerBox(
+                      height: 16,
+                      width: 60,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    const SizedBox(height: 4),
+                    _buildShimmerBox(
+                      height: 12,
+                      width: 80,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                // Stat 2 skeleton
+                Column(
+                  children: [
+                    _buildShimmerBox(
+                      height: 16,
+                      width: 40,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    const SizedBox(height: 4),
+                    _buildShimmerBox(
+                      height: 12,
+                      width: 50,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                // Arrow skeleton
+                AnimatedBuilder(
+                  animation: _shimmerAnimation,
+                  builder: (context, child) {
+                    return Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Globals.COLOR_TEXT_SECONDARY.withOpacity(0.05),
+                            Globals.COLOR_TEXT_SECONDARY.withOpacity(0.15),
+                            Globals.COLOR_TEXT_SECONDARY.withOpacity(0.05),
+                          ],
+                          stops: [
+                            0.0,
+                            _shimmerAnimation.value.clamp(0.0, 1.0),
+                            1.0,
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Column(
+      children: List.generate(
+        3, // Afficher 3 cartes skeleton
+        (index) => _buildSkeletonCard(),
       ),
     );
   }
@@ -431,8 +751,11 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware {
             child: CustomScrollView(
               slivers: [
                 if (_isLoading)
-                  SliverToBoxAdapter(
-                    child: _buildLoadingState(),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverToBoxAdapter(
+                      child: _buildLoadingState(),
+                    ),
                   )
                 else if (Globals.tours.values
                     .where((tour) => [2, 3].contains(tour.status.id))

@@ -203,6 +203,8 @@ class _ProfilePageState extends State<ProfilePage> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      useRootNavigator: true,
+      isScrollControlled: true,
       builder: (context) => Container(
         decoration: BoxDecoration(
           color: Globals.COLOR_SURFACE,
@@ -233,16 +235,20 @@ class _ProfilePageState extends State<ProfilePage> {
               _buildImageSourceOption(
                 icon: Icons.camera_alt,
                 title: 'Prendre une photo',
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
+                  // Délai pour iOS 18 compatibility
+                  await Future<void>.delayed(const Duration(milliseconds: 100));
                   _pickImage(ImageSource.camera);
                 },
               ),
               _buildImageSourceOption(
                 icon: Icons.photo_library,
                 title: 'Choisir dans la galerie',
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
+                  // Délai pour iOS 18 compatibility
+                  await Future<void>.delayed(const Duration(milliseconds: 100));
                   _pickImage(ImageSource.gallery);
                 },
               ),

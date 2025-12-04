@@ -23,7 +23,8 @@
       "Bash(.gradlew clean:*)",
       "Bash(gradlew.bat clean:*)",
       "Bash(./gradlew clean:*)",
-      "Bash(./gradlew:*)"
+      "Bash(./gradlew:*)",
+      "Bash(copy \"d:\\3_PROJET\\Movix\\_fluttermovix\\lib\\Pages\\Others\\HomePage.dart\" \"d:\\3_PROJET\\Movix\\_fluttermovix\\lib\\Pages\\Others\\HomePage_backup.dart\")"
     ],
     "deny": [],
     "ask": []

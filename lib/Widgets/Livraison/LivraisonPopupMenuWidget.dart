@@ -14,6 +14,7 @@ class LivraisonPopupMenuWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
+      key: const ValueKey('livraison_popup_menu'),
       icon: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -21,7 +22,7 @@ class LivraisonPopupMenuWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
-          Icons.more_vert, 
+          Icons.more_vert,
           color: Globals.COLOR_TEXT_LIGHT,
           size: 20,
         ),
@@ -32,9 +33,13 @@ class LivraisonPopupMenuWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       offset: const Offset(0, 8),
-      onSelected: (value) {
+      onSelected: (value) async {
+        // Ajouter un délai pour iOS 18 compatibility
+        await Future<void>.delayed(const Duration(milliseconds: 100));
         if (value == 'spooler') {
-          context.push('/spooler');
+          if (context.mounted) {
+            context.push('/spooler');
+          }
         }
       },
       itemBuilder: (BuildContext context) {

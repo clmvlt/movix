@@ -592,14 +592,14 @@ Future<int?> askForKilometers(BuildContext context, {int? startKm}) async {
                               Icon(
                                 Icons.info_outline,
                                 size: 16,
-                                color: Globals.COLOR_MOVIX,
+                                color: Globals.COLOR_TEXT_DARK,
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 "Km de début: ${startKm.toString()} km",
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Globals.COLOR_MOVIX,
+                                  color: Globals.COLOR_TEXT_DARK,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),

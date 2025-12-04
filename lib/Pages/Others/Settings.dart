@@ -218,6 +218,7 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      useRootNavigator: true,
       builder: (context) => Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -345,8 +346,10 @@ class _SettingsPageState extends State<SettingsPage> {
                         color: Globals.COLOR_MOVIX,
                       ),
                     ),
-                    onTap: () {
+                    onTap: () async {
                       Navigator.pop(context);
+                      // Délai pour iOS 18 compatibility
+                      await Future<void>.delayed(const Duration(milliseconds: 100));
                       onSelected(option);
                     },
                   ),

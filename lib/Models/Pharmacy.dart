@@ -5,12 +5,14 @@ class PharmacyPicture {
   String name;
   String createdAt;
   String imagePath;
+  int displayOrder;
 
   PharmacyPicture({
     required this.id,
     required this.name,
     required this.createdAt,
     required this.imagePath,
+    required this.displayOrder,
   });
 
   factory PharmacyPicture.fromJson(Map<String, dynamic> json) {
@@ -19,6 +21,7 @@ class PharmacyPicture {
       name: (json['name'] is String) ? json['name'] as String : '',
       createdAt: (json['createdAt'] is String) ? json['createdAt'] as String : '',
       imagePath: (json['imagePath'] is String) ? json['imagePath'] as String : '',
+      displayOrder: (json['displayOrder'] is int) ? json['displayOrder'] as int : 0,
     );
   }
 
@@ -28,6 +31,7 @@ class PharmacyPicture {
       'name': name,
       'createdAt': createdAt,
       'imagePath': imagePath,
+      'displayOrder': displayOrder,
     };
   }
 }

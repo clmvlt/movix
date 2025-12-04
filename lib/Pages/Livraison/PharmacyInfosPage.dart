@@ -19,13 +19,58 @@ class PharmacyInfosPage extends StatefulWidget {
   _PharmacyInfosPageState createState() => _PharmacyInfosPageState();
 }
 
-class _PharmacyInfosPageState extends State<PharmacyInfosPage> {
-  late Future<Pharmacy?> _pharmacyInfo;
+class _PharmacyInfosPageState extends State<PharmacyInfosPage> with SingleTickerProviderStateMixin {
+  Pharmacy? _currentPharmacy;
+  bool _isLoading = true;
+  late AnimationController _shimmerController;
+  late Animation<double> _shimmerAnimation;
 
   @override
   void initState() {
     super.initState();
-    _pharmacyInfo = getPharmacyInfos(widget.command.pharmacy.cip);
+
+    // Initialiser l'animation shimmer
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+
+    _shimmerAnimation = Tween<double>(
+      begin: -2,
+      end: 2,
+    ).animate(CurvedAnimation(
+      parent: _shimmerController,
+      curve: Curves.easeInOutSine,
+    ));
+
+    // Charger les données locales immédiatement
+    _currentPharmacy = widget.command.pharmacy;
+    _isLoading = false;
+
+    // En parallèle, récupérer les données depuis l'API
+    _refreshPharmacyFromApi();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refreshPharmacyFromApi() async {
+    try {
+      final apiPharmacy = await getPharmacyInfos(widget.command.pharmacy.cip);
+
+      if (apiPharmacy != null && mounted) {
+        setState(() {
+          _currentPharmacy = apiPharmacy;
+        });
+      }
+      // Si l'API échoue (null), on garde les données locales
+    } catch (e) {
+      // En cas d'erreur, on garde les données locales
+      print('Erreur lors du refresh API: $e');
+    }
   }
 
   TextSpan parseText(String? text) {
@@ -90,6 +135,169 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> {
     );
   }
 
+  Widget _buildShimmerBox({
+    required double height,
+    double? width,
+    required BorderRadius borderRadius,
+  }) {
+    return AnimatedBuilder(
+      animation: _shimmerAnimation,
+      builder: (context, child) {
+        return Container(
+          height: height,
+          width: width,
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
+                Globals.COLOR_TEXT_SECONDARY.withOpacity(0.2),
+                Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
+              ],
+              stops: [
+                0.0,
+                _shimmerAnimation.value.clamp(0.0, 1.0),
+                1.0,
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSkeletonLoading() {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            // Instructions card skeleton
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Globals.COLOR_SURFACE,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header skeleton
+                  Row(
+                    children: [
+                      _buildShimmerBox(
+                        height: 24,
+                        width: 24,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      const SizedBox(width: 12),
+                      _buildShimmerBox(
+                        height: 20,
+                        width: 200,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Content skeleton
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Globals.COLOR_SURFACE_SECONDARY.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildShimmerBox(
+                          height: 16,
+                          width: double.infinity,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildShimmerBox(
+                          height: 16,
+                          width: double.infinity,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildShimmerBox(
+                          height: 16,
+                          width: 250,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Photos card skeleton
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Globals.COLOR_SURFACE,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header skeleton
+                  Row(
+                    children: [
+                      _buildShimmerBox(
+                        height: 24,
+                        width: 24,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      const SizedBox(width: 12),
+                      _buildShimmerBox(
+                        height: 20,
+                        width: 120,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Grid skeleton
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 1,
+                    ),
+                    itemCount: 4,
+                    itemBuilder: (context, index) {
+                      return _buildShimmerBox(
+                        height: double.infinity,
+                        width: double.infinity,
+                        borderRadius: BorderRadius.circular(16),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,50 +310,44 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: FutureBuilder<Pharmacy?>(
-        future: _pharmacyInfo,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const LoadingStateWidget(message: 'Chargement des informations...');
-          } else if (snapshot.hasError) {
-            return ErrorStateWidget(message: snapshot.error.toString());
-          } else if (snapshot.hasData && snapshot.data != null) {
-            final pharmacy = snapshot.data!;
-            final String informations = pharmacy.informations.isNotEmpty 
-                ? pharmacy.informations 
-                : 'Aucune information disponible';
-
-            return Scaffold(
-              backgroundColor: Globals.COLOR_BACKGROUND,
-              body: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    children: [
-                      _buildModernInstructionsCard(informations),
-                      if (pharmacy.pictures.isNotEmpty) ...[
-                        const SizedBox(height: 20),
-                        _buildModernPhotosCard(pharmacy),
-                      ],
-                    ],
-                  ),
+      body: _isLoading
+          ? _buildSkeletonLoading()
+          : _currentPharmacy != null
+              ? _buildPharmacyContent(_currentPharmacy!)
+              : const EmptyStateWidget(
+                  message: 'Les informations de cette pharmacie ne sont pas encore renseignées',
                 ),
-              ),
-              bottomNavigationBar: customButton(
-                  bottomPadding: 32,
-                  onPressed: () {
-                    context.push('/addinfospharmacy',
-                        extra: {'command': widget.command});
-                  },
-                  label: "Ajouter des instructions"),
-            );
-          } else {
-            return const EmptyStateWidget(
-              message: 'Les informations de cette pharmacie ne sont pas encore renseignées',
-            );
-          }
-        },
+    );
+  }
+
+  Widget _buildPharmacyContent(Pharmacy pharmacy) {
+    final String informations = pharmacy.informations.isNotEmpty
+        ? pharmacy.informations
+        : 'Aucune information disponible';
+
+    return Scaffold(
+      backgroundColor: Globals.COLOR_BACKGROUND,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              _buildModernInstructionsCard(informations),
+              if (pharmacy.pictures.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                _buildModernPhotosCard(pharmacy),
+              ],
+            ],
+          ),
+        ),
       ),
+      bottomNavigationBar: customButton(
+          bottomPadding: 32,
+          onPressed: () {
+            context.push('/addinfospharmacy',
+                extra: {'command': widget.command});
+          },
+          label: "Ajouter des instructions"),
     );
   }
 
@@ -178,6 +380,10 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> {
   }
 
   Widget _buildModernPhotosCard(Pharmacy pharmacy) {
+    // Trier les photos par displayOrder
+    final sortedPictures = List<PharmacyPicture>.from(pharmacy.pictures)
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+
     return ModernCardWidget(
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,7 +391,7 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> {
           ModernCardHeader(
             icon: Icons.photo_library_outlined,
             iconColor: Globals.COLOR_MOVIX_GREEN,
-            title: "Photos (${pharmacy.pictures.length})",
+            title: "Photos (${sortedPictures.length})",
           ),
           const SizedBox(height: 20),
           GridView.builder(
@@ -197,12 +403,12 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> {
               mainAxisSpacing: 16,
               childAspectRatio: 1,
             ),
-            itemCount: pharmacy.pictures.length,
+            itemCount: sortedPictures.length,
             itemBuilder: (context, index) {
               return _buildModernPhotoItem(
-                pharmacy.pictures[index].imagePath, 
-                index, 
-                pharmacy.pictures.map((p) => p.imagePath).toList(),
+                sortedPictures[index].imagePath,
+                index,
+                sortedPictures.map((p) => p.imagePath).toList(),
               );
             },
           ),

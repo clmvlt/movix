@@ -139,9 +139,11 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                 ),
               ),
               if (_isLoading)
-                const Expanded(
-                  child: Center(
-                    child: CircularProgressIndicator(),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: 5,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemBuilder: (context, index) => _buildSkeletonCard(),
                   ),
                 ),
               if (_errorMessage != null && !_isLoading)
@@ -215,6 +217,99 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSkeletonCard() {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      color: Globals.COLOR_SURFACE,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Nom de la pharmacie
+            Container(
+              height: 22,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Globals.COLOR_SURFACE_SECONDARY,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Sous-titre
+            Container(
+              height: 16,
+              width: 150,
+              decoration: BoxDecoration(
+                color: Globals.COLOR_SURFACE_SECONDARY,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Badge CIP
+            Container(
+              height: 24,
+              width: 80,
+              decoration: BoxDecoration(
+                color: Globals.COLOR_SURFACE_SECONDARY,
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Adresse ligne 1
+            Row(
+              children: [
+                Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Globals.COLOR_SURFACE_SECONDARY,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Container(
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: Globals.COLOR_SURFACE_SECONDARY,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            // Adresse ligne 2
+            Padding(
+              padding: const EdgeInsets.only(left: 20),
+              child: Container(
+                height: 16,
+                width: 200,
+                decoration: BoxDecoration(
+                  color: Globals.COLOR_SURFACE_SECONDARY,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Bouton
+            Container(
+              height: 36,
+              decoration: BoxDecoration(
+                color: Globals.COLOR_SURFACE_SECONDARY,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
