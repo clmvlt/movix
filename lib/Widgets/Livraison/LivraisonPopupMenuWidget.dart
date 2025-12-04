@@ -13,66 +13,59 @@ class LivraisonPopupMenuWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      key: const ValueKey('livraison_popup_menu'),
-      icon: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(8),
+    return MenuAnchor(
+      style: MenuStyle(
+        backgroundColor: WidgetStateProperty.all(Globals.COLOR_SURFACE),
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
-        child: Icon(
-          Icons.more_vert,
-          color: Globals.COLOR_TEXT_LIGHT,
-          size: 20,
+        elevation: WidgetStateProperty.all(8),
+        padding: WidgetStateProperty.all(EdgeInsets.zero),
+        shadowColor: WidgetStateProperty.all(Colors.black.withOpacity(0.1)),
+      ),
+      alignmentOffset: const Offset(0, 8),
+      menuChildren: [
+        Container(
+          decoration: BoxDecoration(
+            color: Globals.COLOR_SURFACE,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildToggleEndedMenuItem(),
+              Container(
+                height: 1,
+                color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              _buildSpoolerMenuItem(context),
+            ],
+          ),
         ),
-      ),
-      color: Colors.transparent,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      offset: const Offset(0, 8),
-      onSelected: (value) async {
-        // Ajouter un délai pour iOS 18 compatibility
-        await Future<void>.delayed(const Duration(milliseconds: 100));
-        if (value == 'spooler') {
-          if (context.mounted) {
-            context.push('/spooler');
-          }
-        }
-      },
-      itemBuilder: (BuildContext context) {
-        return [
-          PopupMenuItem<String>(
-            padding: EdgeInsets.zero,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Globals.COLOR_SURFACE,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildToggleEndedMenuItem(),
-                  Container(
-                    height: 1,
-                    color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                  _buildSpoolerMenuItem(context),
-                ],
-              ),
+      ],
+      builder: (context, controller, child) {
+        return IconButton(
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.more_vert,
+              color: Globals.COLOR_TEXT_LIGHT,
+              size: 20,
             ),
           ),
-        ];
+        );
       },
     );
   }
@@ -169,8 +162,10 @@ class LivraisonPopupMenuWidget extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          Navigator.pop(context);
-          context.push('/spooler');
+          // MenuAnchor se ferme automatiquement, pas besoin de Navigator.pop
+          if (context.mounted) {
+            context.push('/spooler');
+          }
         },
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(16),

@@ -50,53 +50,25 @@ class _HomePageState extends State<HomePage> {
             toolbarTextStyle: Globals.appBarTextStyle,
             titleTextStyle: Globals.appBarTextStyle,
             actions: [
-              PopupMenuButton<String>(
-                key: const ValueKey('home_popup_menu'),
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
+              MenuAnchor(
+                style: MenuStyle(
+                  backgroundColor: WidgetStateProperty.all(Globals.COLOR_SURFACE),
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: Icon(Icons.more_vert, color: Globals.COLOR_TEXT_LIGHT, size: 20),
+                  elevation: WidgetStateProperty.all(8),
+                  padding: WidgetStateProperty.all(EdgeInsets.zero),
                 ),
-                color: Globals.COLOR_SURFACE,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 8,
-                position: PopupMenuPosition.under,
-                constraints: const BoxConstraints(
-                  minWidth: 280,
-                  maxWidth: 320,
-                ),
-                onSelected: (value) async {
-                  // Ajouter un délai pour iOS 18 compatibility
-                  await Future<void>.delayed(const Duration(milliseconds: 100));
-
-                  if (!mounted) return;
-
-                  if (value == 'deconnexion') {
-                    logout().then((out) {
-                      if (out) {
-                        if (context.mounted) {
-                          context.go('/login');
-                        }
-                        Globals.showSnackbar("Vous êtes déconnecté");
-                      } else {
-                        Globals.showSnackbar("Une erreur s'est produite.",
-                            backgroundColor: Globals.COLOR_MOVIX_RED);
-                      }
-                    });
-                  }
-                  if (value == 'settings') context.push('/settings');
-                  if (value == 'spooler') context.push('/spooler');
-                  if (value == 'update') context.push('/update');
-                  if (value == 'test') context.push('/test');
-                },
-                itemBuilder: (BuildContext context) => [
-                  PopupMenuItem<String>(
-                    value: 'settings',
+                alignmentOffset: const Offset(0, 8),
+                menuChildren: [
+                  MenuItemButton(
+                    style: ButtonStyle(
+                      padding: WidgetStateProperty.all(EdgeInsets.zero),
+                      minimumSize: WidgetStateProperty.all(const Size(280, 0)),
+                    ),
+                    onPressed: () {
+                      if (mounted) context.push('/settings');
+                    },
                     child: _buildPopupMenuItem(
                       icon: Icons.settings,
                       iconColor: Globals.COLOR_MOVIX,
@@ -104,8 +76,14 @@ class _HomePageState extends State<HomePage> {
                       subtitle: 'Configuration de l\'app',
                     ),
                   ),
-                  PopupMenuItem<String>(
-                    value: 'spooler',
+                  MenuItemButton(
+                    style: ButtonStyle(
+                      padding: WidgetStateProperty.all(EdgeInsets.zero),
+                      minimumSize: WidgetStateProperty.all(const Size(280, 0)),
+                    ),
+                    onPressed: () {
+                      if (mounted) context.push('/spooler');
+                    },
                     child: _buildPopupMenuItem(
                       icon: Icons.list_alt,
                       iconColor: Globals.COLOR_MOVIX_YELLOW,
@@ -113,8 +91,14 @@ class _HomePageState extends State<HomePage> {
                       subtitle: 'Actions en attente',
                     ),
                   ),
-                  PopupMenuItem<String>(
-                    value: 'update',
+                  MenuItemButton(
+                    style: ButtonStyle(
+                      padding: WidgetStateProperty.all(EdgeInsets.zero),
+                      minimumSize: WidgetStateProperty.all(const Size(280, 0)),
+                    ),
+                    onPressed: () {
+                      if (mounted) context.push('/update');
+                    },
                     child: _buildPopupMenuItem(
                       icon: Icons.system_update,
                       iconColor: Globals.COLOR_MOVIX_GREEN,
@@ -123,8 +107,14 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   if (kDebugMode)
-                    PopupMenuItem<String>(
-                      value: 'test',
+                    MenuItemButton(
+                      style: ButtonStyle(
+                        padding: WidgetStateProperty.all(EdgeInsets.zero),
+                        minimumSize: WidgetStateProperty.all(const Size(280, 0)),
+                      ),
+                      onPressed: () {
+                        if (mounted) context.push('/test');
+                      },
                       child: _buildPopupMenuItem(
                         icon: Icons.deblur_rounded,
                         iconColor: Colors.purple,
@@ -132,9 +122,25 @@ class _HomePageState extends State<HomePage> {
                         subtitle: 'Mode développeur',
                       ),
                     ),
-                  const PopupMenuDivider(),
-                  PopupMenuItem<String>(
-                    value: 'deconnexion',
+                  const Divider(height: 1),
+                  MenuItemButton(
+                    style: ButtonStyle(
+                      padding: WidgetStateProperty.all(EdgeInsets.zero),
+                      minimumSize: WidgetStateProperty.all(const Size(280, 0)),
+                    ),
+                    onPressed: () {
+                      logout().then((out) {
+                        if (out) {
+                          if (context.mounted) {
+                            context.go('/login');
+                          }
+                          Globals.showSnackbar("Vous êtes déconnecté");
+                        } else {
+                          Globals.showSnackbar("Une erreur s'est produite.",
+                              backgroundColor: Globals.COLOR_MOVIX_RED);
+                        }
+                      });
+                    },
                     child: _buildPopupMenuItem(
                       icon: Icons.logout,
                       iconColor: Globals.COLOR_MOVIX_RED,
@@ -144,6 +150,25 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ],
+                builder: (context, controller, child) {
+                  return IconButton(
+                    onPressed: () {
+                      if (controller.isOpen) {
+                        controller.close();
+                      } else {
+                        controller.open();
+                      }
+                    },
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.more_vert, color: Globals.COLOR_TEXT_LIGHT, size: 20),
+                    ),
+                  );
+                },
               ),
             ],
           ),
