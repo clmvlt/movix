@@ -46,6 +46,7 @@ class Pharmacy {
   String city;
   String country;
   String informations;
+  String commentaire;
   String phone;
   String fax;
   String email;
@@ -68,6 +69,7 @@ class Pharmacy {
     required this.city,
     required this.country,
     required this.informations,
+    required this.commentaire,
     required this.phone,
     required this.fax,
     required this.email,
@@ -92,6 +94,7 @@ class Pharmacy {
       city: (json['city'] is String) ? json['city'] as String : '',
       country: (json['country'] is String) ? json['country'] as String : '',
       informations: (json['informations'] is String) ? json['informations'] as String : '',
+      commentaire: (json['commentaire'] is String) ? json['commentaire'] as String : '',
       phone: (json['phone'] is String) ? json['phone'] as String : '',
       fax: (json['fax'] is String) ? json['fax'] as String : '',
       email: (json['email'] is String) ? json['email'] as String : '',
@@ -119,6 +122,7 @@ class Pharmacy {
       'city': city,
       'country': country,
       'informations': informations,
+      'commentaire': commentaire,
       'phone': phone,
       'fax': fax,
       'email': email,

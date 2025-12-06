@@ -302,31 +302,58 @@ class _FSChargementPageState extends State<FSChargementPage>
     super.dispose();
   }
 
+  Future<void> _handleBack() async {
+    if (isChargementCommandUncomplet(command)) {
+      final result = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (BuildContext context) => _getChargementConfirmDialog(context),
+      );
+
+      if (result != null && result['confirmed'] == true) {
+        for (var package in command.packages.values) {
+          if (package.status.id == 1) {
+            setPackageState(command, package, 5, onUpdate);
+          }
+        }
+        updateCommandState(command, onUpdate, false);
+        context.pop();
+      }
+    } else {
+      context.pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (isChargementCommandUncomplet(command)) {
-          final result = await showDialog<Map<String, dynamic>>(
-            context: context,
-            builder: (BuildContext context) => _getChargementConfirmDialog(context),
-          );
-
-          if (result != null && result['confirmed'] == true) {
-            for (var package in command.packages.values) {
-              if (package.status.id == 1) {
-                setPackageState(command, package, 5, onUpdate);
-              }
-            }
-            // Update command status after all packages are marked as absent
-            updateCommandState(command, onUpdate, false);
-          }
-
-          return result != null && result['confirmed'] == true;
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+          _handleBack();
         }
-        return true;
       },
-      child: Scaffold(
+      child: WillPopScope(
+        onWillPop: () async {
+          if (isChargementCommandUncomplet(command)) {
+            final result = await showDialog<Map<String, dynamic>>(
+              context: context,
+              builder: (BuildContext context) => _getChargementConfirmDialog(context),
+            );
+
+            if (result != null && result['confirmed'] == true) {
+              for (var package in command.packages.values) {
+                if (package.status.id == 1) {
+                  setPackageState(command, package, 5, onUpdate);
+                }
+              }
+              // Update command status after all packages are marked as absent
+              updateCommandState(command, onUpdate, false);
+            }
+
+            return result != null && result['confirmed'] == true;
+          }
+          return true;
+        },
+        child: Scaffold(
         backgroundColor: Globals.COLOR_BACKGROUND,
         appBar: AppBar(
           toolbarTextStyle: Globals.appBarTextStyle,
@@ -429,6 +456,7 @@ class _FSChargementPageState extends State<FSChargementPage>
             ),
           ],
         ),
+      ),
       ),
     );
   }

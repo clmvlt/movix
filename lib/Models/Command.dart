@@ -49,6 +49,7 @@ class Command {
          city: '',
          country: '',
          informations: '',
+         commentaire: '',
          phone: '',
          fax: '',
          email: '',

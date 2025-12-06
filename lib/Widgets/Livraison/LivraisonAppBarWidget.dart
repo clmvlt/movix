@@ -69,8 +69,11 @@ class LivraisonAppBarWidget extends StatelessWidget implements PreferredSizeWidg
             ),
           ),
         ),
-        LivraisonPopupMenuWidget(
-          onShowEndedChanged: onShowEndedChanged,
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: LivraisonPopupMenuWidget(
+            onShowEndedChanged: onShowEndedChanged,
+          ),
         ),
       ],
     );

@@ -31,6 +31,14 @@ class MapBoxPageState extends State<MapBoxPage> {
   double? currentHeading;
   String tileLayerKey = 'initial';
 
+  Color get _colorAdap {
+    final tourColor = widget.command.tourColor;
+    if (tourColor.isNotEmpty && tourColor.startsWith('#')) {
+      return Color(int.parse("0xff${tourColor.substring(1)}"));
+    }
+    return Globals.COLOR_ADAPTIVE_ACCENT;
+  }
+
   StreamSubscription<LocationData>? _locationSub;
   StreamSubscription<CompassEvent>? _compassSub;
 
@@ -275,7 +283,7 @@ class MapBoxPageState extends State<MapBoxPage> {
                     height: 40.0,
                     child: Icon(
                       Icons.location_on_sharp,
-                      color: Globals.COLOR_MOVIX,
+                      color: _colorAdap,
                       size: 40.0,
                     ),
                   ),
@@ -385,12 +393,12 @@ class MapBoxPageState extends State<MapBoxPage> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                                color: _colorAdap.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 Icons.local_hospital,
-                                color: Globals.COLOR_MOVIX,
+                                color: _colorAdap,
                                 size: 20,
                               ),
                             ),

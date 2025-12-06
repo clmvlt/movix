@@ -318,9 +318,15 @@ class _UpdatePageState extends State<UpdatePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Globals.COLOR_BACKGROUND,
-      appBar: AppBar(
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Globals.COLOR_BACKGROUND,
+        appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
         titleTextStyle: Globals.appBarTextStyle,
         backgroundColor: Globals.COLOR_MOVIX,
@@ -336,6 +342,7 @@ class _UpdatePageState extends State<UpdatePage> {
           padding: const EdgeInsets.all(20.0),
           child: Platform.isAndroid ? _buildAndroidContent() : _buildIOSContent(),
         ),
+      ),
       ),
     );
   }

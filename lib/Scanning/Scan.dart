@@ -37,8 +37,11 @@ class _ScannerWidgetState extends State<ScannerWidget> {
     // Vibration conditionnelle si activée
     if (Globals.VIBRATIONS_ENABLED) {
       if (result == ScanResult.SCAN_SUCCESS || result == ScanResult.SCAN_FINISH) {
-        HapticFeedback.mediumImpact();
+        HapticFeedback.heavyImpact();
       } else if (result == ScanResult.SCAN_ERROR) {
+        // Double vibration pour les erreurs
+        HapticFeedback.heavyImpact();
+        await Future<void>.delayed(const Duration(milliseconds: 100));
         HapticFeedback.heavyImpact();
       }
     }

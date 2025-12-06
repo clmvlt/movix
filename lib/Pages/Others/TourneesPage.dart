@@ -22,7 +22,10 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
   final SpoolerManager _spoolerManager = SpoolerManager();
   late AnimationController _shimmerController;
   late Animation<double> _shimmerAnimation;
-  final RefreshController _refreshController = RefreshController(initialRefresh: false);
+  final RefreshController _refreshController = RefreshController(
+    initialRefresh: false,
+    initialRefreshStatus: RefreshStatus.idle,
+  );
 
   @override
   void initState() {
@@ -255,10 +258,16 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
       }
     } finally {
       if (mounted) {
+        // Mettre à jour l'état de loading et reconstruire l'UI avec les nouvelles données
         setState(() {
           _isLoading = false;
         });
-        _refreshController.refreshCompleted();
+        // Attendre que le frame soit rendu avant de terminer le refresh indicator
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _refreshController.refreshCompleted();
+          }
+        });
       }
     }
   }
@@ -270,6 +279,16 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
       return '${tour.commands.values.where((command) => command.status.id == 3 || command.status.id == 4 || command.status.id == 5 || command.status.id == 8 || command.status.id == 9).length}/${tour.commands.values.where((command) => command.status.id != 7).length}';
     }
     return '${tour.commands.length}/${tour.commands.length}';
+  }
+
+  String _formatDuration(double minutes) {
+    final int totalMins = minutes.round();
+    final int hours = totalMins ~/ 60;
+    final int mins = totalMins % 60;
+    if (hours > 0) {
+      return '${hours}h${mins.toString().padLeft(2, '0')}';
+    }
+    return '${mins} min';
   }
 
   Widget _buildShimmerBox({
@@ -367,41 +386,93 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
             ),
             child: Row(
               children: [
-                // Stat 1 skeleton
-                Column(
-                  children: [
-                    _buildShimmerBox(
-                      height: 16,
-                      width: 60,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    const SizedBox(height: 4),
-                    _buildShimmerBox(
-                      height: 12,
-                      width: 80,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                // Stat 2 skeleton
-                Column(
-                  children: [
-                    _buildShimmerBox(
-                      height: 16,
-                      width: 40,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    const SizedBox(height: 4),
-                    _buildShimmerBox(
-                      height: 12,
-                      width: 50,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    children: [
+                      // Première ligne : Commandes, Colis
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildShimmerBox(
+                                  height: 16,
+                                  width: 60,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                const SizedBox(height: 4),
+                                _buildShimmerBox(
+                                  height: 12,
+                                  width: 80,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildShimmerBox(
+                                  height: 16,
+                                  width: 40,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                const SizedBox(height: 4),
+                                _buildShimmerBox(
+                                  height: 12,
+                                  width: 50,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // Deuxième ligne : Distance, Durée
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildShimmerBox(
+                                  height: 16,
+                                  width: 50,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                const SizedBox(height: 4),
+                                _buildShimmerBox(
+                                  height: 12,
+                                  width: 60,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildShimmerBox(
+                                  height: 16,
+                                  width: 50,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                const SizedBox(height: 4),
+                                _buildShimmerBox(
+                                  height: 12,
+                                  width: 45,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(width: 16),
-                // Arrow skeleton
+                // Arrow skeleton centré
                 AnimatedBuilder(
                   animation: _shimmerAnimation,
                   builder: (context, child) {
@@ -601,21 +672,55 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
                   ),
                   child: Row(
                     children: [
-                      _buildStatChip(
-                        icon: Icons.assignment_outlined,
-                        label: 'Commandes',
-                        value: getSubtitle(tour),
-                        color: Globals.COLOR_ADAPTIVE_ACCENT,
-                      ),
-                      const Spacer(),
-                      _buildStatChip(
-                        icon: Icons.inventory_2_outlined,
-                        label: 'Colis',
-                        value: tour.commands.values
-                            .fold<int>(0, (sum, command) => 
-                                sum + command.packages.length)
-                            .toString(),
-                        color: tourColor,
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStatChip(
+                                    icon: Icons.assignment_outlined,
+                                    label: 'Commandes',
+                                    value: getSubtitle(tour),
+                                    color: tourColor,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _buildStatChip(
+                                    icon: Icons.inventory_2_outlined,
+                                    label: 'Colis',
+                                    value: tour.commands.values
+                                        .fold<int>(0, (sum, command) =>
+                                            sum + command.packages.length)
+                                        .toString(),
+                                    color: tourColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStatChip(
+                                    icon: Icons.route_outlined,
+                                    label: 'Distance',
+                                    value: '${tour.estimateKm.toStringAsFixed(0)} km',
+                                    color: tourColor,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _buildStatChip(
+                                    icon: Icons.schedule_outlined,
+                                    label: 'Durée',
+                                    value: _formatDuration(tour.estimateMins),
+                                    color: tourColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Container(
@@ -683,9 +788,15 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Globals.COLOR_BACKGROUND,
-      appBar: AppBar(
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+          context.go('/home');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Globals.COLOR_BACKGROUND,
+        appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
         titleTextStyle: Globals.appBarTextStyle,
         title: Text(
@@ -727,13 +838,21 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
           ),
         ],
       ),
-      body: SmartRefresher(
-        controller: _refreshController,
-        onRefresh: _refreshTours,
-        enablePullDown: true,
-        physics: const ClampingScrollPhysics(),
-        header: CustomHeader(
-          height: 80,
+      body: RefreshConfiguration(
+        springDescription: const SpringDescription(
+          mass: 1,
+          stiffness: 300,
+          damping: 30,
+        ),
+        child: SmartRefresher(
+          controller: _refreshController,
+          onRefresh: _refreshTours,
+          enablePullDown: true,
+          physics: const ClampingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          header: CustomHeader(
+            height: 80,
+            completeDuration: Duration.zero,
+            refreshStyle: RefreshStyle.UnFollow,
           builder: (BuildContext context, RefreshStatus? mode) {
             Widget body;
             if (mode == RefreshStatus.idle) {
@@ -824,6 +943,8 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
             ),
           ],
         ),
+        ),
+      ),
       ),
     );
   }

@@ -300,9 +300,15 @@ class _SpoolerPageState extends State<SpoolerPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Globals.COLOR_BACKGROUND,
-      appBar: AppBar(
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Globals.COLOR_BACKGROUND,
+        appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
         titleTextStyle: Globals.appBarTextStyle,
         title: const Text("Spooler"),
@@ -558,6 +564,7 @@ class _SpoolerPageState extends State<SpoolerPage> {
               ),
             )
         ],
+      ),
       ),
     );
   }

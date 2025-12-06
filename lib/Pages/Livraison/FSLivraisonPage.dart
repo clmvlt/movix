@@ -44,10 +44,30 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
       CIPScanned = true;
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Attendre un délai pour que la caméra soit initialisée
-      await Future<void>.delayed(const Duration(milliseconds: 1500));
-      
+    // Afficher les commentaires après un court délai
+    Future.delayed(const Duration(milliseconds: 100), () async {
+      // Commentaire de la pharmacie
+      if (mounted && widget.command.pharmacy.commentaire.isNotEmpty) {
+        await showInfoPopup(
+          context: context,
+          title: "Commentaire de la pharmacie",
+          content: Text(widget.command.pharmacy.commentaire),
+          buttonText: "Fermer",
+          icon: Icons.store_outlined,
+        );
+      }
+
+      // Commentaire de la commande
+      if (mounted && widget.command.comment.isNotEmpty) {
+        await showInfoPopup(
+          context: context,
+          title: "Commentaire de la commande",
+          content: Text(widget.command.comment),
+          buttonText: "Fermer",
+          icon: Icons.comment_outlined,
+        );
+      }
+
       if (mounted && widget.command.newPharmacy) {
         bool? res = await showConfirmationPopup(
             context: context,
@@ -59,17 +79,6 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
         if (res == true) {
           await context.push('/pharmacy', extra: {"command": widget.command});
         }
-      }
-      
-      // Afficher le commentaire de la commande s'il existe
-      if (mounted && widget.command.comment.isNotEmpty) {
-        await showInfoPopup(
-          context: context,
-          title: "Commentaire de la commande",
-          content: Text(widget.command.comment),
-          buttonText: "Fermer",
-          icon: Icons.comment_outlined,
-        );
       }
     });
   }
@@ -159,7 +168,13 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
   Widget build(BuildContext context) {
     Command command = widget.command;
 
-    return Scaffold(
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+          context.pop();
+        }
+      },
+      child: Scaffold(
         backgroundColor: Globals.COLOR_BACKGROUND,
         appBar: PharmacyAppBarWidget(
           command: command,
@@ -194,7 +209,9 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
             onPressed: () => confirmValidation(command),
             allPackagesScanned: _isAllScanned(command),
           ),
-        ]));
+        ]),
+      ),
+    );
   }
 
   Widget _buildCIPStatusButton() {

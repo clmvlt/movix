@@ -81,9 +81,15 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
     return ValueListenableBuilder<bool>(
       valueListenable: Globals.darkModeNotifier,
       builder: (context, isDarkMode, child) {
-        return Scaffold(
-          backgroundColor: Globals.COLOR_BACKGROUND,
-          appBar: AppBar(
+        return GestureDetector(
+          onHorizontalDragEnd: (details) {
+            if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+              context.pop();
+            }
+          },
+          child: Scaffold(
+            backgroundColor: Globals.COLOR_BACKGROUND,
+            appBar: AppBar(
             backgroundColor: Globals.COLOR_MOVIX,
             title: Text(
               'Recherche Pharmacies',
@@ -214,6 +220,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                   ),
                 ),
             ],
+          ),
           ),
         );
       },

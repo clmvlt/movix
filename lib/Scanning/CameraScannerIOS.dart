@@ -55,7 +55,12 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
       duration: const Duration(milliseconds: 220),
       vsync: this,
     );
-    _setActiveAndInitialize();
+    // Décaler l'initialisation après le build pour éviter setState pendant le build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _setActiveAndInitialize();
+      }
+    });
   }
 
   void _setActiveAndInitialize() async {
@@ -66,7 +71,7 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
   }
 
   Future<void> _initializeCamera() async {
-    if (_CameraScannerManager.isInitializing || isInitialized) {
+    if (_CameraScannerManager.isInitializing || controller != null) {
       return;
     }
 
@@ -78,16 +83,13 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
         facing: CameraFacing.back,
         torchEnabled: false,
         returnImage: false,
+        autoStart: true,
       );
 
-      await controller!.start();
+      controller!.addListener(_onControllerUpdate);
 
       if (mounted && _isWidgetVisible) {
-        setState(() {
-          isInitialized = true;
-          _retryCount = 0;
-          _isRetrying = false;
-        });
+        setState(() {});
       }
     } catch (e) {
       print('Erreur lors de l\'initialisation de la caméra: $e');
@@ -99,6 +101,25 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
       }
     } finally {
       _CameraScannerManager.setInitializing(false);
+    }
+  }
+
+  void _onControllerUpdate() {
+    if (mounted && controller != null) {
+      final isRunning = controller!.value.isRunning;
+      if (isRunning != isInitialized) {
+        setState(() {
+          isInitialized = isRunning;
+          if (isRunning) {
+            _retryCount = 0;
+            _isRetrying = false;
+          }
+        });
+      }
+
+      if (controller!.value.error != null && !isInitialized) {
+        _handleCameraError();
+      }
     }
   }
 
@@ -145,6 +166,8 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
     final route = ModalRoute.of(context);
     if (route != null) {
       final isCurrentRoute = route.isCurrent;
+      // Vérifier si la route est active (visible même si un dialog est au-dessus)
+      final isActiveRoute = route.isActive;
 
       if (isCurrentRoute && !_isWidgetVisible) {
         _isWidgetVisible = true;
@@ -153,7 +176,8 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
             await _reinitializeCamera();
           }
         });
-      } else if (!isCurrentRoute) {
+      } else if (!isCurrentRoute && !isActiveRoute) {
+        // Seulement arrêter si la route n'est plus active du tout (navigation réelle, pas un dialog)
         if (_isWidgetVisible) {
           _isWidgetVisible = false;
           _stopAndDisposeCamera();
@@ -165,6 +189,7 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
   Future<void> _stopAndDisposeCamera() async {
     if (controller != null) {
       try {
+        controller!.removeListener(_onControllerUpdate);
         if (controller!.value.isRunning) {
           await controller!.stop();
         }
@@ -183,10 +208,19 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
   }
 
   Future<void> _reinitializeCamera() async {
+    final shouldRestoreFlash = isFlashOn;
     await _stopAndDisposeCamera();
     await Future<void>.delayed(const Duration(milliseconds: 500));
     if (mounted && _isWidgetVisible && !_CameraScannerManager.isInitializing) {
       await _initializeCamera();
+      // Restaurer l'état du flash si activé
+      if (shouldRestoreFlash && controller != null) {
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        if (controller != null && controller!.value.isRunning) {
+          await controller!.toggleTorch();
+          isFlashOn = true;
+        }
+      }
     }
   }
 
@@ -201,13 +235,22 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
   }
 
   Future<void> _resumeCamera() async {
-    if (controller != null && !controller!.value.isRunning && _isWidgetVisible) {
-      try {
-        await controller!.start();
-      } catch (e) {
-        print('Erreur lors de la reprise de la caméra: $e');
-        if (mounted && _isWidgetVisible) {
-          await _reinitializeCamera();
+    if (controller != null && _isWidgetVisible) {
+      if (!controller!.value.isRunning) {
+        try {
+          await controller!.start();
+          // Restaurer l'état du flash si activé
+          if (isFlashOn) {
+            await Future<void>.delayed(const Duration(milliseconds: 300));
+            if (controller != null && controller!.value.isRunning) {
+              await controller!.toggleTorch();
+            }
+          }
+        } catch (e) {
+          print('Erreur lors de la reprise de la caméra: $e');
+          if (mounted && _isWidgetVisible) {
+            await _reinitializeCamera();
+          }
         }
       }
     } else if (controller == null && _isWidgetVisible) {
@@ -307,13 +350,13 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
             borderRadius: BorderRadius.circular(16),
             child: Stack(
               children: [
-                if (isInitialized && controller != null)
+                if (controller != null)
                   MobileScanner(
                     controller: controller!,
                     onDetect: _onDetect,
                     fit: BoxFit.cover,
-                  )
-                else
+                  ),
+                if (!isInitialized)
                   Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,

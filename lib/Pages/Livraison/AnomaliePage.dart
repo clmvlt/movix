@@ -128,7 +128,13 @@ class _AnomaliePage extends State<AnomaliePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
       backgroundColor: Globals.COLOR_BACKGROUND,
       appBar: CustomAppBarWidget(
         title: widget.command.pharmacy.name,
@@ -199,6 +205,7 @@ class _AnomaliePage extends State<AnomaliePage> with WidgetsBindingObserver {
           ),
         ],
       ),
+    ),
     );
   }
 

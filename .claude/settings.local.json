@@ -26,7 +26,9 @@
       "Bash(./gradlew:*)",
       "Bash(copy \"d:\\3_PROJET\\Movix\\_fluttermovix\\lib\\Pages\\Others\\HomePage.dart\" \"d:\\3_PROJET\\Movix\\_fluttermovix\\lib\\Pages\\Others\\HomePage_backup.dart\")",
       "Bash(git stash:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)",
+      "Bash(xattr:*)"
     ],
     "deny": [],
     "ask": []

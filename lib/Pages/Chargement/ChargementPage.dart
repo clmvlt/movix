@@ -84,9 +84,15 @@ class _ChargementPage extends State<ChargementPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Globals.COLOR_BACKGROUND,
-      appBar: AppBar(
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+          context.go('/tours');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Globals.COLOR_BACKGROUND,
+        appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
         titleTextStyle: Globals.appBarTextStyle,
         title: Column(
@@ -193,6 +199,7 @@ class _ChargementPage extends State<ChargementPage>
               ),
             )
         ],
+      ),
       ),
     );
   }

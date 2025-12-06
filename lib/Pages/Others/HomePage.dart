@@ -50,7 +50,9 @@ class _HomePageState extends State<HomePage> {
             toolbarTextStyle: Globals.appBarTextStyle,
             titleTextStyle: Globals.appBarTextStyle,
             actions: [
-              PopupMenuButton<String>(
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: PopupMenuButton<String>(
                 offset: const Offset(0, 50),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 color: Globals.COLOR_SURFACE,
@@ -147,6 +149,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: Icon(Icons.more_vert, color: Globals.COLOR_TEXT_LIGHT, size: 20),
                 ),
+              ),
               ),
             ],
           ),

@@ -107,9 +107,15 @@ class _LivraisonPage extends State<LivraisonPage> with TickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Globals.COLOR_BACKGROUND,
-      appBar: LivraisonAppBarWidget(
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+          context.go('/tours');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Globals.COLOR_BACKGROUND,
+        appBar: LivraisonAppBarWidget(
         tour: widget.tour,
         onShowEndedChanged: _updateCommands,
       ),
@@ -166,6 +172,7 @@ class _LivraisonPage extends State<LivraisonPage> with TickerProviderStateMixin 
             );
           },
         ),
+      ),
     );
   }
 

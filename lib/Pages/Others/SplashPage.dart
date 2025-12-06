@@ -95,15 +95,20 @@ class _SplashPageState extends State<SplashPage> {
             const Duration(seconds: 10),
             onTimeout: () => throw TimeoutException("Timeout lors de la récupération du profil local", const Duration(seconds: 10)),
           );
-          
-          Globals.profil = await me().timeout(
-            const Duration(seconds: 15),
-            onTimeout: () => throw TimeoutException("Timeout lors de la récupération du profil serveur", const Duration(seconds: 15)),
-          );
-          
+
           if (Globals.profil == null) {
             throw Exception("Profil null après récupération");
           }
+
+          // Vérification auth/me avec timeout de 3 secondes - ignoré si trop lent
+          me().timeout(
+            const Duration(seconds: 3),
+            onTimeout: () => null,
+          ).then((profil) {
+            if (profil != null) {
+              Globals.profil = profil;
+            }
+          }).catchError((_) {});
         } catch (e) {
           Globals.showSnackbar("Impossible de récupérer le profil: ${e.toString()}",
               backgroundColor: Globals.COLOR_MOVIX_RED);
