@@ -25,10 +25,26 @@ class Globals {
   static bool DARK_MODE = true;
   static final ValueNotifier<bool> darkModeNotifier = ValueNotifier<bool>(DARK_MODE);
 
-  static const Color COLOR_MOVIX = Color(0xff123456);
-  static const Color COLOR_MOVIX_RED = Color.fromARGB(255, 155, 9, 9);
-  static const Color COLOR_MOVIX_GREEN = Color.fromARGB(255, 7, 134, 28);
-  static const Color COLOR_MOVIX_YELLOW = Color.fromARGB(255, 233, 175, 0);
+  static Color get COLOR_MOVIX => darkModeNotifier.value
+    ? const Color(0xff123456)
+    : const Color(0xff123456);
+
+  // Couleur qui est MOVIX en clair et gris/blanc en dark
+  static Color get COLOR_ADAPTIVE_ACCENT => darkModeNotifier.value
+    ? const Color.fromARGB(255, 180, 180, 180)
+    : const Color(0xff123456);
+
+  static Color get COLOR_MOVIX_RED => darkModeNotifier.value
+    ? const Color.fromARGB(255, 214, 45, 45)
+    : const Color.fromARGB(255, 155, 9, 9);
+
+  static Color get COLOR_MOVIX_GREEN => darkModeNotifier.value
+    ? const Color.fromARGB(255, 7, 134, 28)
+    : const Color.fromARGB(255, 7, 134, 28);
+
+  static Color get COLOR_MOVIX_YELLOW => darkModeNotifier.value
+    ? const Color.fromARGB(255, 228, 178, 71)
+    : const Color.fromARGB(255, 233, 175, 0);
   static const Color COLOR_AVTRANS = Color(0xFF282e88);
 
   static Color get COLOR_BACKGROUND => darkModeNotifier.value 
@@ -85,6 +101,7 @@ class Globals {
   static SoundPack SOUND_PACK = SoundPack.Basic;
   static String MAP_APP = "Google Maps";
   static ScanMode SCAN_MODE = ScanMode.Camera;
+  static bool VIBRATIONS_ENABLED = false;
   static Profil? profil;
   static Map<String, Tour> tours = {};
   static bool showEnded = false;
@@ -96,8 +113,8 @@ class Globals {
 
   static void showSnackbar(
     String message, {
-    Duration duration = const Duration(seconds: 2),
-    Color backgroundColor = const Color.fromARGB(255, 17, 17, 17),
+    Duration duration = const Duration(seconds: 3),
+    Color? backgroundColor,
     IconData? icon,
   }) {
     if (!(scaffoldMessengerKey.currentState?.mounted ?? false)) return;
@@ -112,22 +129,82 @@ class Globals {
 
     _lastSnackbarTime = now;
 
+    // Couleur de fond adaptée au mode sombre/clair
+    final bgColor = backgroundColor ?? (darkModeNotifier.value
+        ? const Color.fromARGB(255, 50, 50, 50)
+        : const Color.fromARGB(255, 40, 40, 40));
+
     scaffoldMessengerKey.currentState!
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          backgroundColor: backgroundColor,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           duration: duration,
-          content: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, color: Globals.COLOR_TEXT_LIGHT),
-                const SizedBox(width: 8),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.zero,
+          dismissDirection: DismissDirection.down,
+          content: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
               ],
-              Flexible(child: Text(message,
-                  style: TextStyle(color: Globals.COLOR_TEXT_LIGHT))),
-            ],
+            ),
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: COLOR_TEXT_LIGHT.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: COLOR_TEXT_LIGHT,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Text(
+                    message,
+                    style: TextStyle(
+                      color: COLOR_TEXT_LIGHT,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () {
+                      scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      child: Icon(
+                        Icons.close,
+                        color: COLOR_TEXT_LIGHT.withOpacity(0.7),
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );

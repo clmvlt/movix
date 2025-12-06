@@ -166,7 +166,7 @@ class _UpdatePageState extends State<UpdatePage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Annuler", style: TextStyle(color: Globals.COLOR_MOVIX_RED)),
+              child: Text("Annuler", style: TextStyle(color: Globals.COLOR_MOVIX_RED)),
             ),
             ElevatedButton(
               onPressed: () {
@@ -464,16 +464,16 @@ class _UpdatePageState extends State<UpdatePage> {
                 subtitle: Text("Publiée le ${DateService.formatDateTime(update.createdAt)}",
                     style: TextStyle(color: Globals.COLOR_TEXT_DARK_SECONDARY)),
                 trailing: downloadingVersion == update.version
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Globals.COLOR_MOVIX),
+                          valueColor: AlwaysStoppedAnimation<Color>(Globals.COLOR_ADAPTIVE_ACCENT),
                         ),
                       )
                     : IconButton(
-                        icon: const Icon(Icons.download, color: Globals.COLOR_MOVIX),
+                        icon: Icon(Icons.download, color: Globals.COLOR_ADAPTIVE_ACCENT),
                         onPressed: isUpdating ? null : () => _downloadUpdate(update),
                       ),
               ),
@@ -534,7 +534,7 @@ class _UpdatePageState extends State<UpdatePage> {
           ),
         ),
         const SizedBox(height: 30),
-        const Icon(Icons.info_outline, size: 80, color: Globals.COLOR_MOVIX),
+        Icon(Icons.info_outline, size: 80, color: Globals.COLOR_MOVIX),
         const SizedBox(height: 20),
         Text(
           isTestFlight

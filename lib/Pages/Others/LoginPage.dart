@@ -5,6 +5,7 @@ import 'package:movix/Models/Profil.dart';
 import 'package:movix/Services/date_service.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/login.dart';
+import 'package:movix/Services/settings.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class LoginPage extends StatefulWidget {
@@ -80,35 +81,49 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        backgroundColor: Globals.COLOR_BACKGROUND,
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height -
-                    MediaQuery.of(context).padding.top -
-                    MediaQuery.of(context).padding.bottom,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+    return ValueListenableBuilder<bool>(
+      valueListenable: Globals.darkModeNotifier,
+      builder: (context, isDarkMode, child) {
+        return GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Scaffold(
+            backgroundColor: Globals.COLOR_BACKGROUND,
+            body: SafeArea(
+              child: Stack(
                 children: [
-                  const SizedBox(height: 60),
-                  _buildHeader(),
-                  const SizedBox(height: 48),
-                  _buildLoginForm(),
-                  const SizedBox(height: 32),
-                  _buildFooter(),
-                  const SizedBox(height: 24),
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: MediaQuery.of(context).size.height -
+                            MediaQuery.of(context).padding.top -
+                            MediaQuery.of(context).padding.bottom,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 60),
+                          _buildHeader(),
+                          const SizedBox(height: 48),
+                          _buildLoginForm(),
+                          const SizedBox(height: 32),
+                          _buildFooter(),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: _buildDarkModeToggle(),
+                  ),
                 ],
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -153,7 +168,7 @@ class _LoginPageState extends State<LoginPage> {
           'Connectez-vous pour continuer',
           style: TextStyle(
             fontSize: 16,
-            color: Globals.COLOR_TEXT_SECONDARY,
+            color: Globals.COLOR_TEXT_DARK_SECONDARY,
           ),
         ),
       ],
@@ -246,7 +261,7 @@ class _LoginPageState extends State<LoginPage> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
-              color: Globals.COLOR_TEXT_SECONDARY.withOpacity(0.6),
+              color: Globals.COLOR_TEXT_DARK_SECONDARY,
               fontSize: 16,
             ),
             prefixIcon: Icon(
@@ -271,7 +286,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
+              borderSide: BorderSide(
                 color: Globals.COLOR_MOVIX,
                 width: 2,
               ),
@@ -328,6 +343,35 @@ class _LoginPageState extends State<LoginPage> {
         color: Globals.COLOR_TEXT_SECONDARY,
       ),
       textAlign: TextAlign.center,
+    );
+  }
+
+  Widget _buildDarkModeToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Globals.COLOR_SURFACE,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Globals.COLOR_SHADOW.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(
+          Globals.darkModeNotifier.value
+              ? Icons.light_mode_outlined
+              : Icons.dark_mode_outlined,
+          color: Globals.COLOR_ADAPTIVE_ACCENT,
+        ),
+        onPressed: () async {
+          final newValue = !Globals.darkModeNotifier.value;
+          await setDarkMode(newValue);
+          setState(() {});
+        },
+      ),
     );
   }
 }

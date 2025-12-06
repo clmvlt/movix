@@ -1,14 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide RefreshIndicator, RefreshIndicatorState;
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:movix/API/tour_fetcher.dart';
 import 'package:movix/Managers/CommandManager.dart';
 import 'package:movix/Managers/SpoolerManager.dart';
-import 'package:movix/Models/Sound.dart';
 import 'package:movix/Models/Tour.dart';
-import 'package:movix/Scanning/Scan.dart';
 import 'package:movix/Services/affichage.dart';
 import 'package:movix/Services/globals.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class TourneesPage extends StatefulWidget {
   const TourneesPage({super.key});
@@ -19,9 +18,11 @@ class TourneesPage extends StatefulWidget {
 
 class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTickerProviderStateMixin {
   bool _isLoading = false;
+  bool _isInitialLoad = true;
   final SpoolerManager _spoolerManager = SpoolerManager();
   late AnimationController _shimmerController;
   late Animation<double> _shimmerAnimation;
+  final RefreshController _refreshController = RefreshController(initialRefresh: false);
 
   @override
   void initState() {
@@ -45,14 +46,15 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
   @override
   void dispose() {
     _shimmerController.dispose();
+    _refreshController.dispose();
     super.dispose();
   }
 
   Future<void> _checkSpoolerAndRefresh() async {
     // Vérifier si le spooler est vide
     if (_spoolerManager.getTasksCount() == 0) {
-      // Si vide, actualiser automatiquement
-      await _refreshTours();
+      // Si vide, actualiser automatiquement avec skeleton
+      await _refreshTours(showSkeleton: true);
     }
   }
 
@@ -172,30 +174,6 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
     ) ?? false;
   }
 
-  Future<ScanResult> validateCode(String code) async {
-    bool assigned = await assignTour(code);
-    if (assigned) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Récupération de la tournée.', style: TextStyle(color: Globals.COLOR_TEXT_LIGHT)),
-          backgroundColor: Globals.COLOR_MOVIX_GREEN,
-          duration: const Duration(milliseconds: 800),
-        ),
-      );
-      await _refreshTours();
-      return ScanResult.SCAN_SUCCESS;
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Tournée introuvable.', style: TextStyle(color: Globals.COLOR_TEXT_LIGHT)),
-          backgroundColor: Globals.COLOR_MOVIX_RED,
-          duration: const Duration(milliseconds: 800),
-        ),
-      );
-      return ScanResult.SCAN_ERROR;
-    }
-  }
-
   bool _updating = false;
   
   void onPageUpdate() {
@@ -210,17 +188,24 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
     });
   }
 
-  Future<void> _refreshTours() async {
-    if (_isLoading) return; // Éviter les appels multiples
+  Future<void> _refreshTours({bool showSkeleton = false}) async {
+    if (_isLoading) {
+      _refreshController.refreshCompleted();
+      return; // Éviter les appels multiples
+    }
 
     // Vérifier si le spooler contient des éléments avant d'actualiser
     if (_spoolerManager.getTasksCount() > 0) {
       bool shouldContinue = await _showSpoolerWarningDialog();
-      if (!shouldContinue) return;
+      if (!shouldContinue) {
+        _refreshController.refreshCompleted();
+        return;
+      }
     }
 
     setState(() {
       _isLoading = true;
+      _isInitialLoad = showSkeleton;
     });
 
     // Sauvegarder les tournées actuelles avant l'actualisation
@@ -273,6 +258,7 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
         setState(() {
           _isLoading = false;
         });
+        _refreshController.refreshCompleted();
       }
     }
   }
@@ -619,7 +605,7 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
                         icon: Icons.assignment_outlined,
                         label: 'Commandes',
                         value: getSubtitle(tour),
-                        color: Globals.COLOR_MOVIX,
+                        color: Globals.COLOR_ADAPTIVE_ACCENT,
                       ),
                       const Spacer(),
                       _buildStatChip(
@@ -736,69 +722,108 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
                   size: 20,
                 ),
               ),
-              onPressed: _refreshTours,
+              onPressed: () => _refreshTours(showSkeleton: true),
             ),
           ),
         ],
       ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          RefreshIndicator(
-            onRefresh: _refreshTours,
-            color: Globals.COLOR_MOVIX,
-            backgroundColor: Globals.COLOR_SURFACE,
-            child: CustomScrollView(
-              slivers: [
-                if (_isLoading)
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    sliver: SliverToBoxAdapter(
-                      child: _buildLoadingState(),
-                    ),
-                  )
-                else if (Globals.tours.values
-                    .where((tour) => [2, 3].contains(tour.status.id))
-                    .isEmpty)
-                  SliverToBoxAdapter(
-                    child: _buildEmptyState(),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final tours = Globals.tours.values
-                              .where((tour) => [2, 3].contains(tour.status.id))
-                              .toList();
-                          return _buildModernTourCard(tours[index]);
-                        },
-                        childCount: Globals.tours.values
-                            .where((tour) => [2, 3].contains(tour.status.id))
-                            .length,
-                      ),
+      body: SmartRefresher(
+        controller: _refreshController,
+        onRefresh: _refreshTours,
+        enablePullDown: true,
+        physics: const ClampingScrollPhysics(),
+        header: CustomHeader(
+          height: 80,
+          builder: (BuildContext context, RefreshStatus? mode) {
+            Widget body;
+            if (mode == RefreshStatus.idle) {
+              body = Text(
+                'Tirer pour actualiser',
+                style: TextStyle(
+                  color: Globals.COLOR_TEXT_SECONDARY,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              );
+            } else if (mode == RefreshStatus.canRefresh) {
+              body = Text(
+                'Relâcher pour actualiser',
+                style: TextStyle(
+                  color: Globals.COLOR_TEXT_SECONDARY,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              );
+            } else if (mode == RefreshStatus.refreshing) {
+              body = Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Globals.COLOR_TEXT_SECONDARY),
                     ),
                   ),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 120), // Space for scanner + margin
+                  const SizedBox(width: 12),
+                  Text(
+                    'Actualisation...',
+                    style: TextStyle(
+                      color: Globals.COLOR_TEXT_DARK,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              );
+            } else {
+              body = const SizedBox.shrink();
+            }
+            return Container(
+              height: 80,
+              padding: const EdgeInsets.only(top: 20),
+              child: Center(child: body),
+            );
+          },
+        ),
+        child: CustomScrollView(
+          slivers: [
+            if (_isLoading && _isInitialLoad)
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverToBoxAdapter(
+                  child: _buildLoadingState(),
                 ),
-              ],
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ScannerWidget(
-                validateCode: validateCode,
-                isActive: true,
+              )
+            else if (Globals.tours.values
+                .where((tour) => [2, 3].contains(tour.status.id))
+                .isEmpty)
+              SliverToBoxAdapter(
+                child: _buildEmptyState(),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final tours = Globals.tours.values
+                          .where((tour) => [2, 3].contains(tour.status.id))
+                          .toList();
+                      return _buildModernTourCard(tours[index]);
+                    },
+                    childCount: Globals.tours.values
+                        .where((tour) => [2, 3].contains(tour.status.id))
+                        .length,
+                  ),
+                ),
               ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 20),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -25,3 +25,14 @@ Future<void> setDarkMode(bool value) async {
   Globals.DARK_MODE = value;
   Globals.darkModeNotifier.value = value;
 }
+
+Future<bool> getVibrationsEnabled() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getBool('vibrations_enabled') ?? false;
+}
+
+Future<void> setVibrationsEnabled(bool value) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setBool('vibrations_enabled', value);
+  Globals.VIBRATIONS_ENABLED = value;
+}

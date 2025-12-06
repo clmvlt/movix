@@ -305,24 +305,7 @@ class _SpoolerPageState extends State<SpoolerPage> {
       appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
         titleTextStyle: Globals.appBarTextStyle,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                FontAwesomeIcons.clockRotateLeft,
-                size: 20,
-                color: Globals.COLOR_TEXT_LIGHT,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text("Spooler"),
-          ],
-        ),
+        title: const Text("Spooler"),
         backgroundColor: Globals.COLOR_MOVIX,
         foregroundColor: Globals.COLOR_TEXT_LIGHT,
         elevation: 0,
@@ -368,12 +351,12 @@ class _SpoolerPageState extends State<SpoolerPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                    color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     FontAwesomeIcons.listCheck,
-                    color: Globals.COLOR_MOVIX,
+                    color: Globals.COLOR_ADAPTIVE_ACCENT,
                     size: 20,
                   ),
                 ),

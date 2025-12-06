@@ -282,13 +282,6 @@ Future<String?> askForImmat(BuildContext context) async {
                 decoration: BoxDecoration(
                   color: Globals.COLOR_SURFACE,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
                 ),
                 child: SingleChildScrollView(
                   child: Column(
@@ -302,12 +295,12 @@ Future<String?> askForImmat(BuildContext context) async {
                         width: 64,
                         height: 64,
                         decoration: BoxDecoration(
-                          color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                          color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(32),
                         ),
                         child: Icon(
                           Icons.local_shipping_outlined,
-                          color: Globals.COLOR_MOVIX,
+                          color: Globals.COLOR_ADAPTIVE_ACCENT,
                           size: 32,
                         ),
                       ),
@@ -502,7 +495,7 @@ Future<String?> askForImmat(BuildContext context) async {
   );
 }
 
-Future<int?> askForKilometers(BuildContext context, {int? startKm}) async {
+Future<int?> askForKilometers(BuildContext context, {int? startKm, bool allowSkip = false}) async {
   TextEditingController kmController = TextEditingController();
   FocusNode focusNode = FocusNode();
   bool showError = false;
@@ -526,13 +519,6 @@ Future<int?> askForKilometers(BuildContext context, {int? startKm}) async {
             decoration: BoxDecoration(
               color: Globals.COLOR_SURFACE,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
             ),
             child: SingleChildScrollView(
               child: Column(
@@ -546,12 +532,12 @@ Future<int?> askForKilometers(BuildContext context, {int? startKm}) async {
                           width: 64,
                           height: 64,
                           decoration: BoxDecoration(
-                            color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                            color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(32),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.speed_outlined,
-                            color: Globals.COLOR_MOVIX,
+                            color: Globals.COLOR_ADAPTIVE_ACCENT,
                             size: 32,
                           ),
                         ),
@@ -579,10 +565,10 @@ Future<int?> askForKilometers(BuildContext context, {int? startKm}) async {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
-                            color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                            color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Globals.COLOR_MOVIX.withOpacity(0.3),
+                              color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.3),
                               width: 1,
                             ),
                           ),
@@ -668,7 +654,7 @@ Future<int?> askForKilometers(BuildContext context, {int? startKm}) async {
                       ),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.error_outline,
                             size: 16,
                             color: Globals.COLOR_MOVIX_RED,
@@ -676,10 +662,10 @@ Future<int?> askForKilometers(BuildContext context, {int? startKm}) async {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              startKm != null 
+                              startKm != null
                                   ? "Les kilomètres de fin doivent être supérieurs à $startKm km"
                                   : "Veuillez saisir des kilomètres valides",
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 color: Globals.COLOR_MOVIX_RED,
                                 fontWeight: FontWeight.w500,
@@ -703,38 +689,72 @@ Future<int?> askForKilometers(BuildContext context, {int? startKm}) async {
                   ),
                   child: Row(
                     children: [
-                      Expanded(
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              focusNode.unfocus();
-                              Navigator.of(context).pop();
-                              GoRouter.of(context).go('/tours');
-                            },
-                            borderRadius: const BorderRadius.only(
-                              bottomLeft: Radius.circular(20),
-                            ),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              child: Text(
-                                "Fermer",
-                                style: TextStyle(
-                                  color: Globals.COLOR_TEXT_DARK.withOpacity(0.8),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                      if (allowSkip) ...[
+                        Expanded(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                focusNode.unfocus();
+                                Navigator.pop(context, 0);
+                              },
+                              borderRadius: const BorderRadius.only(
+                                bottomLeft: Radius.circular(20),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                child: Text(
+                                  "Plus tard",
+                                  style: TextStyle(
+                                    color: Globals.COLOR_TEXT_DARK.withOpacity(0.8),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 56,
-                        color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
-                      ),
+                        Container(
+                          width: 1,
+                          height: 56,
+                          color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                        ),
+                      ],
+                      if (!allowSkip) ...[
+                        Expanded(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                focusNode.unfocus();
+                                Navigator.pop(context, null);
+                              },
+                              borderRadius: const BorderRadius.only(
+                                bottomLeft: Radius.circular(20),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                child: Text(
+                                  "Fermer",
+                                  style: TextStyle(
+                                    color: Globals.COLOR_TEXT_DARK.withOpacity(0.8),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 56,
+                          color: Globals.COLOR_TEXT_DARK.withOpacity(0.1),
+                        ),
+                      ],
                       Expanded(
                         child: Material(
                           color: Colors.transparent,

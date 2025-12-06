@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:movix/Models/Sound.dart';
 import 'package:movix/Scanning/CameraScanner.dart';
 import 'package:movix/Scanning/CameraScannerIOS.dart';
@@ -32,6 +33,16 @@ class _ScannerWidgetState extends State<ScannerWidget> {
 
   void handleResult(String code) async {
     ScanResult result = await widget.validateCode(code);
+
+    // Vibration conditionnelle si activée
+    if (Globals.VIBRATIONS_ENABLED) {
+      if (result == ScanResult.SCAN_SUCCESS || result == ScanResult.SCAN_FINISH) {
+        HapticFeedback.mediumImpact();
+      } else if (result == ScanResult.SCAN_ERROR) {
+        HapticFeedback.heavyImpact();
+      }
+    }
+
     await playSound(result);
   }
 

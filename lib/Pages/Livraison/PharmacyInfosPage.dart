@@ -101,7 +101,7 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> with SingleTicker
 
       spans.add(TextSpan(
         text: match.group(1),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
           color: Globals.COLOR_MOVIX_RED,
@@ -359,7 +359,7 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> with SingleTicker
         children: [
           ModernCardHeader(
             icon: Icons.info_outline,
-            iconColor: Globals.COLOR_MOVIX,
+            iconColor: Globals.COLOR_ADAPTIVE_ACCENT,
             title: "Instructions de livraison",
           ),
           const SizedBox(height: 20),
@@ -446,7 +446,7 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> with SingleTicker
                     ),
                     child: Center(
                       child: CircularProgressIndicator(
-                        color: Globals.COLOR_MOVIX,
+                        color: Globals.COLOR_ADAPTIVE_ACCENT,
                         value: loadingProgress.expectedTotalBytes != null
                             ? loadingProgress.cumulativeBytesLoaded /
                                 loadingProgress.expectedTotalBytes!
@@ -508,8 +508,8 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> with SingleTicker
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () => showImageFullscreen(imagePath, index, allImages),
-                    splashColor: Globals.COLOR_MOVIX.withOpacity(0.1),
-                    highlightColor: Globals.COLOR_MOVIX.withOpacity(0.05),
+                    splashColor: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
+                    highlightColor: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.05),
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),

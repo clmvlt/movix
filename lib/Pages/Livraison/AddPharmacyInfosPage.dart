@@ -97,7 +97,7 @@ class _AddInfosPharmacyPageState extends State<AddInfosPharmacyPage> {
         children: [
           ModernCardHeader(
             icon: Icons.info_outlined,
-            iconColor: Globals.COLOR_MOVIX,
+            iconColor: Globals.COLOR_ADAPTIVE_ACCENT,
             title: "Informations complémentaires",
           ),
           const SizedBox(height: 20),

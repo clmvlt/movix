@@ -103,7 +103,7 @@ class _PhotoPickerWidgetState extends State<PhotoPickerWidget> {
                             onTap: () => _removeImage(index),
                             child: Container(
                               padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Globals.COLOR_MOVIX_RED,
                               ),
@@ -129,7 +129,7 @@ class _PhotoPickerWidgetState extends State<PhotoPickerWidget> {
             icon: Icon(
               Icons.camera_alt,
               size: 50,
-              color: btnLocked ? Globals.COLOR_TEXT_GRAY : Globals.COLOR_MOVIX,
+              color: btnLocked ? Globals.COLOR_TEXT_GRAY : Globals.COLOR_ADAPTIVE_ACCENT,
             ),
             tooltip: "Prendre une photo",
           ),

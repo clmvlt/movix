@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:movix/API/tour_fetcher.dart';
+import 'package:movix/Managers/LivraisonManager.dart';
+import 'package:movix/Managers/TourManager.dart';
 import 'package:movix/Models/Command.dart';
 import 'package:movix/Models/Tour.dart';
 import 'package:movix/Services/globals.dart';
@@ -29,6 +33,26 @@ class _LivraisonPage extends State<LivraisonPage> with TickerProviderStateMixin 
   void initState() {
     super.initState();
     _updateCommands();
+    _checkStartKm();
+  }
+
+  Future<void> _checkStartKm() async {
+    await Future<void>.delayed(Duration.zero);
+
+    // Si les startKm ne sont pas renseignés, demander obligatoirement
+    if (widget.tour.startKm == 0) {
+      int? startKm = await askForKilometers(context, allowSkip: false);
+      if (startKm != null && startKm > 0) {
+        await setTourData(widget.tour.id, {"startKm": startKm});
+        widget.tour.startKm = startKm;
+        await saveToursToHive();
+      } else if (startKm == null) {
+        // L'utilisateur a cliqué sur "Fermer", retour à la page des tournées
+        if (mounted) {
+          context.go('/tours');
+        }
+      }
+    }
   }
 
   @override

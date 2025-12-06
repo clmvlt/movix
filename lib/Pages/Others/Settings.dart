@@ -18,6 +18,7 @@ class _SettingsPageState extends State<SettingsPage> {
   SoundPack _selectedSoundPack = Globals.SOUND_PACK;
   String _selectedMapApp = Globals.MAP_APP;
   bool _isDarkMode = Globals.DARK_MODE;
+  bool _vibrationsEnabled = Globals.VIBRATIONS_ENABLED;
 
   @override
   void initState() {
@@ -27,8 +28,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _loadSettings() async {
     final darkMode = await getDarkMode();
+    final vibrationsEnabled = await getVibrationsEnabled();
     setState(() {
       _isDarkMode = darkMode;
+      _vibrationsEnabled = vibrationsEnabled;
     });
   }
 
@@ -54,34 +57,81 @@ class _SettingsPageState extends State<SettingsPage> {
             elevation: 0,
             color: Globals.COLOR_SURFACE,
             margin: EdgeInsets.zero,
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Globals.COLOR_MOVIX.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+            child: Column(
+              children: [
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.dark_mode, color: Globals.COLOR_ADAPTIVE_ACCENT, size: 20),
+                  ),
+                  title: Text(
+                    'Mode sombre',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Globals.COLOR_TEXT_DARK,
+                    ),
+                  ),
+                  trailing: Switch(
+                    value: _isDarkMode,
+                    onChanged: (value) async {
+                      await setDarkMode(value);
+                      setState(() {
+                        _isDarkMode = value;
+                      });
+                    },
+                    activeColor: Globals.COLOR_ADAPTIVE_ACCENT,
+                  ),
                 ),
-                child: const Icon(Icons.dark_mode, color: Globals.COLOR_MOVIX, size: 20),
-              ),
-              title: Text(
-                'Mode sombre',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: Globals.COLOR_TEXT_DARK,
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Globals.COLOR_TEXT_GRAY.withOpacity(0.1),
+                  indent: 16,
+                  endIndent: 16,
                 ),
-              ),
-              trailing: Switch(
-                value: _isDarkMode,
-                onChanged: (value) async {
-                  await setDarkMode(value);
-                  setState(() {
-                    _isDarkMode = value;
-                  });
-                },
-                activeColor: Globals.COLOR_MOVIX,
-              ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.vibration, color: Globals.COLOR_ADAPTIVE_ACCENT, size: 20),
+                  ),
+                  title: Text(
+                    'Vibrations',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Globals.COLOR_TEXT_DARK,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Vibrer lors du scan de colis',
+                    style: TextStyle(
+                      color: Globals.COLOR_TEXT_GRAY,
+                      fontSize: 13,
+                    ),
+                  ),
+                  trailing: Switch(
+                    value: _vibrationsEnabled,
+                    onChanged: (value) async {
+                      await setVibrationsEnabled(value);
+                      setState(() {
+                        _vibrationsEnabled = value;
+                      });
+                    },
+                    activeColor: Globals.COLOR_ADAPTIVE_ACCENT,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 20),
@@ -178,10 +228,10 @@ class _SettingsPageState extends State<SettingsPage> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Globals.COLOR_MOVIX.withOpacity(0.1),
+            color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: Globals.COLOR_MOVIX, size: 20),
+          child: Icon(icon, color: Globals.COLOR_ADAPTIVE_ACCENT, size: 20),
         ),
         title: Text(
           title,
@@ -259,15 +309,15 @@ class _SettingsPageState extends State<SettingsPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Globals.COLOR_MOVIX.withOpacity(0.15),
-                            Globals.COLOR_MOVIX.withOpacity(0.08),
+                            Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.15),
+                            Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.08),
                           ],
                         ),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.tune,
-                        color: Globals.COLOR_MOVIX,
+                        color: Globals.COLOR_ADAPTIVE_ACCENT,
                         size: 20,
                       ),
                     ),
@@ -322,7 +372,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: Globals.COLOR_MOVIX,
+                        color: Globals.COLOR_ADAPTIVE_ACCENT,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -337,13 +387,13 @@ class _SettingsPageState extends State<SettingsPage> {
                     trailing: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                        color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.arrow_forward_ios,
                         size: 14,
-                        color: Globals.COLOR_MOVIX,
+                        color: Globals.COLOR_ADAPTIVE_ACCENT,
                       ),
                     ),
                     onTap: () async {

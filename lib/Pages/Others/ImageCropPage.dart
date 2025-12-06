@@ -42,7 +42,7 @@ class _ImageCropPageState extends State<ImageCropPage> {
             // Zone de crop
             Expanded(
               child: _imageData == null
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
                         color: Globals.COLOR_MOVIX,
                       ),

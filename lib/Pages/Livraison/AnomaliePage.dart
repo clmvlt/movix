@@ -158,7 +158,7 @@ class _AnomaliePage extends State<AnomaliePage> with WidgetsBindingObserver {
                 FormSectionWidget(
                   title: "Détails de l'anomalie",
                   icon: Icons.assignment_outlined,
-                  iconColor: Globals.COLOR_MOVIX,
+                  iconColor: Globals.COLOR_ADAPTIVE_ACCENT,
                   content: _buildFormContent(),
                 ),
                 const SizedBox(height: 8),

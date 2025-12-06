@@ -52,6 +52,7 @@ void main() async {
 
   Globals.DARK_MODE = await getDarkMode();
   Globals.darkModeNotifier.value = Globals.DARK_MODE;
+  Globals.VIBRATIONS_ENABLED = await getVibrationsEnabled();
   runApp(const MyApp());
 }
 

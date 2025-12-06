@@ -93,14 +93,14 @@ class LivraisonPopupMenuWidget extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                      color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       Globals.showEnded
                           ? Icons.visibility_off
                           : Icons.visibility,
-                      color: Globals.COLOR_MOVIX,
+                      color: Globals.COLOR_ADAPTIVE_ACCENT,
                       size: 18,
                     ),
                   ),

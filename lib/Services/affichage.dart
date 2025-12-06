@@ -144,7 +144,7 @@ Widget getColisConfirm(BuildContext context) {
                         color: Globals.COLOR_MOVIX_YELLOW.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(32),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.warning_outlined,
                         color: Globals.COLOR_MOVIX_YELLOW,
                         size: 32,

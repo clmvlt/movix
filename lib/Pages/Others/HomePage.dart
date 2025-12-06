@@ -71,7 +71,7 @@ class _HomePageState extends State<HomePage> {
                     },
                     child: _buildPopupMenuItem(
                       icon: Icons.settings,
-                      iconColor: Globals.COLOR_MOVIX,
+                      iconColor: Globals.COLOR_ADAPTIVE_ACCENT,
                       title: 'Paramètres',
                       subtitle: 'Configuration de l\'app',
                     ),
@@ -176,7 +176,7 @@ class _HomePageState extends State<HomePage> {
             physics: const BouncingScrollPhysics(),
             slivers: [
               SliverToBoxAdapter(child: _buildWelcomeCard()),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
               SliverToBoxAdapter(child: _buildQuickAccessGrid()),
               const SliverToBoxAdapter(child: SizedBox(height: 40)),
             ],
@@ -258,7 +258,7 @@ class _HomePageState extends State<HomePage> {
     final hasProfilPicture = profil.profilPicture.isNotEmpty;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Globals.COLOR_SURFACE,
@@ -293,12 +293,12 @@ class _HomePageState extends State<HomePage> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Globals.COLOR_MOVIX.withOpacity(0.2),
-                      Globals.COLOR_MOVIX.withOpacity(0.1),
+                      Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.15),
+                      Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.08),
                     ],
                   ),
                   border: Border.all(
-                    color: Globals.COLOR_MOVIX.withOpacity(0.2),
+                    color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.2),
                     width: 2,
                   ),
                 ),
@@ -312,13 +312,13 @@ class _HomePageState extends State<HomePage> {
                           errorBuilder: (context, error, stackTrace) => Icon(
                             Icons.person_outline_rounded,
                             size: 36,
-                            color: Globals.COLOR_MOVIX,
+                            color: Globals.COLOR_ADAPTIVE_ACCENT,
                           ),
                         )
                       : Icon(
                           Icons.person_outline_rounded,
                           size: 36,
-                          color: Globals.COLOR_MOVIX,
+                          color: Globals.COLOR_ADAPTIVE_ACCENT,
                         ),
                 ),
               ),
@@ -363,13 +363,13 @@ class _HomePageState extends State<HomePage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Globals.COLOR_MOVIX.withOpacity(0.1),
+                    color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     profil.account.societe,
                     style: TextStyle(
-                      color: Globals.COLOR_MOVIX,
+                      color: Globals.COLOR_ADAPTIVE_ACCENT,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -393,7 +393,7 @@ class _HomePageState extends State<HomePage> {
       'title': 'Tournées',
       'subtitle': 'Gérer les livraisons',
       'icon': Icons.local_shipping_outlined,
-      'color': Globals.COLOR_MOVIX,
+      'color': Globals.COLOR_ADAPTIVE_ACCENT,
       'onPressed': () => context.go('/tours'),
     });
 
@@ -571,7 +571,7 @@ class _HomePageState extends State<HomePage> {
       'title': 'Paramètres',
       'subtitle': 'Configuration',
       'icon': Icons.settings_outlined,
-      'color': Globals.COLOR_TEXT_SECONDARY,
+      'color': Globals.COLOR_ADAPTIVE_ACCENT,
       'onPressed': () => context.push('/settings'),
     });
 

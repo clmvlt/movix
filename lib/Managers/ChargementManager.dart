@@ -80,7 +80,7 @@ Future<void> showDialogs(BuildContext context, Tour tour) async {
   }
 
   if (tour.startKm == 0) {
-    int? startKm = await askForKilometers(context) ?? 0;
+    int? startKm = await askForKilometers(context, allowSkip: true) ?? 0;
     setTourData(tour.id, {"startKm": startKm});
     tour.startKm = startKm;
     saveToursToHive();

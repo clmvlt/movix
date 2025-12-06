@@ -53,20 +53,22 @@ class _CustomListePackagesState extends State<CustomListePackages> {
                         children: widget.command.packages.values.map((package) {
                           final emote = getPackageEmote(package.type);
                           final isFresh = package.fresh ? '❄️' : '';
-                          final zoneName = package.zoneName.isEmpty ? "00" : package.zoneName;
+                          final hasZone = package.zoneName.isNotEmpty;
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4.0),
                             child: Row(
                               children: [
-                                Text(
-                                  zoneName,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Globals.COLOR_TEXT_GRAY,
+                                if (hasZone) ...[
+                                  Text(
+                                    package.zoneName,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Globals.COLOR_TEXT_GRAY,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 4),
+                                  const SizedBox(width: 4),
+                                ],
                                 widget.isLivraison ? getLivraisonIconPackageStatus(package, 15) : getCargementIconPackageStatus(package, 15),
                                 const SizedBox(width: 8),
                                 Text(

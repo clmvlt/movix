@@ -89,7 +89,7 @@ Future<void> checkAndShowUpdateDialog(BuildContext context, {bool force = false}
                   MaterialPageRoute<void>(builder: (context) => const UpdatePage()),
                 );
               },
-              child: const Text(
+              child: Text(
                 "Mettre à jour",
                 style: TextStyle(fontSize: 16, color: Globals.COLOR_MOVIX),
               ),
@@ -98,7 +98,7 @@ Future<void> checkAndShowUpdateDialog(BuildContext context, {bool force = false}
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text(
+              child: Text(
                 "Plus tard",
                 style: TextStyle(fontSize: 16, color: Globals.COLOR_MOVIX),
               ),

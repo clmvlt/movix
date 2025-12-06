@@ -5,7 +5,7 @@ import 'package:movix/Services/globals.dart';
 Widget customButton({
   String label = '',
   VoidCallback? onPressed,
-  Color color = Globals.COLOR_MOVIX,
+  Color? color,
   double fontSize = 18,
   double verticalPadding = 16.0,
   double horizontalPadding = 12.0,
@@ -13,6 +13,7 @@ Widget customButton({
   double bottomPadding = 16.0,
   double topPadding = 0,
 }) {
+  final buttonColor = color ?? Globals.COLOR_MOVIX;
 
   return Padding(
     padding: EdgeInsets.symmetric(horizontal: horizontalPadding).copyWith(bottom: bottomPadding, top: topPadding),
@@ -26,7 +27,7 @@ Widget customButton({
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
           ),
-          backgroundColor: color,
+          backgroundColor: buttonColor,
           foregroundColor: Globals.COLOR_TEXT_LIGHT,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
@@ -44,17 +45,19 @@ Widget customToolButton({
   String? iconAssetPath,
   IconData? iconData,
   VoidCallback? onPressed,
-  Color color = Globals.COLOR_MOVIX,
+  Color? color,
   double height = 50,
   double borderRadius = 15.0,
 }) {
+  final buttonColor = color ?? Globals.COLOR_MOVIX;
+
   return SizedBox(
     height: height,
     child: ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        backgroundColor: color,
+        backgroundColor: buttonColor,
         foregroundColor: Globals.COLOR_TEXT_LIGHT,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
@@ -98,16 +101,18 @@ Widget customRoundIconButton({
   String? iconAssetPath,
   IconData? iconData,
   VoidCallback? onPressed,
-  Color color = Globals.COLOR_MOVIX,
+  Color? color,
   double size = 50,
 }) {
+  final buttonColor = color ?? Globals.COLOR_MOVIX;
+
   return SizedBox(
     height: size,
     width: size,
     child: ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: color,
+        backgroundColor: buttonColor,
         foregroundColor: Globals.COLOR_TEXT_LIGHT,
         shape: const CircleBorder(),
         padding: EdgeInsets.all(size * 0.2),
