@@ -4,7 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 class _CameraScannerManager {
   static _CameraScannerState? _activeInstance;
   static bool _isInitializing = false;
-  
+
   static Future<void> setActiveInstance(_CameraScannerState instance) async {
     if (_activeInstance != null && _activeInstance != instance) {
       await _activeInstance!._forceStop();
@@ -12,13 +12,13 @@ class _CameraScannerManager {
     }
     _activeInstance = instance;
   }
-  
+
   static void removeInstance(_CameraScannerState instance) {
     if (_activeInstance == instance) {
       _activeInstance = null;
     }
   }
-  
+
   static bool get isInitializing => _isInitializing;
   static void setInitializing(bool value) => _isInitializing = value;
 }
@@ -57,7 +57,7 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
     );
     _setActiveAndInitialize();
   }
-  
+
   void _setActiveAndInitialize() async {
     await _CameraScannerManager.setActiveInstance(this);
     if (mounted && _isWidgetVisible) {
@@ -69,9 +69,9 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
     if (_CameraScannerManager.isInitializing || isInitialized) {
       return;
     }
-    
+
     _CameraScannerManager.setInitializing(true);
-    
+
     try {
       controller = MobileScannerController(
         detectionSpeed: DetectionSpeed.normal,
@@ -79,9 +79,9 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
         torchEnabled: false,
         returnImage: false,
       );
-      
+
       await controller!.start();
-      
+
       if (mounted && _isWidgetVisible) {
         setState(() {
           isInitialized = true;
@@ -106,15 +106,15 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
     if (_retryCount < _maxRetries && !_isRetrying && mounted && _isWidgetVisible && !_CameraScannerManager.isInitializing) {
       _isRetrying = true;
       _retryCount++;
-      
+
       final delayMs = 1000 * _retryCount;
-      
+
       if (mounted) {
         setState(() {});
       }
-      
+
       await Future<void>.delayed(Duration(milliseconds: delayMs));
-      
+
       if (mounted && _isWidgetVisible) {
         print('Tentative de reconnexion de la caméra ($_retryCount/$_maxRetries)');
         await _initializeCamera();
@@ -141,11 +141,11 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     final route = ModalRoute.of(context);
     if (route != null) {
       final isCurrentRoute = route.isCurrent;
-      
+
       if (isCurrentRoute && !_isWidgetVisible) {
         _isWidgetVisible = true;
         Future.delayed(const Duration(milliseconds: 300), () async {
@@ -218,20 +218,20 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
   void _onDetect(BarcodeCapture capture) {
     final List<Barcode> barcodes = capture.barcodes;
     final now = DateTime.now();
-    
+
     for (final barcode in barcodes) {
       if (barcode.rawValue != null) {
         final code = barcode.rawValue!;
-        
+
         // Nettoyer les codes expirés (plus de 3 secondes)
-        _recentScannedCodes.removeWhere((key, value) => 
+        _recentScannedCodes.removeWhere((key, value) =>
           now.difference(value).inSeconds >= 3);
-        
+
         // Vérifier si ce code a été scanné récemment
         if (_recentScannedCodes.containsKey(code)) {
           continue; // Ignorer ce code
         }
-        
+
         // Enregistrer le nouveau code et l'envoyer
         _recentScannedCodes[code] = now;
         widget.onScanResult(code);
@@ -323,7 +323,7 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          _isRetrying 
+                          _isRetrying
                             ? 'Tentative de reconnexion ($_retryCount/$_maxRetries)...'
                             : 'Initialisation de la caméra...',
                           style: const TextStyle(
@@ -334,7 +334,7 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
                       ],
                     ),
                   ),
-                
+
                 // Gradient overlay
                 Positioned(
                   bottom: 0,
@@ -356,7 +356,7 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
                     ),
                   ),
                 ),
-                
+
                 // Controls
                 Positioned(
                   bottom: 8,
@@ -382,9 +382,9 @@ class _CameraScannerState extends State<CameraScannerIOS> with TickerProviderSta
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(width: 8),
-                      
+
                       // Fullscreen button
                       GestureDetector(
                         onTap: _toggleFullscreen,

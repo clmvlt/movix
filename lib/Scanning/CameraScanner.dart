@@ -44,7 +44,7 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
         torchEnabled: false,
         returnImage: false,
       );
-      
+
       if (mounted) {
         setState(() {
           isInitialized = true;
@@ -67,15 +67,15 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
     if (_retryCount < _maxRetries && !_isRetrying && mounted) {
       _isRetrying = true;
       _retryCount++;
-      
+
       final delayMs = 1000 * _retryCount;
-      
+
       if (mounted) {
         setState(() {});
       }
-      
+
       await Future<void>.delayed(Duration(milliseconds: delayMs));
-      
+
       if (mounted) {
         print('Tentative de reconnexion de la caméra ($_retryCount/$_maxRetries)');
         _initializeCamera();
@@ -105,11 +105,11 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     final route = ModalRoute.of(context);
     if (route != null) {
       final isCurrentRoute = route.isCurrent;
-      
+
       if (isCurrentRoute && !_isWidgetVisible) {
         _isWidgetVisible = true;
         _reinitializeCamera();
@@ -144,20 +144,20 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
   void _onDetect(BarcodeCapture capture) {
     final List<Barcode> barcodes = capture.barcodes;
     final now = DateTime.now();
-    
+
     for (final barcode in barcodes) {
       if (barcode.rawValue != null) {
         final code = barcode.rawValue!;
-        
+
         // Nettoyer les codes expirés (plus de 3 secondes)
-        _recentScannedCodes.removeWhere((key, value) => 
+        _recentScannedCodes.removeWhere((key, value) =>
           now.difference(value).inSeconds >= 3);
-        
+
         // Vérifier si ce code a été scanné récemment
         if (_recentScannedCodes.containsKey(code)) {
           continue; // Ignorer ce code
         }
-        
+
         // Enregistrer le nouveau code et l'envoyer
         _recentScannedCodes[code] = now;
         widget.onScanResult(code);
@@ -242,7 +242,7 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          _isRetrying 
+                          _isRetrying
                             ? 'Tentative de reconnexion ($_retryCount/$_maxRetries)...'
                             : 'Initialisation de la caméra...',
                           style: const TextStyle(
@@ -253,7 +253,7 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
                       ],
                     ),
                   ),
-                
+
                 // Gradient overlay
                 Positioned(
                   bottom: 0,
@@ -275,7 +275,7 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
                     ),
                   ),
                 ),
-                
+
                 // Controls
                 Positioned(
                   bottom: 8,
@@ -301,9 +301,9 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(width: 8),
-                      
+
                       // Fullscreen button
                       GestureDetector(
                         onTap: _toggleFullscreen,

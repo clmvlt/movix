@@ -50,85 +50,26 @@ class _HomePageState extends State<HomePage> {
             toolbarTextStyle: Globals.appBarTextStyle,
             titleTextStyle: Globals.appBarTextStyle,
             actions: [
-              MenuAnchor(
-                style: MenuStyle(
-                  backgroundColor: WidgetStateProperty.all(Globals.COLOR_SURFACE),
-                  shape: WidgetStateProperty.all(
-                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  elevation: WidgetStateProperty.all(8),
-                  padding: WidgetStateProperty.all(EdgeInsets.zero),
-                ),
-                alignmentOffset: const Offset(0, 8),
-                menuChildren: [
-                  MenuItemButton(
-                    style: ButtonStyle(
-                      padding: WidgetStateProperty.all(EdgeInsets.zero),
-                      minimumSize: WidgetStateProperty.all(const Size(280, 0)),
-                    ),
-                    onPressed: () {
-                      if (mounted) context.push('/settings');
-                    },
-                    child: _buildPopupMenuItem(
-                      icon: Icons.settings,
-                      iconColor: Globals.COLOR_ADAPTIVE_ACCENT,
-                      title: 'Paramètres',
-                      subtitle: 'Configuration de l\'app',
-                    ),
-                  ),
-                  MenuItemButton(
-                    style: ButtonStyle(
-                      padding: WidgetStateProperty.all(EdgeInsets.zero),
-                      minimumSize: WidgetStateProperty.all(const Size(280, 0)),
-                    ),
-                    onPressed: () {
-                      if (mounted) context.push('/spooler');
-                    },
-                    child: _buildPopupMenuItem(
-                      icon: Icons.list_alt,
-                      iconColor: Globals.COLOR_MOVIX_YELLOW,
-                      title: 'Voir le spooler',
-                      subtitle: 'Actions en attente',
-                    ),
-                  ),
-                  MenuItemButton(
-                    style: ButtonStyle(
-                      padding: WidgetStateProperty.all(EdgeInsets.zero),
-                      minimumSize: WidgetStateProperty.all(const Size(280, 0)),
-                    ),
-                    onPressed: () {
-                      if (mounted) context.push('/update');
-                    },
-                    child: _buildPopupMenuItem(
-                      icon: Icons.system_update,
-                      iconColor: Globals.COLOR_MOVIX_GREEN,
-                      title: 'Mise à jour',
-                      subtitle: 'Vérifier les mises à jour',
-                    ),
-                  ),
-                  if (kDebugMode)
-                    MenuItemButton(
-                      style: ButtonStyle(
-                        padding: WidgetStateProperty.all(EdgeInsets.zero),
-                        minimumSize: WidgetStateProperty.all(const Size(280, 0)),
-                      ),
-                      onPressed: () {
-                        if (mounted) context.push('/test');
-                      },
-                      child: _buildPopupMenuItem(
-                        icon: Icons.deblur_rounded,
-                        iconColor: Colors.purple,
-                        title: 'Page de test',
-                        subtitle: 'Mode développeur',
-                      ),
-                    ),
-                  const Divider(height: 1),
-                  MenuItemButton(
-                    style: ButtonStyle(
-                      padding: WidgetStateProperty.all(EdgeInsets.zero),
-                      minimumSize: WidgetStateProperty.all(const Size(280, 0)),
-                    ),
-                    onPressed: () {
+              PopupMenuButton<String>(
+                offset: const Offset(0, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                color: Globals.COLOR_SURFACE,
+                elevation: 8,
+                onSelected: (value) {
+                  switch (value) {
+                    case 'settings':
+                      context.push('/settings');
+                      break;
+                    case 'spooler':
+                      context.push('/spooler');
+                      break;
+                    case 'update':
+                      context.push('/update');
+                      break;
+                    case 'test':
+                      context.push('/test');
+                      break;
+                    case 'logout':
                       logout().then((out) {
                         if (out) {
                           if (context.mounted) {
@@ -140,7 +81,55 @@ class _HomePageState extends State<HomePage> {
                               backgroundColor: Globals.COLOR_MOVIX_RED);
                         }
                       });
-                    },
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem<String>(
+                    value: 'settings',
+                    padding: EdgeInsets.zero,
+                    child: _buildPopupMenuItem(
+                      icon: Icons.settings,
+                      iconColor: Globals.COLOR_ADAPTIVE_ACCENT,
+                      title: 'Paramètres',
+                      subtitle: 'Configuration de l\'app',
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'spooler',
+                    padding: EdgeInsets.zero,
+                    child: _buildPopupMenuItem(
+                      icon: Icons.list_alt,
+                      iconColor: Globals.COLOR_MOVIX_YELLOW,
+                      title: 'Voir le spooler',
+                      subtitle: 'Actions en attente',
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'update',
+                    padding: EdgeInsets.zero,
+                    child: _buildPopupMenuItem(
+                      icon: Icons.system_update,
+                      iconColor: Globals.COLOR_MOVIX_GREEN,
+                      title: 'Mise à jour',
+                      subtitle: 'Vérifier les mises à jour',
+                    ),
+                  ),
+                  if (kDebugMode)
+                    PopupMenuItem<String>(
+                      value: 'test',
+                      padding: EdgeInsets.zero,
+                      child: _buildPopupMenuItem(
+                        icon: Icons.deblur_rounded,
+                        iconColor: Colors.purple,
+                        title: 'Page de test',
+                        subtitle: 'Mode développeur',
+                      ),
+                    ),
+                  const PopupMenuDivider(height: 1),
+                  PopupMenuItem<String>(
+                    value: 'logout',
+                    padding: EdgeInsets.zero,
                     child: _buildPopupMenuItem(
                       icon: Icons.logout,
                       iconColor: Globals.COLOR_MOVIX_RED,
@@ -150,25 +139,14 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ],
-                builder: (context, controller, child) {
-                  return IconButton(
-                    onPressed: () {
-                      if (controller.isOpen) {
-                        controller.close();
-                      } else {
-                        controller.open();
-                      }
-                    },
-                    icon: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(Icons.more_vert, color: Globals.COLOR_TEXT_LIGHT, size: 20),
-                    ),
-                  );
-                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.more_vert, color: Globals.COLOR_TEXT_LIGHT, size: 20),
+                ),
               ),
             ],
           ),
