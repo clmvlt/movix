@@ -1,7 +1,7 @@
 name: movix
 description: "Application Movix"
 
-version: 0.0.71
+version: 0.0.72
 
 environment:
   sdk: ^3.5.4
@@ -47,6 +47,7 @@ dependencies:
     path: ./scan_receiver
   intl: ^0.20.2
   pull_to_refresh: ^2.0.0
+  flutter_native_splash: ^2.4.7
 
 dev_dependencies:
   flutter_test:
@@ -84,3 +85,9 @@ flutter_icons:
   # Configuration supplémentaire pour Android
   adaptive_icon_padding: true
   min_sdk_android: 21
+
+flutter_native_splash:
+  color: "#FFFFFF"  # Couleur de fond (ou votre couleur)
+  image: assets/images/logo.png  # Chemin vers votre logo
+  ios: true
+  android: true
