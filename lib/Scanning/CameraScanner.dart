@@ -13,17 +13,14 @@ class CameraScanner extends StatefulWidget {
   State<CameraScanner> createState() => _CameraScannerState();
 }
 
-class _CameraScannerState extends State<CameraScanner> with TickerProviderStateMixin, WidgetsBindingObserver {
-  MobileScannerController? controller;
-  bool isExtended = false;
-  bool isFlashOn = false;
-  bool isInitialized = false;
-  bool _isWidgetVisible = true;
+class _CameraScannerState extends State<CameraScanner>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
+  MobileScannerController? _controller;
+  bool _isExtended = false;
+  bool _isFlashOn = false;
+  bool _isInitialized = false;
   late AnimationController _animationController;
   final Map<String, DateTime> _recentScannedCodes = {};
-  int _retryCount = 0;
-  final int _maxRetries = 3;
-  bool _isRetrying = false;
 
   @override
   void initState() {
@@ -33,132 +30,84 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
       duration: const Duration(milliseconds: 220),
       vsync: this,
     );
-    _initializeCamera();
-  }
-
-  void _initializeCamera() async {
-    try {
-      controller = MobileScannerController(
-        detectionSpeed: DetectionSpeed.normal,
-        facing: CameraFacing.back,
-        torchEnabled: false,
-        returnImage: false,
-      );
-
-      if (mounted) {
-        setState(() {
-          isInitialized = true;
-          _retryCount = 0;
-          _isRetrying = false;
-        });
-      }
-    } catch (e) {
-      print('Erreur lors de l\'initialisation de la caméra: $e');
-      if (mounted) {
-        setState(() {
-          isInitialized = false;
-        });
-        _handleCameraError();
-      }
-    }
-  }
-
-  void _handleCameraError() async {
-    if (_retryCount < _maxRetries && !_isRetrying && mounted) {
-      _isRetrying = true;
-      _retryCount++;
-
-      final delayMs = 1000 * _retryCount;
-
-      if (mounted) {
-        setState(() {});
-      }
-
-      await Future<void>.delayed(Duration(milliseconds: delayMs));
-
-      if (mounted) {
-        print('Tentative de reconnexion de la caméra ($_retryCount/$_maxRetries)');
-        _initializeCamera();
-      }
-    }
+    _loadCamera();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
-      case AppLifecycleState.detached:
-      case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
-        _isWidgetVisible = false;
-        _stopAndDisposeCamera();
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.detached:
+        _unloadCamera();
         break;
       case AppLifecycleState.resumed:
-        if (_isWidgetVisible) {
-          _reinitializeCamera();
-        }
+        _loadCamera();
         break;
       case AppLifecycleState.inactive:
         break;
     }
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  Future<void> _loadCamera() async {
+    if (_controller != null) return;
 
-    final route = ModalRoute.of(context);
-    if (route != null) {
-      final isCurrentRoute = route.isCurrent;
+    // Délai avant chargement pour éviter les conflits
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
 
-      if (isCurrentRoute && !_isWidgetVisible) {
-        _isWidgetVisible = true;
-        _reinitializeCamera();
-      } else if (!isCurrentRoute && _isWidgetVisible) {
-        _isWidgetVisible = false;
-        _stopAndDisposeCamera();
-      }
-    }
-  }
+    try {
+      _controller = MobileScannerController(
+        detectionSpeed: DetectionSpeed.normal,
+        facing: CameraFacing.back,
+        torchEnabled: false,
+        returnImage: false,
+      );
 
-  Future<void> _stopAndDisposeCamera() async {
-    if (controller != null) {
-      if (controller!.value.isRunning) {
-        await controller!.stop();
-      }
-      await controller!.dispose();
-      controller = null;
+      await _controller!.start();
+
       if (mounted) {
         setState(() {
-          isInitialized = false;
+          _isInitialized = true;
         });
       }
+    } catch (e) {
+      debugPrint('Erreur chargement caméra: $e');
     }
   }
 
-  Future<void> _reinitializeCamera() async {
-    await _stopAndDisposeCamera();
-    await Future<void>.delayed(const Duration(milliseconds: 100));
-    _initializeCamera();
+  Future<void> _unloadCamera() async {
+    if (_controller == null) return;
+
+    final controllerToDispose = _controller;
+    _controller = null;
+
+    if (mounted) {
+      setState(() {
+        _isInitialized = false;
+      });
+    }
+
+    try {
+      await controllerToDispose!.stop();
+      await controllerToDispose.dispose();
+    } catch (e) {
+      debugPrint('Erreur déchargement caméra: $e');
+    }
   }
 
   void _onDetect(BarcodeCapture capture) {
-    final List<Barcode> barcodes = capture.barcodes;
     final now = DateTime.now();
 
-    for (final barcode in barcodes) {
+    for (final barcode in capture.barcodes) {
       if (barcode.rawValue != null) {
         final code = barcode.rawValue!;
 
-        // Nettoyer les codes expirés (plus de 3 secondes)
-        _recentScannedCodes.removeWhere((key, value) =>
-          now.difference(value).inSeconds >= 3);
+        _recentScannedCodes.removeWhere(
+            (key, value) => now.difference(value).inSeconds >= 3);
 
-        // Vérifier si ce code a été scanné récemment
-        if (_recentScannedCodes.containsKey(code)) {
-          continue; // Ignorer ce code
-        }
+        if (_recentScannedCodes.containsKey(code)) continue;
 
-        // Enregistrer le nouveau code et l'envoyer
         _recentScannedCodes[code] = now;
         widget.onScanResult(code);
         break;
@@ -167,19 +116,19 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
   }
 
   void _toggleFlash() {
-    if (controller != null) {
+    if (_controller != null) {
       setState(() {
-        isFlashOn = !isFlashOn;
+        _isFlashOn = !_isFlashOn;
       });
-      controller!.toggleTorch();
+      _controller!.toggleTorch();
     }
   }
 
   void _toggleFullscreen() {
     setState(() {
-      isExtended = !isExtended;
+      _isExtended = !_isExtended;
     });
-    if (isExtended) {
+    if (_isExtended) {
       _animationController.forward();
     } else {
       _animationController.reverse();
@@ -189,8 +138,8 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    controller?.dispose();
     _animationController.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -199,13 +148,12 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
-        final height = Tween<double>(
-          begin: 120.0,
-          end: 320.0,
-        ).animate(CurvedAnimation(
-          parent: _animationController,
-          curve: Curves.easeInOut,
-        )).value;
+        final height = Tween<double>(begin: 120.0, end: 320.0)
+            .animate(CurvedAnimation(
+              parent: _animationController,
+              curve: Curves.easeInOut,
+            ))
+            .value;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 6),
@@ -226,35 +174,16 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
             borderRadius: BorderRadius.circular(16),
             child: Stack(
               children: [
-                if (isInitialized && controller != null)
+                if (_isInitialized && _controller != null)
                   MobileScanner(
-                    controller: controller!,
+                    controller: _controller!,
                     onDetect: _onDetect,
                     fit: BoxFit.cover,
                   )
                 else
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircularProgressIndicator(
-                          color: Colors.white,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _isRetrying
-                            ? 'Tentative de reconnexion ($_retryCount/$_maxRetries)...'
-                            : 'Initialisation de la caméra...',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
+                  const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
                   ),
-
-                // Gradient overlay
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -275,8 +204,6 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
                     ),
                   ),
                 ),
-
-                // Controls
                 Positioned(
                   bottom: 8,
                   left: 8,
@@ -284,7 +211,6 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      // Flash button
                       GestureDetector(
                         onTap: _toggleFlash,
                         child: Container(
@@ -295,16 +221,13 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            isFlashOn ? Icons.flash_on : Icons.flash_off,
+                            _isFlashOn ? Icons.flash_on : Icons.flash_off,
                             color: Colors.white,
                             size: 24,
                           ),
                         ),
                       ),
-
                       const SizedBox(width: 8),
-
-                      // Fullscreen button
                       GestureDetector(
                         onTap: _toggleFullscreen,
                         child: Container(
@@ -315,7 +238,7 @@ class _CameraScannerState extends State<CameraScanner> with TickerProviderStateM
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            isExtended ? Icons.fullscreen_exit : Icons.fullscreen,
+                            _isExtended ? Icons.fullscreen_exit : Icons.fullscreen,
                             color: Colors.white,
                             size: 24,
                           ),

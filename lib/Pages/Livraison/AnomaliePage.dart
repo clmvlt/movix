@@ -5,7 +5,6 @@ import 'package:movix/Models/Command.dart';
 import 'package:movix/Models/Package.dart';
 import 'package:movix/Models/Sound.dart';
 import 'package:movix/Services/globals.dart';
-import 'package:movix/Services/scanner.dart';
 import 'package:movix/Widgets/Common/AppBarWidget.dart';
 import 'package:movix/Widgets/Sections/PhotoSectionWidget.dart';
 import 'package:movix/Widgets/Sections/FormSectionWidget.dart';
@@ -24,13 +23,12 @@ class AnomaliePage extends StatefulWidget {
   _AnomaliePage createState() => _AnomaliePage();
 }
 
-class _AnomaliePage extends State<AnomaliePage> with WidgetsBindingObserver {
+class _AnomaliePage extends State<AnomaliePage> {
   List<String> _photosBase64 = [];
   String? _selectedReasonCode;
   final TextEditingController _otherReasonController = TextEditingController();
   final TextEditingController _actionsController = TextEditingController();
   final Map<String, Package> packages = {};
-  bool _isPageActive = true; // Commence à true par défaut
 
   final Map<String, String> _reasonsMap = {
     'excu_temp': 'Excurtion de température',
@@ -90,40 +88,10 @@ class _AnomaliePage extends State<AnomaliePage> with WidgetsBindingObserver {
   }
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _otherReasonController.dispose();
     _actionsController.dispose();
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) async {
-    final scanMode = await getScanMode();
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      if (scanMode == ScanMode.Camera) {
-        setState(() {
-          _isPageActive = false;
-        });
-      }
-    } else if (state == AppLifecycleState.resumed) {
-      if (scanMode == ScanMode.Camera) {
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            setState(() {
-              _isPageActive = true;
-            });
-          }
-        });
-      }
-      // Pour les autres modes, ne rien faire - _isPageActive reste à sa valeur actuelle
-    }
   }
 
   @override
@@ -256,7 +224,6 @@ class _AnomaliePage extends State<AnomaliePage> with WidgetsBindingObserver {
 
   Widget _buildScannerSection() {
     return ScannerSectionWidget(
-      isPageActive: _isPageActive,
       validateCode: validateCode,
     );
   }

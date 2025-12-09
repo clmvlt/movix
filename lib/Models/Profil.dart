@@ -86,4 +86,16 @@ class Profil {
       'account': account.toJson(),
     };
   }
+
+  /// Vérifie si c'est l'anniversaire de l'utilisateur aujourd'hui
+  bool isBirthday() {
+    if (birthday.isEmpty) return false;
+    try {
+      final birthDate = DateTime.parse(birthday);
+      final now = DateTime.now();
+      return birthDate.month == now.month && birthDate.day == now.day;
+    } catch (e) {
+      return false;
+    }
+  }
 }

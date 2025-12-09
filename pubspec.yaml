@@ -46,6 +46,7 @@ dependencies:
   scan_receiver:
     path: ./scan_receiver
   intl: ^0.20.2
+  confetti: ^0.7.0
   pull_to_refresh: ^2.0.0
   flutter_native_splash: ^2.4.7
 

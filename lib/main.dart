@@ -7,6 +7,7 @@ import 'package:movix/Services/login.dart';
 import 'package:movix/Services/settings.dart';
 import 'package:movix/Services/update_check_cache.dart';
 import 'package:movix/Services/update_service.dart';
+import 'package:movix/Widgets/Common/BirthdayOverlay.dart';
 import 'package:path_provider/path_provider.dart';
 
 class RestartWidget extends StatefulWidget {
@@ -126,6 +127,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               ),
               themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
               routerConfig: appRouter,
+              builder: (context, child) {
+                return BirthdayOverlay(child: child ?? const SizedBox.shrink());
+              },
             ),
           );
         },

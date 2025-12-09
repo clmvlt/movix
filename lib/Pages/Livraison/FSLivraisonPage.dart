@@ -22,9 +22,8 @@ class FSLivraisonPage extends StatefulWidget {
   _FSLivraisonPageState createState() => _FSLivraisonPageState();
 }
 
-class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingObserver, RouteAware {
+class _FSLivraisonPageState extends State<FSLivraisonPage> {
   bool CIPScanned = false;
-  bool _isPageActive = true;
 
   bool get _isCIPRequired => Globals.profil?.account.isScanCIP ?? false;
 
@@ -33,11 +32,9 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
     widget.onUpdate();
   }
 
-
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
 
     // Valider auto le CIP si la commande est forcée
     if (widget.command.isForced) {
@@ -83,47 +80,8 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
     });
   }
 
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      setState(() {
-        _isPageActive = false;
-      });
-    } else if (state == AppLifecycleState.resumed) {
-      setState(() {
-        _isPageActive = true;
-      });
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Utiliser un délai pour vérifier si on a une nouvelle route au-dessus
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final route = ModalRoute.of(context);
-        final isActive = route?.isCurrent == true;
-
-        if (_isPageActive != isActive) {
-          setState(() {
-            _isPageActive = isActive;
-          });
-        }
-      }
-    });
-  }
-
   Future<ScanResult> validateCode(String code, {bool isManualInput = false}) async {
-    // Ne pas bloquer si c'est une saisie manuelle
-    if (!isManualInput && (!_isPageActive || !mounted)) {
+    if (!mounted) {
       return ScanResult.SCAN_ERROR;
     }
 
@@ -196,7 +154,6 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> with WidgetsBindingOb
               children: [
                 ScannerContainerWidget(
                   validateCode: validateCode,
-                  isActive: _isPageActive,
                 ),
                 if (_isCIPRequired) _buildCIPStatusButton(),
                 _buildModernCommandCard(command),

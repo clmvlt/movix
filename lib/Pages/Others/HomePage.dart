@@ -225,10 +225,14 @@ class _HomePageState extends State<HomePage> {
     if (profil == null) return const SizedBox.shrink();
 
     final hour = DateTime.now().hour;
+    final isBirthday = profil.isBirthday();
     String greeting = 'Bonsoir';
     IconData greetingIcon = Icons.nightlight_round;
 
-    if (hour >= 5 && hour < 12) {
+    if (isBirthday) {
+      greeting = 'Joyeux anniversaire';
+      greetingIcon = Icons.cake_outlined;
+    } else if (hour >= 5 && hour < 12) {
       greeting = 'Bonjour';
       greetingIcon = Icons.wb_sunny_rounded;
     } else if (hour >= 12 && hour < 17) {
@@ -245,12 +249,16 @@ class _HomePageState extends State<HomePage> {
         color: Globals.COLOR_SURFACE,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Globals.COLOR_MOVIX.withOpacity(0.1),
-          width: 1,
+          color: isBirthday
+              ? const Color(0xFFFFD700).withOpacity(0.5)
+              : Globals.COLOR_MOVIX.withOpacity(0.1),
+          width: isBirthday ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Globals.COLOR_MOVIX.withOpacity(0.08),
+            color: isBirthday
+                ? const Color(0xFFFFD700).withOpacity(0.15)
+                : Globals.COLOR_MOVIX.withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -315,17 +323,25 @@ class _HomePageState extends State<HomePage> {
                     Icon(
                       greetingIcon,
                       size: 16,
-                      color: Globals.COLOR_TEXT_SECONDARY,
+                      color: isBirthday
+                          ? const Color(0xFFFFD700)
+                          : Globals.COLOR_TEXT_SECONDARY,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       greeting,
                       style: TextStyle(
-                        color: Globals.COLOR_TEXT_SECONDARY,
+                        color: isBirthday
+                            ? const Color(0xFFFFD700)
+                            : Globals.COLOR_TEXT_SECONDARY,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    if (isBirthday) ...[
+                      const SizedBox(width: 6),
+                      const Text('🎂', style: TextStyle(fontSize: 14)),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 6),

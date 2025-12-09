@@ -28,12 +28,14 @@ class _SplashPageState extends State<SplashPage> {
   String? _errorMessage;
   bool _hasError = false;
 
+  // Couleur Movix pour le texte et les éléments
+  static const Color _movixColor = Color(0xff123456);
+
   @override
   void initState() {
     super.initState();
     _initializeApp();
   }
-
 
   void _showError(String message) {
     setState(() {
@@ -72,7 +74,7 @@ class _SplashPageState extends State<SplashPage> {
 
       setState(() => _loadingText = "Configuration du spooler...");
       await SpoolerManager().initialize();
-      
+
       setState(() => _loadingText = "Chargement des données...");
       final appDocDir = await getApplicationDocumentsDirectory();
       Hive.init(appDocDir.path);
@@ -131,96 +133,95 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Globals.COLOR_MOVIX,
+      backgroundColor: Colors.white,
       body: Center(
-        child: ValueListenableBuilder<bool>(
-          valueListenable: Globals.darkModeNotifier,
-          builder: (context, isDarkMode, child) {
-            if (_hasError) {
-              return Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: Colors.white,
-                      size: 64,
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      "Erreur d'initialisation",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _errorMessage ?? "Une erreur inconnue s'est produite",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: _retryInitialization,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text("Réessayer"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Globals.COLOR_MOVIX,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-            
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 150,
-                  child: Image(
-                    image: AssetImage(
-                      isDarkMode 
-                        ? 'assets/images/logo_dark.png'
-                        : 'assets/images/logo.png'
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  _loadingText,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const CircularProgressIndicator(
-                  color: Colors.white,
-                ),
-              ],
-            );
-          },
+        child: _hasError ? _buildErrorView() : _buildLoadingView(),
+      ),
+    );
+  }
+
+  Widget _buildLoadingView() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 150,
+          child: Image.asset('assets/images/logo.png'),
         ),
+        const SizedBox(height: 30),
+        Text(
+          _loadingText,
+          style: const TextStyle(
+            color: _movixColor,
+            fontSize: 14,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 20),
+        const SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            color: _movixColor,
+            strokeWidth: 2.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorView() {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            color: Colors.red,
+            size: 64,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            "Erreur d'initialisation",
+            style: TextStyle(
+              color: _movixColor,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              _errorMessage ?? "Une erreur inconnue s'est produite",
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _retryInitialization,
+            icon: const Icon(Icons.refresh),
+            label: const Text("Réessayer"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _movixColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

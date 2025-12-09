@@ -28,7 +28,11 @@
       "Bash(git stash:*)",
       "Bash(git pull:*)",
       "Bash(git checkout:*)",
-      "Bash(xattr:*)"
+      "Bash(xattr:*)",
+      "Bash(plutil:*)",
+      "Bash(find:*)",
+      "Bash(/usr/libexec/PlistBuddy:*)",
+      "Bash(/Users/clementveillet/Development/flutter/bin/flutter analyze:*)"
     ],
     "deny": [],
     "ask": []

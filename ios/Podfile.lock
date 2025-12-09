@@ -9,6 +9,8 @@ PODS:
   - Flutter (1.0.0)
   - flutter_compass (0.0.1):
     - Flutter
+  - flutter_native_splash (2.4.3):
+    - Flutter
   - image_picker_ios (0.0.1):
     - Flutter
   - location (0.0.1):
@@ -41,6 +43,7 @@ DEPENDENCIES:
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - Flutter (from `Flutter`)
   - flutter_compass (from `.symlinks/plugins/flutter_compass/ios`)
+  - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - location (from `.symlinks/plugins/location/ios`)
   - mobile_scanner (from `.symlinks/plugins/mobile_scanner/darwin`)
@@ -67,6 +70,8 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_compass:
     :path: ".symlinks/plugins/flutter_compass/ios"
+  flutter_native_splash:
+    :path: ".symlinks/plugins/flutter_native_splash/ios"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
   location:
@@ -94,6 +99,7 @@ SPEC CHECKSUMS:
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_compass: b236ab69b61545cce89fd58527f401a7587d5cc1
+  flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
   image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
   location: 155caecf9da4f280ab5fe4a55f94ceccfab838f8
   mobile_scanner: 9157936403f5a0644ca3779a38ff8404c5434a93
