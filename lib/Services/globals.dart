@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:movix/Models/Profil.dart';
+import 'package:movix/Models/ScanMode.dart';
 import 'package:movix/Models/Tour.dart';
-import 'package:movix/Services/scanner.dart';
 import 'package:movix/Services/sound.dart';
 
 class Globals {

@@ -8,6 +8,7 @@ import 'package:movix/Scanning/CameraScannerIOS.dart';
 import 'package:movix/Scanning/DefaultScanner.dart';
 import 'package:movix/Scanning/ScannerManager.dart';
 import 'package:movix/Scanning/TextScanner.dart';
+import 'package:movix/Scanning/ZebraScanner.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/scanner.dart';
 import 'package:movix/Services/sound.dart';
@@ -129,8 +130,14 @@ class _ScannerWidgetState extends State<ScannerWidget> {
         );
       }
         break;
-      case ScanMode.Scanneur:
+      case ScanMode.DT50:
         scannerWidget = IntentScanner(
+          onScanResult: handleResult,
+          isActive: widget.isActive,
+        );
+        break;
+      case ScanMode.Zebra:
+        scannerWidget = ZebraScanner(
           onScanResult: handleResult,
           isActive: widget.isActive,
         );
