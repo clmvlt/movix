@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:movix/Managers/LivraisonManager.dart';
 import 'package:movix/Models/Command.dart';
 import 'package:movix/Services/globals.dart';
+import 'package:movix/Services/map_service.dart';
 import 'package:movix/Widgets/CustomButton.dart';
 import 'package:movix/Widgets/PhotoPickerWidget.dart';
 
@@ -33,6 +34,38 @@ class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
     });
   }
 
+  /// Trouve et lance le GPS vers la prochaine livraison non livrée
+  void _launchGpsForNextDelivery() {
+    final tour = Globals.tours[widget.command.tourId];
+    if (tour == null) return;
+
+    // Récupérer les commandes triées par tourOrder
+    final commands = tour.commands.values.toList()
+      ..sort((a, b) => a.tourOrder.compareTo(b.tourOrder));
+
+    // Trouver la prochaine commande non livrée (status != 3, 4, 5, 7, 8, 9)
+    Command? nextCommand;
+    for (final cmd in commands) {
+      // Ignorer la commande actuelle et les commandes déjà livrées/annulées
+      if (cmd.id == widget.command.id) continue;
+      final statusId = cmd.status.id;
+      // Status 3=livré, 4=livré partiel, 5=anomalie, 7=annulé, 8=refusé, 9=absent
+      if (statusId != 3 && statusId != 4 && statusId != 5 &&
+          statusId != 7 && statusId != 8 && statusId != 9) {
+        nextCommand = cmd;
+        break;
+      }
+    }
+
+    // Lancer le GPS si une prochaine commande existe
+    if (nextCommand != null) {
+      MapService.instance.openNavigation(
+        latitude: nextCommand.pharmacy.latitude,
+        longitude: nextCommand.pharmacy.longitude,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,26 +73,13 @@ class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
       appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
         titleTextStyle: Globals.appBarTextStyle,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Validation de livraison",
-              style: TextStyle(
-                color: Globals.COLOR_TEXT_LIGHT,
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
-            ),
-            Text(
-              widget.command.pharmacy.name,
-              style: TextStyle(
-                color: Globals.COLOR_TEXT_LIGHT.withOpacity(0.8),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+        title: Text(
+          "Validation de livraison",
+          style: TextStyle(
+            color: Globals.COLOR_TEXT_LIGHT,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
         ),
         backgroundColor: Globals.COLOR_MOVIX,
         foregroundColor: Globals.COLOR_TEXT_LIGHT,
@@ -172,9 +192,15 @@ class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
                   if (base64Images.isNotEmpty) {
                     ValidLivraisonCommand(
                         widget.command, base64Images, widget.onUpdate);
-                        context.go('/tour/livraison', extra: {
-                          'tour': Globals.tours[widget.command.tourId]
-                        });
+
+                    // Lancement automatique du GPS vers la prochaine livraison
+                    if (Globals.AUTO_LAUNCH_GPS) {
+                      _launchGpsForNextDelivery();
+                    }
+
+                    context.go('/tour/livraison', extra: {
+                      'tour': Globals.tours[widget.command.tourId]
+                    });
                   } else {
                     Globals.showSnackbar('Au moins une photo est obligatoire.',
                         backgroundColor: Globals.COLOR_MOVIX_RED);

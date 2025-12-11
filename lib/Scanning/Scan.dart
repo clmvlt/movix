@@ -79,26 +79,22 @@ class _ScannerWidgetState extends State<ScannerWidget> {
     if (Globals.VIBRATIONS_ENABLED) {
       switch (result) {
         case ScanResult.SCAN_SUCCESS:
-          // Vibration légère pour succès
+          // Vibration courte classique
+          HapticFeedback.mediumImpact();
+          break;
+        case ScanResult.SCAN_SWITCH:
+          // Vibration courte classique (comme succès)
           HapticFeedback.mediumImpact();
           break;
         case ScanResult.SCAN_FINISH:
-          // Double vibration pour indiquer la fin
-          HapticFeedback.heavyImpact();
+          // Légère double vibration
+          HapticFeedback.lightImpact();
           await Future<void>.delayed(const Duration(milliseconds: 100));
-          HapticFeedback.heavyImpact();
+          HapticFeedback.lightImpact();
           break;
         case ScanResult.SCAN_ERROR:
-          // Triple vibration rapide pour erreur
+          // Vibration forte pour erreur
           HapticFeedback.heavyImpact();
-          await Future<void>.delayed(const Duration(milliseconds: 80));
-          HapticFeedback.heavyImpact();
-          await Future<void>.delayed(const Duration(milliseconds: 80));
-          HapticFeedback.heavyImpact();
-          break;
-        case ScanResult.SCAN_SWITCH:
-          // Vibration douce pour changement de contexte
-          HapticFeedback.lightImpact();
           break;
         case ScanResult.NOTHING:
           // Pas de vibration

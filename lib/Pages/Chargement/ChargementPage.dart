@@ -95,26 +95,13 @@ class _ChargementPage extends State<ChargementPage>
         appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
         titleTextStyle: Globals.appBarTextStyle,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.tour.name,
-              style: TextStyle(
-                color: Globals.COLOR_TEXT_LIGHT,
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
-            ),
-            Text(
-              'Chargement en cours',
-              style: TextStyle(
-                color: Globals.COLOR_TEXT_LIGHT.withOpacity(0.8),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+        title: Text(
+          widget.tour.name,
+          style: TextStyle(
+            color: Globals.COLOR_TEXT_LIGHT,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
         ),
         backgroundColor: Globals.COLOR_MOVIX,
         foregroundColor: Globals.COLOR_TEXT_LIGHT,

@@ -4,7 +4,7 @@ import 'package:movix/API/pharmacy_fetcher.dart';
 import 'package:movix/Models/Command.dart';
 import 'package:movix/Models/Pharmacy.dart';
 import 'package:movix/Services/globals.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:movix/Services/map_service.dart';
 
 class PharmaciesPage extends StatefulWidget {
   const PharmaciesPage({super.key});
@@ -68,12 +68,11 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
   }
 
 
-  Future<void> _openMap(double latitude, double longitude, String name) async {
-    final Uri mapUri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
-    if (await canLaunchUrl(mapUri)) {
-      await launchUrl(mapUri, mode: LaunchMode.externalApplication);
-    }
+  Future<void> _openMap(double latitude, double longitude) async {
+    await MapService.instance.openNavigation(
+      latitude: latitude,
+      longitude: longitude,
+    );
   }
 
   @override
@@ -489,7 +488,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
         if (pharmacy.latitude != 0 || pharmacy.longitude != 0)
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: () => _openMap(pharmacy.latitude, pharmacy.longitude, pharmacy.name),
+              onPressed: () => _openMap(pharmacy.latitude, pharmacy.longitude),
               icon: const Icon(Icons.map, size: 16),
               label: const Text('Itinéraire'),
               style: ElevatedButton.styleFrom(

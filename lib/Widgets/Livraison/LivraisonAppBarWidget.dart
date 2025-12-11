@@ -22,26 +22,13 @@ class LivraisonAppBarWidget extends StatelessWidget implements PreferredSizeWidg
     return AppBar(
       toolbarTextStyle: Globals.appBarTextStyle,
       titleTextStyle: Globals.appBarTextStyle,
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            tour.name,
-            style: TextStyle(
-              color: Globals.COLOR_TEXT_LIGHT,
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-            ),
-          ),
-          Text(
-            'Livraison en cours',
-            style: TextStyle(
-              color: Globals.COLOR_TEXT_LIGHT.withOpacity(0.8),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+      title: Text(
+        tour.name,
+        style: TextStyle(
+          color: Globals.COLOR_TEXT_LIGHT,
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
+        ),
       ),
       backgroundColor: Globals.COLOR_MOVIX,
       foregroundColor: Globals.COLOR_TEXT_LIGHT,

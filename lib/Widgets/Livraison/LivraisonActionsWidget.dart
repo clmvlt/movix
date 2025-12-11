@@ -3,9 +3,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:movix/Models/Command.dart';
 import 'package:movix/Services/globals.dart';
+import 'package:movix/Services/map_service.dart';
 import 'package:movix/Widgets/Livraison/ModernButtonWidget.dart';
 import 'package:movix/Widgets/AnomalieMenu.dart';
-import 'package:movix/Managers/LivraisonManager.dart';
 
 class LivraisonActionsWidget extends StatelessWidget {
   final Command command;
@@ -17,24 +17,30 @@ class LivraisonActionsWidget extends StatelessWidget {
     required this.onUpdate,
   });
 
+  IconData _getMapButtonIcon() {
+    switch (Globals.MAP_APP) {
+      case MapApp.waze:
+        return FontAwesomeIcons.waze;
+      case MapApp.appleMaps:
+        return Icons.map;
+      case MapApp.googleMaps:
+        return Icons.fmd_good;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        if (Globals.MAP_APP == "Waze")
-          ModernIconButtonWidget(
-            icon: FontAwesomeIcons.waze,
-            color: Globals.COLOR_MOVIX_YELLOW,
-            onPressed: () => openMap(command: command),
+        ModernIconButtonWidget(
+          icon: _getMapButtonIcon(),
+          color: Globals.COLOR_MOVIX_YELLOW,
+          onPressed: () => MapService.instance.openNavigation(
+            latitude: command.pharmacy.latitude,
+            longitude: command.pharmacy.longitude,
           ),
-        if (Globals.MAP_APP == "Google Maps")
-          ModernIconButtonWidget(
-            icon: Icons.fmd_good,
-            color: Globals.COLOR_MOVIX_YELLOW,
-            onPressed: () => openMap(command: command),
-          ),
-        if (Globals.MAP_APP == "Waze" || Globals.MAP_APP == "Google Maps")
-          const SizedBox(width: 8),
+        ),
+        const SizedBox(width: 8),
         ModernIconButtonWidget(
           icon: FontAwesomeIcons.mapLocation,
           color: Globals.COLOR_MOVIX_GREEN,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:movix/Pages/Others/SoundPackPage.dart';
 import 'package:movix/Services/globals.dart';
+import 'package:movix/Services/map_service.dart';
 import 'package:movix/Services/scanner.dart';
 import 'package:movix/Services/sound.dart';
 
@@ -16,9 +17,11 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   ScanMode _selectedScanMode = Globals.SCAN_MODE;
   SoundPack _selectedSoundPack = Globals.SOUND_PACK;
-  String _selectedMapApp = Globals.MAP_APP;
+  MapApp _selectedMapApp = Globals.MAP_APP;
   bool _isDarkMode = Globals.DARK_MODE;
   bool _vibrationsEnabled = Globals.VIBRATIONS_ENABLED;
+  bool _soundEnabled = Globals.SOUND_ENABLED;
+  bool _autoLaunchGps = Globals.AUTO_LAUNCH_GPS;
 
   @override
   void initState() {
@@ -29,9 +32,13 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadSettings() async {
     final darkMode = await getDarkMode();
     final vibrationsEnabled = await getVibrationsEnabled();
+    final soundEnabled = await getSoundEnabled();
+    final autoLaunchGps = await getAutoLaunchGps();
     setState(() {
       _isDarkMode = darkMode;
       _vibrationsEnabled = vibrationsEnabled;
+      _soundEnabled = soundEnabled;
+      _autoLaunchGps = autoLaunchGps;
     });
   }
 
@@ -56,7 +63,49 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
         children: <Widget>[
+          // === APPARENCE ===
           _buildSectionHeader('Apparence'),
+          const SizedBox(height: 8),
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+            color: Globals.COLOR_SURFACE,
+            margin: EdgeInsets.zero,
+            child: _buildSwitchTile(
+              icon: Icons.dark_mode,
+              title: 'Mode sombre',
+              value: _isDarkMode,
+              onChanged: (bool value) async {
+                await setDarkMode(value);
+                setState(() => _isDarkMode = value);
+              },
+            ),
+          ),
+
+          // === VIBRATIONS ===
+          const SizedBox(height: 24),
+          _buildSectionHeader('Vibrations'),
+          const SizedBox(height: 8),
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+            color: Globals.COLOR_SURFACE,
+            margin: EdgeInsets.zero,
+            child: _buildSwitchTile(
+              icon: Icons.vibration,
+              title: 'Vibrations',
+              subtitle: 'Vibrer lors du scan de colis',
+              value: _vibrationsEnabled,
+              onChanged: (bool value) async {
+                await setVibrationsEnabled(value);
+                setState(() => _vibrationsEnabled = value);
+              },
+            ),
+          ),
+
+          // === SONS ===
+          const SizedBox(height: 24),
+          _buildSectionHeader('Sons'),
           const SizedBox(height: 8),
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -65,87 +114,43 @@ class _SettingsPageState extends State<SettingsPage> {
             margin: EdgeInsets.zero,
             child: Column(
               children: [
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.dark_mode, color: Globals.COLOR_ADAPTIVE_ACCENT, size: 20),
-                  ),
-                  title: Text(
-                    'Mode sombre',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: Globals.COLOR_TEXT_DARK,
-                    ),
-                  ),
-                  trailing: Switch(
-                    value: _isDarkMode,
-                    onChanged: (value) async {
-                      await setDarkMode(value);
-                      setState(() {
-                        _isDarkMode = value;
-                      });
-                    },
-                    activeColor: Globals.COLOR_ADAPTIVE_ACCENT,
-                  ),
+                _buildSwitchTile(
+                  icon: Icons.volume_up,
+                  title: 'Sons activés',
+                  subtitle: 'Jouer un son lors du scan de colis',
+                  value: _soundEnabled,
+                  onChanged: (bool value) async {
+                    await setSoundEnabled(value);
+                    setState(() => _soundEnabled = value);
+                  },
                 ),
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: Globals.COLOR_TEXT_GRAY.withOpacity(0.1),
-                  indent: 16,
-                  endIndent: 16,
-                ),
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.vibration, color: Globals.COLOR_ADAPTIVE_ACCENT, size: 20),
-                  ),
-                  title: Text(
-                    'Vibrations',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: Globals.COLOR_TEXT_DARK,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Vibrer lors du scan de colis',
-                    style: TextStyle(
-                      color: Globals.COLOR_TEXT_GRAY,
-                      fontSize: 13,
-                    ),
-                  ),
-                  trailing: Switch(
-                    value: _vibrationsEnabled,
-                    onChanged: (value) async {
-                      await setVibrationsEnabled(value);
-                      setState(() {
-                        _vibrationsEnabled = value;
-                      });
-                    },
-                    activeColor: Globals.COLOR_ADAPTIVE_ACCENT,
-                  ),
+                _buildDivider(),
+                _buildSelectableTileWithPreview<SoundPack>(
+                  context,
+                  title: 'Pack de sons',
+                  subtitle: _selectedSoundPack.name,
+                  icon: Icons.music_note,
+                  options: SoundPack.values,
+                  getLabel: (SoundPack s) => s.name,
+                  onSelected: (SoundPack value) {
+                    setState(() {
+                      setSoundPack(value.name);
+                      _selectedSoundPack = value;
+                    });
+                  },
+                  onPreview: () => _openSoundPackPage(_selectedSoundPack),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          _buildSectionHeader('Préférences'),
+
+          // === SCANNER ===
+          const SizedBox(height: 24),
+          _buildSectionHeader('Scanner'),
           const SizedBox(height: 8),
           _buildSelectableCard<ScanMode>(
             context,
-            title: 'Scanneur',
+            title: 'Mode de scan',
             subtitle: _selectedScanMode.name,
             icon: Icons.qr_code_scanner,
             options: ScanMode.values,
@@ -157,41 +162,47 @@ class _SettingsPageState extends State<SettingsPage> {
               });
             },
           ),
-          const SizedBox(height: 12),
-          _buildSelectableCard<SoundPack>(
-            context,
-            title: 'Pack de sons',
-            subtitle: _selectedSoundPack.name,
-            icon: Icons.music_note,
-            options: SoundPack.values,
-            getLabel: (s) => s.name,
-            onSelected: (value) {
-              setState(() {
-                setSoundPack(value.name);
-                _selectedSoundPack = value;
-              });
-            },
-            trailing: IconButton(
-              icon: Icon(Icons.list, color: Globals.COLOR_TEXT_GRAY),
-              onPressed: () => _openSoundPackPage(_selectedSoundPack),
-              tooltip: 'Voir les sons',
+
+          // === NAVIGATION ===
+          const SizedBox(height: 24),
+          _buildSectionHeader('Navigation'),
+          const SizedBox(height: 8),
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+            color: Globals.COLOR_SURFACE,
+            margin: EdgeInsets.zero,
+            child: Column(
+              children: [
+                _buildSelectableTile<MapApp>(
+                  context,
+                  title: 'Application de carte',
+                  subtitle: _selectedMapApp.displayName,
+                  icon: Icons.map,
+                  options: MapService.getAvailableApps(),
+                  getLabel: (MapApp app) => app.displayName,
+                  onSelected: (MapApp value) {
+                    setState(() {
+                      _selectedMapApp = value;
+                      setMapApp(value);
+                    });
+                  },
+                ),
+                _buildDivider(),
+                _buildSwitchTile(
+                  icon: Icons.navigation,
+                  title: 'Lancement auto du GPS',
+                  subtitle: 'Ouvrir le GPS après validation de livraison',
+                  value: _autoLaunchGps,
+                  onChanged: (bool value) async {
+                    await setAutoLaunchGps(value);
+                    setState(() => _autoLaunchGps = value);
+                  },
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          _buildSelectableCard<String>(
-            context,
-            title: 'Application de carte',
-            subtitle: _selectedMapApp,
-            icon: Icons.map,
-            options: const ["Google Maps", "Waze"],
-            getLabel: (s) => s,
-            onSelected: (value) {
-              setState(() {
-                _selectedMapApp = value;
-                setMapApp(value);
-              });
-            },
-          ),
+          const SizedBox(height: 24),
         ],
       ),
       ),
@@ -209,6 +220,161 @@ class _SettingsPageState extends State<SettingsPage> {
           color: Globals.COLOR_TEXT_GRAY,
           letterSpacing: 0.5,
         ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: Globals.COLOR_TEXT_GRAY.withOpacity(0.1),
+      indent: 16,
+      endIndent: 16,
+    );
+  }
+
+  Widget _buildSwitchTile({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: Globals.COLOR_ADAPTIVE_ACCENT, size: 20),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+          color: Globals.COLOR_TEXT_DARK,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle,
+              style: TextStyle(
+                color: Globals.COLOR_TEXT_GRAY,
+                fontSize: 13,
+              ),
+            )
+          : null,
+      trailing: Switch(
+        value: value,
+        onChanged: onChanged,
+        activeColor: Globals.COLOR_ADAPTIVE_ACCENT,
+      ),
+    );
+  }
+
+  Widget _buildSelectableTile<T>(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required List<T> options,
+    required String Function(T) getLabel,
+    required void Function(T) onSelected,
+    Widget? trailing,
+  }) {
+    return ListTile(
+      onTap: () => _showSelectionDialog<T>(
+          context, title, options, getLabel, onSelected),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: Globals.COLOR_ADAPTIVE_ACCENT, size: 20),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+          color: Globals.COLOR_TEXT_DARK,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          color: Globals.COLOR_TEXT_GRAY,
+          fontSize: 14,
+        ),
+      ),
+      trailing: trailing ?? Icon(
+        Icons.chevron_right,
+        color: Globals.COLOR_TEXT_GRAY,
+        size: 20,
+      ),
+    );
+  }
+
+  Widget _buildSelectableTileWithPreview<T>(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required List<T> options,
+    required String Function(T) getLabel,
+    required void Function(T) onSelected,
+    required VoidCallback onPreview,
+  }) {
+    return ListTile(
+      onTap: () => _showSelectionDialog<T>(
+          context, title, options, getLabel, onSelected),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: Globals.COLOR_ADAPTIVE_ACCENT, size: 20),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+          color: Globals.COLOR_TEXT_DARK,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          color: Globals.COLOR_TEXT_GRAY,
+          fontSize: 14,
+        ),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(Icons.headphones, color: Globals.COLOR_TEXT_GRAY, size: 20),
+            onPressed: onPreview,
+            tooltip: 'Écouter les sons',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+          const SizedBox(width: 8),
+          Icon(
+            Icons.chevron_right,
+            color: Globals.COLOR_TEXT_GRAY,
+            size: 20,
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -14,7 +12,6 @@ import 'package:movix/Models/Spooler.dart';
 import 'package:movix/Models/Tour.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/location.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 
 void ValidLivraisonAnomalie(
@@ -171,89 +168,6 @@ Future<void> ValidLivraisonTour(
 
     updateState();
     GoRouter.of(context).go('/tours');
-  }
-}
-
-Future<void> openMap({
-  Command? command,
-  double? latitude,
-  double? longitude,
-}) async {
-  try {
-    final double lat = latitude ?? command?.pharmacy.latitude ?? 0;
-    final double lng = longitude ?? command?.pharmacy.longitude ?? 0;
-
-    final String selectedApp = Globals.MAP_APP;
-
-    if (lat == 0 || lng == 0) {
-      Globals.showSnackbar('Aucune position disponible.',
-          backgroundColor: Globals.COLOR_MOVIX_RED);
-      return;
-    }
-
-    Uri? nativeUri;
-    Uri? altNativeUri;
-    Uri webUri = Uri.parse(
-        'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving');
-
-    if (Platform.isAndroid) {
-      if (selectedApp == 'Waze') {
-        nativeUri = Uri.parse('waze://?ll=$lat,$lng&navigate=yes');
-        altNativeUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
-        webUri = Uri.parse('https://waze.com/ul?ll=$lat,$lng&navigate=yes');
-      } else if (selectedApp == 'Google Maps') {
-        nativeUri = Uri.parse('google.navigation:q=$lat,$lng&mode=d');
-        altNativeUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
-        webUri = Uri.parse(
-            'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving');
-      } else {
-        nativeUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
-      }
-    } else if (Platform.isIOS) {
-      if (selectedApp == 'Waze') {
-        nativeUri = Uri.parse('waze://?ll=$lat,$lng&navigate=yes');
-        webUri = Uri.parse('https://waze.com/ul?ll=$lat,$lng&navigate=yes');
-      } else if (selectedApp == 'Google Maps') {
-        nativeUri =
-            Uri.parse('comgooglemaps://?daddr=$lat,$lng&directionsmode=driving');
-        webUri = Uri.parse(
-            'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving');
-      } else {
-        nativeUri = Uri.parse('maps://?daddr=$lat,$lng&dirflg=d');
-        webUri = Uri.parse('https://maps.apple.com/?daddr=$lat,$lng&dirflg=d');
-      }
-    } else {
-      // Web/Desktop fallback
-      nativeUri = null;
-      webUri = Uri.parse(
-          'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving');
-    }
-
-    final List<Uri> attempts = [
-      if (nativeUri != null) nativeUri,
-      if (altNativeUri != null) altNativeUri,
-      webUri,
-    ];
-
-    for (final uri in attempts) {
-      try {
-        final bool launched = await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication,
-        );
-        if (launched) return;
-      } catch (_) {
-        // on essaie l'URI suivant
-      }
-    }
-
-    throw Exception(
-        'Aucune application/URL n\'a pu être ouverte. Plateforme: ${Platform.operatingSystem}, App: $selectedApp, Tentatives: ${attempts.map((u) => u.toString()).join(' | ')}');
-  } catch (e) {
-    Globals.showSnackbar(
-      'Erreur lors de l\'ouverture de la carte: ${e.runtimeType}: ${e.toString()}',
-      backgroundColor: Globals.COLOR_MOVIX_RED,
-    );
   }
 }
 

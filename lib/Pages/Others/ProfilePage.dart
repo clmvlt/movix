@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:movix/API/profile_fetcher.dart';
 import 'package:movix/Pages/Others/ChangePasswordPage.dart';
 import 'package:movix/Pages/Others/ImageCropPage.dart';
@@ -34,12 +35,18 @@ class _ProfilePageState extends State<ProfilePage> {
     _firstNameController = TextEditingController(text: profil?.firstName ?? '');
     _lastNameController = TextEditingController(text: profil?.lastName ?? '');
     _emailController = TextEditingController(text: profil?.email ?? '');
-    _birthdayController = TextEditingController(text: profil?.birthday ?? '');
 
     if (profil?.birthday != null && profil!.birthday.isNotEmpty) {
       try {
         _selectedDate = DateTime.parse(profil.birthday);
-      } catch (_) {}
+        _birthdayController = TextEditingController(
+          text: DateFormat('dd/MM/yyyy').format(_selectedDate!),
+        );
+      } catch (_) {
+        _birthdayController = TextEditingController(text: '');
+      }
+    } else {
+      _birthdayController = TextEditingController(text: '');
     }
   }
 
@@ -346,7 +353,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         prefixIcon: Icon(
           icon,
-          color: Globals.COLOR_MOVIX,
+          color: Globals.COLOR_ADAPTIVE_ACCENT,
         ),
         filled: true,
         fillColor: Globals.COLOR_SURFACE,
@@ -401,11 +408,11 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             prefixIcon: Icon(
               Icons.cake_outlined,
-              color: Globals.COLOR_MOVIX,
+              color: Globals.COLOR_ADAPTIVE_ACCENT,
             ),
             suffixIcon: Icon(
               Icons.calendar_today,
-              color: Globals.COLOR_TEXT_GRAY,
+              color: Globals.COLOR_ADAPTIVE_ACCENT,
             ),
             filled: true,
             fillColor: Globals.COLOR_SURFACE,
@@ -435,7 +442,7 @@ class _ProfilePageState extends State<ProfilePage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Globals.COLOR_MOVIX,
+              primary: Globals.COLOR_ADAPTIVE_ACCENT,
               onPrimary: Colors.white,
               surface: Globals.COLOR_SURFACE,
               onSurface: Globals.COLOR_TEXT_DARK,
@@ -449,7 +456,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
-        _birthdayController.text = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+        _birthdayController.text = DateFormat('dd/MM/yyyy').format(picked);
       });
     }
   }
@@ -493,10 +500,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
     setState(() => _isLoading = true);
 
+    final birthdayISO = _selectedDate != null
+        ? DateFormat('yyyy-MM-dd').format(_selectedDate!)
+        : '';
+
     final result = await updateProfil(
       firstName: _firstNameController.text,
       lastName: _lastNameController.text,
-      birthday: _birthdayController.text,
+      birthday: birthdayISO,
       email: _emailController.text,
       profilPicture: _newProfilPictureBase64,
     );
@@ -544,9 +555,9 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
         style: OutlinedButton.styleFrom(
-          foregroundColor: Globals.COLOR_MOVIX,
+          foregroundColor: Globals.COLOR_ADAPTIVE_ACCENT,
           side: BorderSide(
-            color: Globals.COLOR_MOVIX.withOpacity(0.5),
+            color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.5),
             width: 1.5,
           ),
           shape: RoundedRectangleBorder(

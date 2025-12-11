@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:movix/Services/globals.dart';
+import 'package:movix/Services/settings.dart';
 
 class CameraScannerIOS extends StatefulWidget {
   final void Function(String) onScanResult;
@@ -21,15 +23,27 @@ class _CameraScannerIOSState extends State<CameraScannerIOS>
   bool _isInitialized = false;
   late AnimationController _animationController;
   final Map<String, DateTime> _recentScannedCodes = {};
+  Size? _containerSize;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Charger les états depuis les globals
+    _isFlashOn = Globals.CAMERA_TORCH_ENABLED;
+    _isExtended = Globals.CAMERA_EXTENDED;
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 220),
       vsync: this,
     );
+
+    // Appliquer l'état étendu si nécessaire
+    if (_isExtended) {
+      _animationController.value = 1.0;
+    }
+
     _loadCamera();
   }
 
@@ -75,6 +89,16 @@ class _CameraScannerIOSState extends State<CameraScannerIOS>
     }
   }
 
+  void _restoreFlashIfNeeded() {
+    // Appelé quand le controller est prêt, restaure la torche depuis les globals
+    if (Globals.CAMERA_TORCH_ENABLED && _controller != null && _isInitialized) {
+      _controller!.toggleTorch();
+      setState(() {
+        _isFlashOn = true;
+      });
+    }
+  }
+
   Future<void> _unloadCamera() async {
     if (_controller == null) return;
 
@@ -84,6 +108,7 @@ class _CameraScannerIOSState extends State<CameraScannerIOS>
     if (mounted) {
       setState(() {
         _isInitialized = false;
+        _isFlashOn = false;
       });
     }
 
@@ -104,14 +129,61 @@ class _CameraScannerIOSState extends State<CameraScannerIOS>
       setState(() {
         _isInitialized = isRunning;
       });
+
+      // Restaurer la torche quand le controller devient prêt
+      if (isRunning) {
+        _restoreFlashIfNeeded();
+      }
     }
+  }
+
+  bool _isBarcodeInVisibleArea(Barcode barcode, Size? imageSize) {
+    if (_containerSize == null || imageSize == null) {
+      return true;
+    }
+    if (barcode.corners.isEmpty) {
+      return true;
+    }
+
+    final corners = barcode.corners;
+    final centerX = corners.map((c) => c.dx).reduce((a, b) => a + b) / corners.length;
+    final centerY = corners.map((c) => c.dy).reduce((a, b) => a + b) / corners.length;
+
+    final imageAspect = imageSize.width / imageSize.height;
+    final containerAspect = _containerSize!.width / _containerSize!.height;
+
+    double visibleLeft, visibleTop, visibleRight, visibleBottom;
+
+    if (imageAspect > containerAspect) {
+      final visibleWidth = imageSize.height * containerAspect;
+      visibleLeft = (imageSize.width - visibleWidth) / 2;
+      visibleRight = visibleLeft + visibleWidth;
+      visibleTop = 0;
+      visibleBottom = imageSize.height;
+    } else {
+      final visibleHeight = imageSize.width / containerAspect;
+      visibleTop = (imageSize.height - visibleHeight) / 2;
+      visibleBottom = visibleTop + visibleHeight;
+      visibleLeft = 0;
+      visibleRight = imageSize.width;
+    }
+
+    return centerX >= visibleLeft &&
+        centerX <= visibleRight &&
+        centerY >= visibleTop &&
+        centerY <= visibleBottom;
   }
 
   void _onDetect(BarcodeCapture capture) {
     final now = DateTime.now();
+    final imageSize = capture.size;
 
     for (final barcode in capture.barcodes) {
       if (barcode.rawValue != null) {
+        if (!_isBarcodeInVisibleArea(barcode, imageSize)) {
+          continue;
+        }
+
         final code = barcode.rawValue!;
 
         _recentScannedCodes.removeWhere(
@@ -127,11 +199,12 @@ class _CameraScannerIOSState extends State<CameraScannerIOS>
   }
 
   void _toggleFlash() {
-    if (_controller != null) {
+    if (_controller != null && _isInitialized) {
+      _controller!.toggleTorch();
       setState(() {
         _isFlashOn = !_isFlashOn;
       });
-      _controller!.toggleTorch();
+      setCameraTorchEnabled(_isFlashOn);
     }
   }
 
@@ -144,6 +217,7 @@ class _CameraScannerIOSState extends State<CameraScannerIOS>
     } else {
       _animationController.reverse();
     }
+    setCameraExtended(_isExtended);
   }
 
   @override
@@ -167,101 +241,108 @@ class _CameraScannerIOSState extends State<CameraScannerIOS>
             ))
             .value;
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 6),
-          height: height,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 2,
-                offset: const Offset(0, 1),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            _containerSize = Size(constraints.maxWidth, height);
+            return Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              height: height,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Stack(
-              children: [
-                if (_controller != null)
-                  MobileScanner(
-                    controller: _controller!,
-                    onDetect: _onDetect,
-                    fit: BoxFit.cover,
-                  ),
-                if (!_isInitialized)
-                  const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: IgnorePointer(
-                    child: Container(
-                      height: 88,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.6),
-                          ],
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Stack(
+                  children: [
+                    if (_controller != null)
+                      MobileScanner(
+                        controller: _controller!,
+                        onDetect: _onDetect,
+                        fit: BoxFit.cover,
+                      ),
+                    if (!_isInitialized)
+                      const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: IgnorePointer(
+                        child: Container(
+                          height: 88,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.6),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 8,
-                  left: 8,
-                  right: 8,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      GestureDetector(
-                        onTap: _toggleFlash,
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: const BoxDecoration(
-                            color: Colors.transparent,
-                            shape: BoxShape.circle,
+                    Positioned(
+                      bottom: 8,
+                      left: 8,
+                      right: 8,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          GestureDetector(
+                            onTap: _toggleFlash,
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: const BoxDecoration(
+                                color: Colors.transparent,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _isFlashOn ? Icons.flash_on : Icons.flash_off,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
                           ),
-                          child: Icon(
-                            _isFlashOn ? Icons.flash_on : Icons.flash_off,
-                            color: Colors.white,
-                            size: 24,
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: _toggleFullscreen,
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: const BoxDecoration(
+                                color: Colors.transparent,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _isExtended
+                                    ? Icons.fullscreen_exit
+                                    : Icons.fullscreen,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: _toggleFullscreen,
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: const BoxDecoration(
-                            color: Colors.transparent,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _isExtended ? Icons.fullscreen_exit : Icons.fullscreen,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );

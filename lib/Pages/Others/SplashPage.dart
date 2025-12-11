@@ -81,6 +81,7 @@ class _SplashPageState extends State<SplashPage> {
       loadToursFromHive();
       Globals.SCAN_MODE = await getScanMode();
       Globals.SOUND_PACK = await getSoundPack();
+      Globals.SOUND_ENABLED = await getSoundEnabled();
       Globals.MAP_APP = await getMapApp();
       setupLocator();
 

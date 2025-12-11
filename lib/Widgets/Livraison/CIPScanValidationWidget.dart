@@ -28,6 +28,7 @@ class CIPScanValidationWidget extends StatelessWidget {
       Globals.showSnackbar(
         'Veuillez scanner le CIP avant les colis.',
         backgroundColor: Globals.COLOR_MOVIX_RED,
+        duration: const Duration(seconds: 1),
       );
       return ScanResult.SCAN_ERROR;
     }
@@ -37,6 +38,7 @@ class CIPScanValidationWidget extends StatelessWidget {
       Globals.showSnackbar(
         "Colis introuvable",
         backgroundColor: Globals.COLOR_MOVIX_RED,
+        duration: const Duration(seconds: 1),
       );
       return ScanResult.SCAN_ERROR;
     }
@@ -45,6 +47,7 @@ class CIPScanValidationWidget extends StatelessWidget {
       Globals.showSnackbar(
         "Déjà scanné",
         backgroundColor: Globals.COLOR_MOVIX_RED,
+        duration: const Duration(seconds: 1),
       );
       return ScanResult.SCAN_ERROR;
     }

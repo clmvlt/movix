@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:movix/Models/Sound.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,8 +15,41 @@ enum SoundPack {
 }
 
 final AudioPlayer _audioPlayer = AudioPlayer();
+bool _audioContextConfigured = false;
+
+Future<void> _configureAudioContext() async {
+  if (_audioContextConfigured) return;
+
+  if (Platform.isIOS) {
+    await _audioPlayer.setAudioContext(AudioContext(
+      iOS: AudioContextIOS(
+        category: AVAudioSessionCategory.ambient,
+        options: const {
+          AVAudioSessionOptions.mixWithOthers,
+        },
+      ),
+    ));
+  } else if (Platform.isAndroid) {
+    await _audioPlayer.setAudioContext(AudioContext(
+      android: const AudioContextAndroid(
+        isSpeakerphoneOn: false,
+        audioMode: AndroidAudioMode.normal,
+        stayAwake: false,
+        contentType: AndroidContentType.sonification,
+        usageType: AndroidUsageType.notification,
+        audioFocus: AndroidAudioFocus.none,
+      ),
+    ));
+  }
+
+  _audioContextConfigured = true;
+}
 
 Future<void> playSound(ScanResult result) async {
+    if (!Globals.SOUND_ENABLED) return;
+
+    await _configureAudioContext();
+
     final path = switch (result) {
       ScanResult.SCAN_SUCCESS =>
         'sounds/${Globals.SOUND_PACK.name.toLowerCase()}/success.mp3',
@@ -36,8 +71,12 @@ Future<void> playSound(ScanResult result) async {
   }
 
 Future<void> playCustomSound(String soundFileName) async {
+  if (!Globals.SOUND_ENABLED) return;
+
+  await _configureAudioContext();
+
   final path = 'sounds/${Globals.SOUND_PACK.name.toLowerCase()}/$soundFileName.mp3';
-  
+
   try {
     await _audioPlayer.stop();
     await _audioPlayer.play(AssetSource(path));
@@ -45,8 +84,10 @@ Future<void> playCustomSound(String soundFileName) async {
 }
 
 Future<void> playCustomSoundFromPack(SoundPack pack, String soundFileName) async {
+  await _configureAudioContext();
+
   final path = 'sounds/${pack.name.toLowerCase()}/$soundFileName.mp3';
-  
+
   try {
     await _audioPlayer.stop();
     await _audioPlayer.play(AssetSource(path));

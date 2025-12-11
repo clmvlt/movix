@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:movix/Managers/LivraisonManager.dart';
 import 'package:movix/Models/Tour.dart';
 import 'package:movix/Services/globals.dart';
+import 'package:movix/Services/map_service.dart';
 import 'package:movix/Widgets/Livraison/ModernButtonWidget.dart';
 
 class DepotActionsWidget extends StatefulWidget {
@@ -26,36 +27,20 @@ class _DepotActionsWidgetState extends State<DepotActionsWidget> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        if (Globals.MAP_APP == "Waze")
-          Expanded(
-            child: ModernActionButtonWidget(
-              label: "Waze",
-              icon: FontAwesomeIcons.waze,
-              color: Globals.COLOR_MOVIX_YELLOW,
-              onPressed: () => openMap(
-                latitude: Globals.profil?.account.latitude,
-                longitude: Globals.profil?.account.longitude,
-              ),
-              iconSize: 16,
-              fontSize: 12,
+        Expanded(
+          child: ModernActionButtonWidget(
+            label: _getMapButtonLabel(),
+            icon: _getMapButtonIcon(),
+            color: Globals.COLOR_MOVIX_YELLOW,
+            onPressed: () => MapService.instance.openNavigation(
+              latitude: Globals.profil?.account.latitude,
+              longitude: Globals.profil?.account.longitude,
             ),
+            iconSize: 16,
+            fontSize: 12,
           ),
-        if (Globals.MAP_APP == "Google Maps")
-          Expanded(
-            child: ModernActionButtonWidget(
-              label: "Maps",
-              icon: Icons.fmd_good,
-              color: Globals.COLOR_MOVIX_YELLOW,
-              onPressed: () => openMap(
-                latitude: Globals.profil?.account.latitude,
-                longitude: Globals.profil?.account.longitude,
-              ),
-              iconSize: 16,
-              fontSize: 12,
-            ),
-          ),
-        if (Globals.MAP_APP == "Waze" || Globals.MAP_APP == "Google Maps")
-          const SizedBox(width: 12),
+        ),
+        const SizedBox(width: 12),
         Expanded(
           flex: 2,
           child: validationLoading
@@ -99,5 +84,27 @@ class _DepotActionsWidgetState extends State<DepotActionsWidget> {
       }
     }
     return true;
+  }
+
+  String _getMapButtonLabel() {
+    switch (Globals.MAP_APP) {
+      case MapApp.waze:
+        return "Waze";
+      case MapApp.appleMaps:
+        return "Plans";
+      case MapApp.googleMaps:
+        return "Maps";
+    }
+  }
+
+  IconData _getMapButtonIcon() {
+    switch (Globals.MAP_APP) {
+      case MapApp.waze:
+        return FontAwesomeIcons.waze;
+      case MapApp.appleMaps:
+        return Icons.map;
+      case MapApp.googleMaps:
+        return Icons.fmd_good;
+    }
   }
 }

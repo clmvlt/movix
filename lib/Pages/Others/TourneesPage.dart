@@ -42,8 +42,6 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
       parent: _shimmerController,
       curve: Curves.easeInOutSine,
     ));
-
-    _checkSpoolerAndRefresh();
   }
 
   @override
@@ -51,14 +49,6 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
     _shimmerController.dispose();
     _refreshController.dispose();
     super.dispose();
-  }
-
-  Future<void> _checkSpoolerAndRefresh() async {
-    // Vérifier si le spooler est vide
-    if (_spoolerManager.getTasksCount() == 0) {
-      // Si vide, actualiser automatiquement avec skeleton
-      await _refreshTours(showSkeleton: true);
-    }
   }
 
   Future<bool> _showSpoolerWarningDialog() async {

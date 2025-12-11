@@ -181,7 +181,8 @@ class _FSChargementPageState extends State<FSChargementPage>
         widget.packageSearcher.getPackageByBarcode(widget.command, code);
     if (package == null) {
       Globals.showSnackbar("Colis introuvable",
-          backgroundColor: Globals.COLOR_MOVIX_RED);
+          backgroundColor: Globals.COLOR_MOVIX_RED,
+          duration: const Duration(seconds: 1));
       return ScanResult.SCAN_ERROR;
     }
 
@@ -189,7 +190,8 @@ class _FSChargementPageState extends State<FSChargementPage>
     if (command == null || package.status.id == 2) {
       if (package.status.id == 2) {
         Globals.showSnackbar("Déjà scanné",
-            backgroundColor: Globals.COLOR_MOVIX_RED);
+            backgroundColor: Globals.COLOR_MOVIX_RED,
+            duration: const Duration(seconds: 1));
       }
       return ScanResult.SCAN_ERROR;
     }
@@ -358,26 +360,13 @@ class _FSChargementPageState extends State<FSChargementPage>
         appBar: AppBar(
           toolbarTextStyle: Globals.appBarTextStyle,
           titleTextStyle: Globals.appBarTextStyle,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.tour.name,
-                style: TextStyle(
-                  color: Globals.COLOR_TEXT_LIGHT,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
-              Text(
-                'Scanner les colis',
-                style: TextStyle(
-                  color: Globals.COLOR_TEXT_LIGHT.withOpacity(0.8),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+          title: Text(
+            widget.tour.name,
+            style: TextStyle(
+              color: Globals.COLOR_TEXT_LIGHT,
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
           ),
           backgroundColor: Globals.COLOR_MOVIX,
           foregroundColor: Globals.COLOR_TEXT_LIGHT,

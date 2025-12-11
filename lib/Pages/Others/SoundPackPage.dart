@@ -70,7 +70,13 @@ class _SoundPackPageState extends State<SoundPackPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
       backgroundColor: Globals.COLOR_BACKGROUND,
       appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
@@ -124,7 +130,7 @@ class _SoundPackPageState extends State<SoundPackPage> {
                   child: Icon(
                     Icons.music_note,
                     size: 32,
-                    color: Globals.COLOR_MOVIX,
+                    color: Globals.COLOR_ADAPTIVE_ACCENT,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -199,17 +205,17 @@ class _SoundPackPageState extends State<SoundPackPage> {
                       ),
                       trailing: Container(
                         decoration: BoxDecoration(
-                          color: isPlaying 
-                            ? Globals.COLOR_MOVIX 
-                            : Globals.COLOR_MOVIX.withOpacity(0.1),
+                          color: isPlaying
+                            ? Globals.COLOR_ADAPTIVE_ACCENT
+                            : Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: IconButton(
                           icon: Icon(
                             isPlaying ? Icons.stop : Icons.play_arrow,
-                            color: isPlaying 
-                              ? Colors.white 
-                              : Globals.COLOR_MOVIX,
+                            color: isPlaying
+                              ? Colors.white
+                              : Globals.COLOR_ADAPTIVE_ACCENT,
                           ),
                           onPressed: () => _playSound(sound),
                         ),
@@ -221,6 +227,7 @@ class _SoundPackPageState extends State<SoundPackPage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

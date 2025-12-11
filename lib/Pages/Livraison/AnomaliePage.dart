@@ -106,7 +106,6 @@ class _AnomaliePage extends State<AnomaliePage> {
       backgroundColor: Globals.COLOR_BACKGROUND,
       appBar: CustomAppBarWidget(
         title: widget.command.pharmacy.name,
-        subtitle: 'Signaler une anomalie',
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Globals.COLOR_TEXT_LIGHT),
           onPressed: () => Navigator.pop(context),
@@ -232,7 +231,8 @@ class _AnomaliePage extends State<AnomaliePage> {
     Package? package = widget.command.packages[code];
     if (package == null) {
       Globals.showSnackbar("Colis introuvable",
-          backgroundColor: Globals.COLOR_MOVIX_RED);
+          backgroundColor: Globals.COLOR_MOVIX_RED,
+          duration: const Duration(seconds: 1));
       return ScanResult.SCAN_ERROR;
     } else {
       packages[package.barcode] = package;

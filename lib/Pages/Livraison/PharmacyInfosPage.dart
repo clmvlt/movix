@@ -310,7 +310,6 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> with SingleTicker
         backgroundColor: Globals.COLOR_BACKGROUND,
         appBar: CustomAppBarWidget(
         title: widget.command.pharmacy.name,
-        subtitle: 'Informations pharmacie',
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Globals.COLOR_TEXT_LIGHT),
           onPressed: () => context.pop(),

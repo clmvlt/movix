@@ -47,27 +47,14 @@ class _AddInfosPharmacyPageState extends State<AddInfosPharmacyPage> {
         appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
         titleTextStyle: Globals.appBarTextStyle,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.command.pharmacy.name,
-              style: TextStyle(
-                color: Globals.COLOR_TEXT_LIGHT,
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              'Ajouter des informations',
-              style: TextStyle(
-                color: Globals.COLOR_TEXT_LIGHT.withOpacity(0.8),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+        title: Text(
+          widget.command.pharmacy.name,
+          style: TextStyle(
+            color: Globals.COLOR_TEXT_LIGHT,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+          overflow: TextOverflow.ellipsis,
         ),
         backgroundColor: Globals.COLOR_MOVIX,
         foregroundColor: Globals.COLOR_TEXT_LIGHT,

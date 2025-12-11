@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:movix/Models/Profil.dart';
 import 'package:movix/Models/ScanMode.dart';
 import 'package:movix/Models/Tour.dart';
+import 'package:movix/Services/map_service.dart';
 import 'package:movix/Services/sound.dart';
 
 class Globals {
@@ -99,9 +100,13 @@ class Globals {
   );
 
   static SoundPack SOUND_PACK = SoundPack.Basic;
-  static String MAP_APP = "Google Maps";
+  static bool SOUND_ENABLED = true;
+  static MapApp MAP_APP = MapService.getDefaultApp();
   static ScanMode SCAN_MODE = ScanMode.Camera;
   static bool VIBRATIONS_ENABLED = false;
+  static bool AUTO_LAUNCH_GPS = false;
+  static bool CAMERA_TORCH_ENABLED = false;
+  static bool CAMERA_EXTENDED = false;
   static Profil? profil;
   static Map<String, Tour> tours = {};
   static bool showEnded = false;

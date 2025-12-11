@@ -94,6 +94,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
       Globals.showSnackbar(
         'Veuillez scanner le CIP avant les colis.',
         backgroundColor: Globals.COLOR_MOVIX_RED,
+        duration: const Duration(seconds: 1),
       );
       return ScanResult.SCAN_ERROR;
     }
@@ -103,6 +104,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
       Globals.showSnackbar(
         "Colis introuvable",
         backgroundColor: Globals.COLOR_MOVIX_RED,
+        duration: const Duration(seconds: 1),
       );
       return ScanResult.SCAN_ERROR;
     }
@@ -111,6 +113,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
       Globals.showSnackbar(
         "Déjà scanné",
         backgroundColor: Globals.COLOR_MOVIX_RED,
+        duration: const Duration(seconds: 1),
       );
       return ScanResult.SCAN_ERROR;
     }
@@ -136,7 +139,6 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
         backgroundColor: Globals.COLOR_BACKGROUND,
         appBar: PharmacyAppBarWidget(
           command: command,
-          subtitle: 'Livraison des colis',
           actions: [
             if (kDebugMode)
               IconButton(
