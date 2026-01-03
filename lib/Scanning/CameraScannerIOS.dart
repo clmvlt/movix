@@ -90,8 +90,30 @@ class _CameraScannerIOSState extends State<CameraScannerIOS>
       if (mounted) {
         setState(() {});
       }
+
+      // Attendre que le widget soit construit puis vérifier l'état
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkInitialState();
+      });
     } catch (e) {
       debugPrint('Erreur chargement caméra: $e');
+    }
+  }
+
+  void _checkInitialState() {
+    if (!mounted || _controller == null) return;
+
+    // Si le controller est déjà en cours d'exécution mais _isInitialized est false
+    if (_controller!.value.isRunning && !_isInitialized) {
+      setState(() {
+        _isInitialized = true;
+      });
+      _restoreFlashIfNeeded();
+    } else if (!_controller!.value.isRunning && !_isInitialized) {
+      // Réessayer après un court délai si pas encore prêt
+      Future.delayed(const Duration(milliseconds: 200), () {
+        _checkInitialState();
+      });
     }
   }
 
@@ -193,7 +215,7 @@ class _CameraScannerIOSState extends State<CameraScannerIOS>
         final code = barcode.rawValue!;
 
         _recentScannedCodes.removeWhere(
-            (key, value) => now.difference(value).inSeconds >= 3);
+            (key, value) => now.difference(value).inSeconds >= Globals.SCAN_SPEED.delaySeconds);
 
         if (_recentScannedCodes.containsKey(code)) continue;
 

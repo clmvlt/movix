@@ -83,6 +83,7 @@ class _SplashPageState extends State<SplashPage> {
       Globals.SOUND_PACK = await getSoundPack();
       Globals.SOUND_ENABLED = await getSoundEnabled();
       Globals.MAP_APP = await getMapApp();
+      Globals.SCAN_SPEED = await getScanSpeed();
       setupLocator();
 
       setState(() => _loadingText = "Configuration de la carte...");

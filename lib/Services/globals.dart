@@ -7,6 +7,24 @@ import 'package:movix/Models/Tour.dart';
 import 'package:movix/Services/map_service.dart';
 import 'package:movix/Services/sound.dart';
 
+enum ScanSpeed {
+  slow(5, 'Lente'),
+  normal(3, 'Normale'),
+  fast(1, 'Rapide');
+
+  final int delaySeconds;
+  final String displayName;
+
+  const ScanSpeed(this.delaySeconds, this.displayName);
+
+  static ScanSpeed fromName(String name) {
+    return ScanSpeed.values.firstWhere(
+      (s) => s.name == name,
+      orElse: () => ScanSpeed.normal,
+    );
+  }
+}
+
 class Globals {
   static const List<String> _BETA_ACCOUNT_IDS = [
     "6bce8203-058c-43d4-8c92-fc5cad90acc9",
@@ -107,6 +125,7 @@ class Globals {
   static bool AUTO_LAUNCH_GPS = false;
   static bool CAMERA_TORCH_ENABLED = false;
   static bool CAMERA_EXTENDED = false;
+  static ScanSpeed SCAN_SPEED = ScanSpeed.normal;
   static Profil? profil;
   static Map<String, Tour> tours = {};
   static bool showEnded = false;

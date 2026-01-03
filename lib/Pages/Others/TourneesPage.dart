@@ -798,7 +798,11 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Globals.COLOR_TEXT_LIGHT),
           onPressed: () {
-            context.pop();
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
           },
         ),
         actions: [

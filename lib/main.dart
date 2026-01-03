@@ -65,6 +65,7 @@ void main() async {
   Globals.SCAN_MODE = await getScanMode();
   Globals.CAMERA_TORCH_ENABLED = await getCameraTorchEnabled();
   Globals.CAMERA_EXTENDED = await getCameraExtended();
+  Globals.SCAN_SPEED = await getScanSpeed();
 
   runApp(const MyApp());
 }

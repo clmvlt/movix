@@ -177,7 +177,7 @@ class _CameraScannerState extends State<CameraScanner>
         final code = barcode.rawValue!;
 
         _recentScannedCodes.removeWhere(
-            (key, value) => now.difference(value).inSeconds >= 3);
+            (key, value) => now.difference(value).inSeconds >= Globals.SCAN_SPEED.delaySeconds);
 
         if (_recentScannedCodes.containsKey(code)) continue;
 

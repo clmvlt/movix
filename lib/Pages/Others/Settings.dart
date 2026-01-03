@@ -18,6 +18,7 @@ class _SettingsPageState extends State<SettingsPage> {
   ScanMode _selectedScanMode = Globals.SCAN_MODE;
   SoundPack _selectedSoundPack = Globals.SOUND_PACK;
   MapApp _selectedMapApp = Globals.MAP_APP;
+  ScanSpeed _selectedScanSpeed = Globals.SCAN_SPEED;
   bool _isDarkMode = Globals.DARK_MODE;
   bool _vibrationsEnabled = Globals.VIBRATIONS_ENABLED;
   bool _soundEnabled = Globals.SOUND_ENABLED;
@@ -34,11 +35,13 @@ class _SettingsPageState extends State<SettingsPage> {
     final vibrationsEnabled = await getVibrationsEnabled();
     final soundEnabled = await getSoundEnabled();
     final autoLaunchGps = await getAutoLaunchGps();
+    final scanSpeed = await getScanSpeed();
     setState(() {
       _isDarkMode = darkMode;
       _vibrationsEnabled = vibrationsEnabled;
       _soundEnabled = soundEnabled;
       _autoLaunchGps = autoLaunchGps;
+      _selectedScanSpeed = scanSpeed;
     });
   }
 
@@ -142,19 +145,44 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 24),
           _buildSectionHeader('Scanner'),
           const SizedBox(height: 8),
-          _buildSelectableCard<ScanMode>(
-            context,
-            title: 'Mode de scan',
-            subtitle: _selectedScanMode.name,
-            icon: Icons.qr_code_scanner,
-            options: ScanMode.values,
-            getLabel: (mode) => mode.name,
-            onSelected: (value) {
-              setState(() {
-                setScanMode(value.name);
-                _selectedScanMode = value;
-              });
-            },
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+            color: Globals.COLOR_SURFACE,
+            margin: EdgeInsets.zero,
+            child: Column(
+              children: [
+                _buildSelectableTile<ScanMode>(
+                  context,
+                  title: 'Mode de scan',
+                  subtitle: _selectedScanMode.name,
+                  icon: Icons.qr_code_scanner,
+                  options: ScanMode.values,
+                  getLabel: (mode) => mode.name,
+                  onSelected: (value) {
+                    setState(() {
+                      setScanMode(value.name);
+                      _selectedScanMode = value;
+                    });
+                  },
+                ),
+                _buildDivider(),
+                _buildSelectableTile<ScanSpeed>(
+                  context,
+                  title: 'Vitesse de scan',
+                  subtitle: _selectedScanSpeed.displayName,
+                  icon: Icons.speed,
+                  options: ScanSpeed.values,
+                  getLabel: (speed) => speed.displayName,
+                  onSelected: (value) {
+                    setState(() {
+                      setScanSpeed(value);
+                      _selectedScanSpeed = value;
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
 
           // === NAVIGATION ===

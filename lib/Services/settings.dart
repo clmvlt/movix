@@ -98,3 +98,18 @@ Future<void> setManageToursSelectedDate(DateTime date) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   await prefs.setString('manage_tours_selected_date', date.toIso8601String());
 }
+
+Future<ScanSpeed> getScanSpeed() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? speedName = prefs.getString('scan_speed');
+  if (speedName == null) {
+    return ScanSpeed.normal;
+  }
+  return ScanSpeed.fromName(speedName);
+}
+
+Future<void> setScanSpeed(ScanSpeed speed) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setString('scan_speed', speed.name);
+  Globals.SCAN_SPEED = speed;
+}
