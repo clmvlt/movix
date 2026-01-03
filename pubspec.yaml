@@ -1,6 +1,7 @@
 name: movix
 description: "Application Movix"
 
+version: 0.1.3
 
 environment:
   sdk: ^3.5.4
