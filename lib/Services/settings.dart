@@ -84,3 +84,17 @@ Future<void> setCameraExtended(bool value) async {
   await prefs.setBool('camera_extended', value);
   Globals.CAMERA_EXTENDED = value;
 }
+
+Future<DateTime> getManageToursSelectedDate() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? dateStr = prefs.getString('manage_tours_selected_date');
+  if (dateStr != null) {
+    return DateTime.parse(dateStr);
+  }
+  return DateTime.now();
+}
+
+Future<void> setManageToursSelectedDate(DateTime date) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setString('manage_tours_selected_date', date.toIso8601String());
+}

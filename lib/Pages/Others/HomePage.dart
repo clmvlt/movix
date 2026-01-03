@@ -394,7 +394,7 @@ class _HomePageState extends State<HomePage> {
       'onPressed': () => context.go('/tours'),
     });
 
-    // Bouton Pharmacies (si pas web)
+    // Bouton Pharmacies (si isWeb)
     if (Globals.profil?.isWeb ?? false) {
       buttons.add({
         'title': 'Pharmacies',
@@ -402,6 +402,17 @@ class _HomePageState extends State<HomePage> {
         'icon': Icons.local_pharmacy_outlined,
         'color': Globals.COLOR_MOVIX_GREEN,
         'onPressed': () => context.push('/pharmacies'),
+      });
+    }
+
+    // Bouton Gérer les tournées (si isWeb ET isAdmin)
+    if ((Globals.profil?.isWeb ?? false) && (Globals.profil?.isAdmin ?? false)) {
+      buttons.add({
+        'title': 'Gérer les tournées',
+        'subtitle': 'Consulter par date',
+        'icon': Icons.calendar_month_outlined,
+        'color': Globals.COLOR_MOVIX_YELLOW,
+        'onPressed': () => context.push('/manage-tours'),
       });
     }
 

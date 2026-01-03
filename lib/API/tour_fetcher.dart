@@ -120,3 +120,68 @@ Future<Map<String, dynamic>> validateLoading(Tour tour) async {
     };
   }
 }
+
+/// Récupère les tournées pour une date spécifique
+/// [date] doit être au format yyyy-MM-dd
+Future<List<Tour>?> getToursByDate(String date) async {
+  try {
+    final response = await ApiBase.get('/tours/by-date/$date');
+
+    if (!ApiBase.isSuccess(response.statusCode)) return null;
+
+    final data = ApiBase.decodeResponse(response);
+    final List<Tour> tours = [];
+
+    if (data is List) {
+      for (var tourJson in data) {
+        if (tourJson is Map<String, dynamic>) {
+          final tour = Tour.fromJson(tourJson);
+          tours.add(tour);
+        }
+      }
+    }
+
+    return tours;
+  } catch (e) {
+    print(e);
+    return null;
+  }
+}
+
+/// Assigne une tournée à un profil spécifique
+/// [tourId] ID de la tournée
+/// [profilId] ID du profil (null pour désassigner)
+Future<bool> assignTourToProfile(String tourId, String? profilId) async {
+  try {
+    final response = await ApiBase.put(
+      '/tours/assign/$tourId',
+      {
+        "profilId": profilId,
+      },
+    );
+
+    return ApiBase.isSuccess(response.statusCode);
+  } catch (e) {
+    print(e);
+    return false;
+  }
+}
+
+/// Met à jour l'ordre des commandes d'une tournée
+/// [tourId] ID de la tournée
+/// [commands] Liste de maps avec commandId et tourOrder
+Future<bool> updateTourOrder(String tourId, List<Map<String, dynamic>> commands) async {
+  try {
+    final response = await ApiBase.put(
+      '/tours/update-order/$tourId',
+      {
+        "commands": commands,
+      },
+    );
+
+    return ApiBase.isSuccess(response.statusCode);
+  } catch (e) {
+    print(e);
+    return false;
+  }
+}

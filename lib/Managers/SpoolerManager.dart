@@ -21,11 +21,24 @@ class SpoolerManager {
   String lastError = "";
   static const int batchSize = 10;
 
+  Timer? _autoSyncTimer;
+  static const Duration autoSyncInterval = Duration(seconds: 30);
+
   late Box<String> spoolerBox;
 
   Future<void> initialize() async {
     spoolerBox = await Hive.openBox<String>('spoolerBox');
     await loadQueue();
+    _startAutoSync();
+  }
+
+  void _startAutoSync() {
+    _autoSyncTimer?.cancel();
+    _autoSyncTimer = Timer.periodic(autoSyncInterval, (_) {
+      if (queue.isNotEmpty && !isProcessing) {
+        processQueue();
+      }
+    });
   }
 
   int getTasksCount() {

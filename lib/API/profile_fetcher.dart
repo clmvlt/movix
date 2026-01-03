@@ -2,6 +2,35 @@ import 'package:movix/Models/Profil.dart';
 import 'package:movix/Services/globals.dart';
 import 'base.dart';
 
+/// Récupère tous les profils du compte
+Future<List<Profil>?> getAllProfiles() async {
+  try {
+    final response = await ApiBase.get('/profiles');
+
+    if (!ApiBase.isSuccess(response.statusCode)) return null;
+
+    final data = ApiBase.decodeResponse(response);
+    final List<Profil> profiles = [];
+
+    if (data is List) {
+      for (var profilJson in data) {
+        if (profilJson is Map<String, dynamic>) {
+          // Ajouter les champs manquants pour éviter les erreurs de parsing
+          profilJson['token'] = '';
+          profilJson['passwordHash'] = '';
+          profilJson['account'] = Globals.profil?.account.toJson() ?? {};
+          profiles.add(Profil.fromJson(profilJson));
+        }
+      }
+    }
+
+    return profiles;
+  } catch (e) {
+    print(e);
+    return null;
+  }
+}
+
 /// Met à jour le profil de l'utilisateur connecté
 /// Retourne le profil mis à jour si succès, null si échec
 Future<({Profil? profil, String? error})> updateProfil({

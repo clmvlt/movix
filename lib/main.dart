@@ -4,7 +4,9 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:movix/Router/app_router.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/login.dart';
+import 'package:movix/Services/scanner.dart';
 import 'package:movix/Services/settings.dart';
+import 'package:movix/Services/sound.dart';
 import 'package:movix/Services/update_check_cache.dart';
 import 'package:movix/Services/update_service.dart';
 import 'package:movix/Widgets/Common/BirthdayOverlay.dart';
@@ -51,9 +53,18 @@ void main() async {
   // Initialisation du cache de vérification des mises à jour
   await UpdateCheckCache.init();
 
+  // Chargement de tous les paramètres depuis SharedPreferences
   Globals.DARK_MODE = await getDarkMode();
   Globals.darkModeNotifier.value = Globals.DARK_MODE;
   Globals.VIBRATIONS_ENABLED = await getVibrationsEnabled();
+  Globals.SOUND_ENABLED = await getSoundEnabled();
+  Globals.AUTO_LAUNCH_GPS = await getAutoLaunchGps();
+  Globals.MAP_APP = await getMapApp();
+  Globals.SOUND_PACK = await getSoundPack();
+  Globals.SCAN_MODE = await getScanMode();
+  Globals.CAMERA_TORCH_ENABLED = await getCameraTorchEnabled();
+  Globals.CAMERA_EXTENDED = await getCameraExtended();
+
   runApp(const MyApp());
 }
 
