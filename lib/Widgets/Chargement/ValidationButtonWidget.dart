@@ -28,7 +28,7 @@ class ValidationButtonWidget extends StatelessWidget {
       ),
       child: ElevatedButton(
         onPressed: () {
-          context.go('/tour/validateChargement', extra: {
+          context.push('/tour/validateChargement', extra: {
             'packageSearcher': packageSearcher,
             'tour': tour
           });

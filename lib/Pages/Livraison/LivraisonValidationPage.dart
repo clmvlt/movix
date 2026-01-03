@@ -198,9 +198,7 @@ class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
                       _launchGpsForNextDelivery();
                     }
 
-                    context.go('/tour/livraison', extra: {
-                      'tour': Globals.tours[widget.command.tourId]
-                    });
+                    context.pop();
                   } else {
                     Globals.showSnackbar('Au moins une photo est obligatoire.',
                         backgroundColor: Globals.COLOR_MOVIX_RED);

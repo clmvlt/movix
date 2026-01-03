@@ -171,13 +171,7 @@ class _ChargementPage extends State<ChargementPage>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
-          context.go('/tours');
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Globals.COLOR_BACKGROUND,
         appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
@@ -196,7 +190,7 @@ class _ChargementPage extends State<ChargementPage>
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Globals.COLOR_TEXT_LIGHT),
           onPressed: () {
-            context.go('/tours');
+            context.pop();
           },
         ),
         actions: [
@@ -267,7 +261,7 @@ class _ChargementPage extends State<ChargementPage>
                   child: customButton(
                     label: "Valider le chargement",
                     onPressed: () {
-                      context.go('/tour/validateChargement', extra: {
+                      context.push('/tour/validateChargement', extra: {
                         'packageSearcher': packageSearcher,
                         'tour': widget.tour
                       });
@@ -277,7 +271,6 @@ class _ChargementPage extends State<ChargementPage>
               ),
             )
         ],
-      ),
       ),
     );
   }

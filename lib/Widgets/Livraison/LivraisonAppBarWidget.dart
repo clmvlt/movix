@@ -36,7 +36,7 @@ class LivraisonAppBarWidget extends StatelessWidget implements PreferredSizeWidg
       leading: IconButton(
         icon: Icon(Icons.arrow_back_ios, color: Globals.COLOR_TEXT_LIGHT),
         onPressed: () {
-          context.go('/tours');
+          context.pop();
         },
       ),
       actions: [

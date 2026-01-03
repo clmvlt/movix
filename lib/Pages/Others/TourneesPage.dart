@@ -574,9 +574,9 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
           borderRadius: BorderRadius.circular(20),
           onTap: () async {
             if (tour.status.id == 2) {
-              context.go('/tour/chargement', extra: {'tour': tour});
+              context.push('/tour/chargement', extra: {'tour': tour});
             } else if (tour.status.id == 3) {
-              context.go('/tour/livraison', extra: {'tour': tour});
+              context.push('/tour/livraison', extra: {'tour': tour});
             } else {
               Globals.showSnackbar(
                 'Erreur status de la tournée',
@@ -778,13 +778,7 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
-          context.go('/home');
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Globals.COLOR_BACKGROUND,
         appBar: AppBar(
         toolbarTextStyle: Globals.appBarTextStyle,
@@ -804,7 +798,7 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Globals.COLOR_TEXT_LIGHT),
           onPressed: () {
-            context.go('/home');
+            context.pop();
           },
         ),
         actions: [
@@ -934,7 +928,6 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
           ],
         ),
         ),
-      ),
       ),
     );
   }

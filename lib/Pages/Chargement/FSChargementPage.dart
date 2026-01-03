@@ -304,36 +304,9 @@ class _FSChargementPageState extends State<FSChargementPage>
     super.dispose();
   }
 
-  Future<void> _handleBack() async {
-    if (isChargementCommandUncomplet(command)) {
-      final result = await showDialog<Map<String, dynamic>>(
-        context: context,
-        builder: (BuildContext context) => _getChargementConfirmDialog(context),
-      );
-
-      if (result != null && result['confirmed'] == true) {
-        for (var package in command.packages.values) {
-          if (package.status.id == 1) {
-            setPackageState(command, package, 5, onUpdate);
-          }
-        }
-        updateCommandState(command, onUpdate, false);
-        context.pop();
-      }
-    } else {
-      context.pop();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
-          _handleBack();
-        }
-      },
-      child: WillPopScope(
+    return WillPopScope(
         onWillPop: () async {
           if (isChargementCommandUncomplet(command)) {
             final result = await showDialog<Map<String, dynamic>>(
@@ -445,7 +418,6 @@ class _FSChargementPageState extends State<FSChargementPage>
             ),
           ],
         ),
-      ),
       ),
     );
   }

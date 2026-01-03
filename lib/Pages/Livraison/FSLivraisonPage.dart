@@ -129,13 +129,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
   Widget build(BuildContext context) {
     Command command = widget.command;
 
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
-          context.pop();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Globals.COLOR_BACKGROUND,
         appBar: PharmacyAppBarWidget(
           command: command,
@@ -169,7 +163,6 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
             allPackagesScanned: _isAllScanned(command),
           ),
         ]),
-      ),
     );
   }
 

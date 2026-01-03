@@ -300,13 +300,7 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
-          context.pop();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Globals.COLOR_BACKGROUND,
         appBar: CustomAppBarWidget(
         title: widget.command.pharmacy.name,
@@ -322,7 +316,6 @@ class _PharmacyInfosPageState extends State<PharmacyInfosPage> with SingleTicker
               : const EmptyStateWidget(
                   message: 'Les informations de cette pharmacie ne sont pas encore renseignées',
                 ),
-      ),
     );
   }
 

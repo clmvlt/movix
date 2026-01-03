@@ -18,6 +18,7 @@ PODS:
   - mobile_scanner (7.0.0):
     - Flutter
     - FlutterMacOS
+  - Mute (0.6.1)
   - ObjectBox (4.3.0)
   - objectbox_flutter_libs (0.0.1):
     - Flutter
@@ -34,6 +35,9 @@ PODS:
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - sound_mode (0.0.1):
+    - Flutter
+    - Mute (~> 0.6.0)
   - url_launcher_ios (0.0.1):
     - Flutter
 
@@ -53,10 +57,12 @@ DEPENDENCIES:
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
+  - sound_mode (from `.symlinks/plugins/sound_mode/ios`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
 
 SPEC REPOS:
   trunk:
+    - Mute
     - ObjectBox
 
 EXTERNAL SOURCES:
@@ -90,6 +96,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
+  sound_mode:
+    :path: ".symlinks/plugins/sound_mode/ios"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
 
@@ -103,6 +111,7 @@ SPEC CHECKSUMS:
   image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
   location: 155caecf9da4f280ab5fe4a55f94ceccfab838f8
   mobile_scanner: 9157936403f5a0644ca3779a38ff8404c5434a93
+  Mute: 20135a96076f140cc82bfc8b810e2d6150d8ec7e
   ObjectBox: 7760fa9072adcffe102a6adf4646ca84ba70ab6b
   objectbox_flutter_libs: 4014e38f57250b074b99893ae84579aba8f02876
   open_filex: 432f3cd11432da3e39f47fcc0df2b1603854eff1
@@ -110,6 +119,7 @@ SPEC CHECKSUMS:
   path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
+  sound_mode: 53bd43e2fb1f640571ea74931ca5efdea5ddfc97
   url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
 
 PODFILE CHECKSUM: ca7d4fde741d1292ac17aa6c4dcd52c841917885

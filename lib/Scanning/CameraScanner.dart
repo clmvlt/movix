@@ -212,13 +212,6 @@ class _CameraScannerState extends State<CameraScanner>
 
   @override
   void dispose() {
-    // Restaurer toutes les orientations
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
     WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     _controller?.dispose();

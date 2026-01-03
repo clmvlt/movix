@@ -391,7 +391,7 @@ class _HomePageState extends State<HomePage> {
       'subtitle': 'Gérer les livraisons',
       'icon': Icons.local_shipping_outlined,
       'color': Globals.COLOR_ADAPTIVE_ACCENT,
-      'onPressed': () => context.go('/tours'),
+      'onPressed': () => context.push('/tours'),
     });
 
     // Bouton Pharmacies (si isWeb)

@@ -96,13 +96,7 @@ class _AnomaliePage extends State<AnomaliePage> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
-          Navigator.pop(context);
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: Globals.COLOR_BACKGROUND,
       appBar: CustomAppBarWidget(
         title: widget.command.pharmacy.name,
@@ -172,10 +166,8 @@ class _AnomaliePage extends State<AnomaliePage> {
           ),
         ],
       ),
-    ),
     );
   }
-
 
   Widget _buildFormContent() {
     return Column(

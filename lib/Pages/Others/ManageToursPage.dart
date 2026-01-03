@@ -452,7 +452,7 @@ class _ManageToursPageState extends State<ManageToursPage> with SingleTickerProv
                 _selectedTour = null;
               });
             } else {
-              context.go('/home');
+              context.pop();
             }
           },
         ),

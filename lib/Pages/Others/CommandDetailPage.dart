@@ -592,13 +592,7 @@ class _CommandDetailPageState extends State<CommandDetailPage> {
         ? DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(_command.status.createdAt))
         : '';
 
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
-          context.pop();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Globals.COLOR_BACKGROUND,
         appBar: CustomAppBarWidget(
           title: 'Détail commande',
@@ -800,7 +794,6 @@ class _CommandDetailPageState extends State<CommandDetailPage> {
                   ],
                 ),
               ),
-      ),
     );
   }
 

@@ -49,7 +49,7 @@ class _LivraisonPage extends State<LivraisonPage> with TickerProviderStateMixin 
       } else if (startKm == null) {
         // L'utilisateur a cliqué sur "Fermer", retour à la page des tournées
         if (mounted) {
-          context.go('/tours');
+          context.pop();
         }
       }
     }
@@ -107,13 +107,7 @@ class _LivraisonPage extends State<LivraisonPage> with TickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
-          context.go('/tours');
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Globals.COLOR_BACKGROUND,
         appBar: LivraisonAppBarWidget(
         tour: widget.tour,
@@ -172,11 +166,6 @@ class _LivraisonPage extends State<LivraisonPage> with TickerProviderStateMixin 
             );
           },
         ),
-      ),
     );
   }
-
-
-
-
 }

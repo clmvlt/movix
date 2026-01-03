@@ -165,7 +165,7 @@ class _SuccessView extends StatelessWidget {
             width: double.infinity,
             margin: const EdgeInsets.symmetric(horizontal: 16),
             child: ElevatedButton(
-              onPressed: () => context.go('/tours'),
+              onPressed: () => context.pop(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Globals.COLOR_MOVIX,
                 foregroundColor: Colors.white,
@@ -319,7 +319,7 @@ class _ErrorView extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                context.go('/tour/chargement', extra: {
+                context.push('/tour/chargement', extra: {
                   'packageSearcher': packageSearcher,
                   'tour': tour,
                 });
