@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:movix/Models/Sound.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sound_mode/sound_mode.dart';
+import 'package:sound_mode/utils/ringer_mode_statuses.dart';
 
 import 'globals.dart';
 
@@ -16,6 +18,28 @@ enum SoundPack {
 
 final AudioPlayer _audioPlayer = AudioPlayer();
 bool _audioContextConfigured = false;
+
+/// Vérifie si le son peut être joué
+/// [ignoreSoundEnabled] : true pour la preview (ignore le paramètre utilisateur)
+Future<bool> canPlaySound({bool ignoreSoundEnabled = false}) async {
+  // 1. Vérifier le paramètre utilisateur (sauf si preview)
+  if (!ignoreSoundEnabled && !Globals.SOUND_ENABLED) {
+    return false;
+  }
+
+  // 2. Vérifier le mode silencieux du système
+  try {
+    final ringerStatus = await SoundMode.ringerModeStatus;
+    if (ringerStatus == RingerModeStatus.silent ||
+        ringerStatus == RingerModeStatus.vibrate) {
+      return false;
+    }
+  } catch (_) {
+    // Si erreur (iOS ou autre), on laisse le AudioContext gérer
+  }
+
+  return true;
+}
 
 Future<void> _configureAudioContext() async {
   if (_audioContextConfigured) return;
@@ -46,7 +70,7 @@ Future<void> _configureAudioContext() async {
 }
 
 Future<void> playSound(ScanResult result) async {
-    if (!Globals.SOUND_ENABLED) return;
+    if (!await canPlaySound()) return;
 
     await _configureAudioContext();
 
@@ -71,7 +95,7 @@ Future<void> playSound(ScanResult result) async {
   }
 
 Future<void> playCustomSound(String soundFileName) async {
-  if (!Globals.SOUND_ENABLED) return;
+  if (!await canPlaySound()) return;
 
   await _configureAudioContext();
 
@@ -83,7 +107,9 @@ Future<void> playCustomSound(String soundFileName) async {
   } catch (_) {}
 }
 
-Future<void> playCustomSoundFromPack(SoundPack pack, String soundFileName) async {
+Future<void> playCustomSoundFromPack(SoundPack pack, String soundFileName, {bool isPreview = false}) async {
+  if (!await canPlaySound(ignoreSoundEnabled: isPreview)) return;
+
   await _configureAudioContext();
 
   final path = 'sounds/${pack.name.toLowerCase()}/$soundFileName.mp3';

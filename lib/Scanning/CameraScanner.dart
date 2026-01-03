@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/settings.dart';
@@ -29,6 +30,11 @@ class _CameraScannerState extends State<CameraScanner>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Verrouiller l'orientation en portrait pour le scanner
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
 
     // Charger les états depuis les globals
     _isFlashOn = Globals.CAMERA_TORCH_ENABLED;
@@ -206,6 +212,13 @@ class _CameraScannerState extends State<CameraScanner>
 
   @override
   void dispose() {
+    // Restaurer toutes les orientations
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     _controller?.dispose();

@@ -405,8 +405,8 @@ class _HomePageState extends State<HomePage> {
       });
     }
 
-    // Bouton Gérer les tournées (si isWeb ET isAdmin)
-    if ((Globals.profil?.isWeb ?? false) && (Globals.profil?.isAdmin ?? false)) {
+    // Bouton Gérer les tournées (si isWeb OU isAdmin)
+    if ((Globals.profil?.isWeb ?? false) || (Globals.profil?.isAdmin ?? false)) {
       buttons.add({
         'title': 'Gérer les tournées',
         'subtitle': 'Consulter par date',

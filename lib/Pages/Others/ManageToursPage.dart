@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart' hide RefreshIndicator, RefreshIndicatorState;
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:movix/API/command_fetcher.dart';
 import 'package:movix/API/profile_fetcher.dart';
 import 'package:movix/API/tour_fetcher.dart';
 import 'package:movix/Models/Command.dart';
@@ -121,7 +120,6 @@ class _ManageToursPageState extends State<ManageToursPage> with SingleTickerProv
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
-      locale: const Locale('fr', 'FR'),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -1329,25 +1327,6 @@ class _ManageToursPageState extends State<ManageToursPage> with SingleTickerProv
     );
   }
 
-  Future<void> _toggleIsForced(Command command, bool value) async {
-    final success = await updateCommandIsForced([command.id], value);
-    if (success) {
-      setState(() {
-        command.isForced = value;
-      });
-      Globals.showSnackbar(
-        value ? 'Scan CIP désactivé' : 'Scan CIP activé',
-        icon: value ? Icons.check_circle_outline : Icons.qr_code_scanner,
-      );
-    } else {
-      Globals.showSnackbar(
-        'Erreur lors de la mise à jour',
-        backgroundColor: Globals.COLOR_MOVIX_RED,
-        icon: Icons.error_outline,
-      );
-    }
-  }
-
   Future<void> _showAssignProfileDialog(Tour tour) async {
     // Récupérer tous les profils via l'API
     final allProfiles = await getAllProfiles();
@@ -1570,148 +1549,29 @@ class _ManageToursPageState extends State<ManageToursPage> with SingleTickerProv
     }
   }
 
-  Future<void> _showAssignTourDialog(Command command) async {
+  Future<void> _openCommandDetail(Command command) async {
     // Filtrer les autres tournées (exclure la tournée actuelle)
     final otherTours = _tours.where((t) => t.id != _selectedTour?.id).toList();
 
-    if (otherTours.isEmpty) {
-      Globals.showSnackbar(
-        'Aucune autre tournée disponible',
-        backgroundColor: Globals.COLOR_MOVIX_YELLOW,
-        icon: Icons.warning_outlined,
-      );
-      return;
-    }
-
-    final selectedTourId = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Globals.COLOR_SURFACE,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Text(
-          'Assigner à une tournée',
-          style: TextStyle(
-            color: Globals.COLOR_TEXT_DARK,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: otherTours.length,
-            itemBuilder: (context, index) {
-              final tour = otherTours[index];
-              final tourColor = Color(int.parse("0xff${tour.color.substring(1)}"));
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: Globals.COLOR_SURFACE_SECONDARY,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: tourColor.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  leading: Container(
-                    width: 4,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: tourColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  title: Text(
-                    tour.name,
-                    style: TextStyle(
-                      color: Globals.COLOR_TEXT_DARK,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: Text(
-                    tour.profil.firstName.isNotEmpty || tour.profil.lastName.isNotEmpty
-                        ? '${tour.profil.firstName} ${tour.profil.lastName}'
-                        : 'Non attribué',
-                    style: TextStyle(
-                      color: Globals.COLOR_TEXT_SECONDARY,
-                      fontSize: 12,
-                      fontStyle: tour.profil.firstName.isEmpty && tour.profil.lastName.isEmpty
-                          ? FontStyle.italic
-                          : FontStyle.normal,
-                    ),
-                  ),
-                  trailing: Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: tourColor,
-                  ),
-                  onTap: () => Navigator.of(context).pop(tour.id),
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Annuler',
-              style: TextStyle(
-                color: Globals.COLOR_TEXT_SECONDARY,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
+    await context.push(
+      '/command-detail',
+      extra: {
+        'command': command,
+        'availableTours': otherTours,
+        'onUpdate': () async {
+          await _loadTours(showSkeleton: false);
+          if (_selectedTour != null) {
+            final updatedTour = _tours.firstWhere(
+              (t) => t.id == _selectedTour!.id,
+              orElse: () => _selectedTour!,
+            );
+            setState(() {
+              _selectedTour = updatedTour;
+            });
+          }
+        },
+      },
     );
-
-    if (selectedTourId != null) {
-      await _assignCommandToTour(command, selectedTourId);
-    }
-  }
-
-  Future<void> _assignCommandToTour(Command command, String tourId) async {
-    final success = await assignCommandsToTour(tourId, [command.id]);
-
-    if (success) {
-      // Trouver le nom de la tournée de destination
-      final destinationTour = _tours.firstWhere((t) => t.id == tourId);
-
-      // Supprimer la commande de la tournée actuelle localement
-      setState(() {
-        _selectedTour?.commands.remove(command.id);
-      });
-
-      Globals.showSnackbar(
-        'Commande assignée à ${destinationTour.name}',
-        icon: Icons.check_circle_outline,
-      );
-
-      // Recharger les tournées pour mettre à jour les données
-      await _loadTours(showSkeleton: false);
-
-      // Si on est toujours sur le détail de la tournée, la mettre à jour
-      if (_selectedTour != null) {
-        final updatedTour = _tours.firstWhere(
-          (t) => t.id == _selectedTour!.id,
-          orElse: () => _selectedTour!,
-        );
-        setState(() {
-          _selectedTour = updatedTour;
-        });
-      }
-    } else {
-      Globals.showSnackbar(
-        'Erreur lors de l\'assignation',
-        backgroundColor: Globals.COLOR_MOVIX_RED,
-        icon: Icons.error_outline,
-      );
-    }
   }
 
   Widget _buildCommandCard(Command command) {
@@ -1723,200 +1583,133 @@ class _ManageToursPageState extends State<ManageToursPage> with SingleTickerProv
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Material(
         color: Globals.COLOR_SURFACE,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                SizedBox(
-                  height: 24,
-                  child: GetLivraisonIconCommandStatus(command, 20),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    command.pharmacy.name,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Globals.COLOR_TEXT_DARK,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${command.packages.length} colis',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Globals.COLOR_ADAPTIVE_ACCENT,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "${command.pharmacy.address1} ${command.pharmacy.address2} ${command.pharmacy.address3}".trim(),
-              style: TextStyle(
-                fontSize: 12,
-                color: Globals.COLOR_TEXT_DARK_SECONDARY,
-                fontWeight: FontWeight.w500,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _openCommandDetail(command),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
+                width: 1,
               ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              "${command.pharmacy.postalCode} ${command.pharmacy.city}",
-              style: TextStyle(
-                fontSize: 12,
-                color: Globals.COLOR_TEXT_DARK_SECONDARY,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
+            child: Row(
               children: [
-                if (statusText.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(command.status.id).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      statusText,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _getStatusColor(command.status.id),
-                      ),
-                    ),
-                  ),
-                ],
-                if (statusTime.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.access_time,
-                    size: 14,
-                    color: Globals.COLOR_TEXT_SECONDARY,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    statusTime,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Globals.COLOR_TEXT_SECONDARY,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                // Bouton pour assigner à une autre tournée
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () => _showAssignTourDialog(command),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Icon(
-                            Icons.swap_horiz,
-                            size: 18,
-                            color: Globals.COLOR_ADAPTIVE_ACCENT,
+                          SizedBox(
+                            height: 24,
+                            child: GetLivraisonIconCommandStatus(command, 20),
                           ),
-                          const SizedBox(width: 6),
-                          Flexible(
+                          const SizedBox(width: 8),
+                          Expanded(
                             child: Text(
-                              'Attribuer',
+                              command.pharmacy.name,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Globals.COLOR_TEXT_DARK,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${command.packages.length} colis',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: Globals.COLOR_ADAPTIVE_ACCENT,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "${command.pharmacy.address1} ${command.pharmacy.address2} ${command.pharmacy.address3}".trim(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Globals.COLOR_TEXT_DARK_SECONDARY,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        "${command.pharmacy.postalCode} ${command.pharmacy.city}",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Globals.COLOR_TEXT_DARK_SECONDARY,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          if (statusText.isNotEmpty) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor(command.status.id).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                statusText,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: _getStatusColor(command.status.id),
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (statusTime.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.access_time,
+                              size: 14,
+                              color: Globals.COLOR_TEXT_SECONDARY,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              statusTime,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Globals.COLOR_TEXT_SECONDARY,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                // Checkbox pour isForced (forcer scan CIP)
-                GestureDetector(
-                  onTap: () => _toggleIsForced(command, !command.isForced),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: command.isForced
-                          ? Globals.COLOR_MOVIX_GREEN.withOpacity(0.15)
-                          : Globals.COLOR_TEXT_SECONDARY.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: command.isForced
-                            ? Globals.COLOR_MOVIX_GREEN.withOpacity(0.3)
-                            : Globals.COLOR_TEXT_SECONDARY.withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          command.isForced
-                              ? Icons.check_box
-                              : Icons.check_box_outline_blank,
-                          size: 18,
-                          color: command.isForced
-                              ? Globals.COLOR_MOVIX_GREEN
-                              : Globals.COLOR_TEXT_SECONDARY,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Forcer le scan CIP',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: command.isForced
-                                ? Globals.COLOR_MOVIX_GREEN
-                                : Globals.COLOR_TEXT_SECONDARY,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                const SizedBox(width: 12),
+                Icon(
+                  Icons.chevron_right,
+                  color: Globals.COLOR_TEXT_SECONDARY,
+                  size: 24,
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

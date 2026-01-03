@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:movix/Models/Tour.dart';
 import 'package:movix/Services/globals.dart';
 
 class LivraisonPopupMenuWidget extends StatefulWidget {
   final VoidCallback onShowEndedChanged;
+  final Tour tour;
 
   const LivraisonPopupMenuWidget({
     super.key,
     required this.onShowEndedChanged,
+    required this.tour,
   });
 
   @override
@@ -31,6 +34,12 @@ class _LivraisonPopupMenuWidgetState extends State<LivraisonPopupMenuWidget> {
             });
             widget.onShowEndedChanged();
             break;
+          case 'reorder':
+            context.push('/tour/reorder', extra: {
+              'tour': widget.tour,
+              'onOrderChanged': widget.onShowEndedChanged,
+            });
+            break;
           case 'spooler':
             context.push('/spooler');
             break;
@@ -41,6 +50,12 @@ class _LivraisonPopupMenuWidgetState extends State<LivraisonPopupMenuWidget> {
           value: 'toggle_ended',
           padding: EdgeInsets.zero,
           child: _buildToggleEndedMenuItem(),
+        ),
+        const PopupMenuDivider(height: 1),
+        PopupMenuItem<String>(
+          value: 'reorder',
+          padding: EdgeInsets.zero,
+          child: _buildReorderMenuItem(),
         ),
         const PopupMenuDivider(height: 1),
         PopupMenuItem<String>(
@@ -122,6 +137,57 @@ class _LivraisonPopupMenuWidgetState extends State<LivraisonPopupMenuWidget> {
                   : Globals.COLOR_TEXT_DARK.withOpacity(0.5),
               size: 16,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReorderMenuItem() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.reorder,
+              color: Globals.COLOR_ADAPTIVE_ACCENT,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Réorganiser la tournée',
+                  style: TextStyle(
+                    color: Globals.COLOR_TEXT_DARK,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Modifier l\'ordre des commandes',
+                  style: TextStyle(
+                    color: Globals.COLOR_TEXT_DARK.withOpacity(0.6),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.arrow_forward_ios,
+            color: Globals.COLOR_TEXT_DARK.withOpacity(0.3),
+            size: 14,
           ),
         ],
       ),

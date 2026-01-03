@@ -24,6 +24,8 @@ import 'package:movix/Pages/Others/TourneesPage.dart';
 import 'package:movix/Pages/Others/UpdatePage.dart';
 import 'package:movix/Pages/Others/ProfilePage.dart';
 import 'package:movix/Pages/Others/ManageToursPage.dart';
+import 'package:movix/Pages/Others/ReorderTourPage.dart';
+import 'package:movix/Pages/Others/CommandDetailPage.dart';
 import 'package:movix/Services/globals.dart';
 
 CustomTransitionPage<Widget> buildPageWithTransition(Widget child) {
@@ -72,6 +74,15 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/profile', pageBuilder: (_, __) => buildPageWithTransition(const ProfilePage())),
     GoRoute(path: '/tours', pageBuilder: (_, __) => buildPageWithTransition(const TourneesPage())),
     GoRoute(path: '/manage-tours', pageBuilder: (_, __) => buildPageWithTransition(const ManageToursPage())),
+    GoRoute(
+      path: '/tour/reorder',
+      pageBuilder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        final tour = extra['tour'] as Tour;
+        final onOrderChanged = extra['onOrderChanged'] as VoidCallback?;
+        return buildPageWithTransition(ReorderTourPage(tour: tour, onOrderChanged: onOrderChanged));
+      },
+    ),
     GoRoute(
       path: '/mapbox',
       pageBuilder: (context, state) {
@@ -167,6 +178,20 @@ final GoRouter appRouter = GoRouter(
         return buildPageWithTransition(LivraisonValidationPage(
           onUpdate: onUpdate,
           command: command,
+        ));
+      },
+    ),
+    GoRoute(
+      path: '/command-detail',
+      pageBuilder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        final command = extra['command'] as Command;
+        final availableTours = extra['availableTours'] as List<Tour>?;
+        final onUpdate = extra['onUpdate'] as VoidCallback?;
+        return buildPageWithTransition(CommandDetailPage(
+          command: command,
+          availableTours: availableTours,
+          onUpdate: onUpdate,
         ));
       },
     ),

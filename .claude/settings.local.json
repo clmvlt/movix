@@ -32,7 +32,8 @@
       "Bash(plutil:*)",
       "Bash(find:*)",
       "Bash(/usr/libexec/PlistBuddy:*)",
-      "Bash(/Users/clementveillet/Development/flutter/bin/flutter analyze:*)"
+      "Bash(/Users/clementveillet/Development/flutter/bin/flutter analyze:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

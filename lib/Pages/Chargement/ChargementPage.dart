@@ -64,7 +64,7 @@ class _ChargementPage extends State<ChargementPage>
     }
 
     packageSearcher = PackageSearcher(widget.tour.commands);
-    
+
     // Initialize animations for each command
     for (var command in widget.tour.commands.values) {
       _cardAnimations[command.id] = AnimationController(
@@ -72,6 +72,93 @@ class _ChargementPage extends State<ChargementPage>
         vsync: this,
       );
     }
+  }
+
+  Widget _buildPopupMenu() {
+    return PopupMenuButton<String>(
+      offset: const Offset(0, 50),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: Globals.COLOR_SURFACE,
+      elevation: 8,
+      onSelected: (value) {
+        switch (value) {
+          case 'reorder':
+            context.push('/tour/reorder', extra: {
+              'tour': widget.tour,
+              'onOrderChanged': () {
+                if (mounted) setState(() {});
+              },
+            });
+            break;
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          value: 'reorder',
+          padding: EdgeInsets.zero,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.reorder,
+                    color: Globals.COLOR_ADAPTIVE_ACCENT,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Réorganiser la tournée',
+                        style: TextStyle(
+                          color: Globals.COLOR_TEXT_DARK,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Modifier l\'ordre des commandes',
+                        style: TextStyle(
+                          color: Globals.COLOR_TEXT_DARK.withOpacity(0.6),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Globals.COLOR_TEXT_DARK.withOpacity(0.3),
+                  size: 14,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          Icons.more_vert,
+          color: Globals.COLOR_TEXT_LIGHT,
+          size: 20,
+        ),
+      ),
+    );
   }
 
   @override
@@ -114,7 +201,7 @@ class _ChargementPage extends State<ChargementPage>
         ),
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 16),
+            margin: const EdgeInsets.only(right: 8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
@@ -128,6 +215,10 @@ class _ChargementPage extends State<ChargementPage>
                 fontSize: 14,
               ),
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: _buildPopupMenu(),
           ),
         ],
       ),

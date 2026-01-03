@@ -60,6 +60,7 @@ class LivraisonAppBarWidget extends StatelessWidget implements PreferredSizeWidg
           padding: const EdgeInsets.only(right: 12),
           child: LivraisonPopupMenuWidget(
             onShowEndedChanged: onShowEndedChanged,
+            tour: tour,
           ),
         ),
       ],

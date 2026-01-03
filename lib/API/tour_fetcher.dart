@@ -176,6 +176,7 @@ Future<bool> updateTourOrder(String tourId, List<Map<String, dynamic>> commands)
       '/tours/update-order/$tourId',
       {
         "commands": commands,
+        "autoUpdateRoute": true,
       },
     );
 

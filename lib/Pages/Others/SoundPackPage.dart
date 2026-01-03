@@ -238,10 +238,15 @@ class _SoundPackPageState extends State<SoundPackPage> {
       try {
         await _audioPlayer.stop();
       } catch (_) {}
-      
+
       setState(() {
         _currentlyPlaying = null;
       });
+      return;
+    }
+
+    // Vérifier le mode silencieux (mais pas SOUND_ENABLED car c'est la preview)
+    if (!await canPlaySound(ignoreSoundEnabled: true)) {
       return;
     }
 
@@ -267,23 +272,28 @@ class _SoundPackPageState extends State<SoundPackPage> {
   }
 
   Future<void> _playAllSounds() async {
+    // Vérifier le mode silencieux (mais pas SOUND_ENABLED car c'est la preview)
+    if (!await canPlaySound(ignoreSoundEnabled: true)) {
+      return;
+    }
+
     final sounds = ['success', 'error', 'finish', 'switch'];
-    
+
     // Arrêter tout son en cours
     try {
       await _audioPlayer.stop();
     } catch (_) {}
-    
+
     setState(() {
       _currentlyPlaying = null;
     });
-    
+
     for (final sound in sounds) {
       try {
         await _audioPlayer.stop();
         final path = 'sounds/${widget.soundPack.name.toLowerCase()}/$sound.mp3';
         await _audioPlayer.play(AssetSource(path));
-        
+
         // Attendre que le son se termine avant de jouer le suivant
         await Future<void>.delayed(const Duration(milliseconds: 1500));
       } catch (_) {}

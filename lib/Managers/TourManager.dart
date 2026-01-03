@@ -30,8 +30,11 @@ Future<void> loadToursFromHive() async {
       if (jsonStr != null) {
         Map<String, dynamic> tourData = jsonDecode(jsonStr) as Map<String, dynamic>;
         Tour tour = Tour.fromJson(tourData);
-        for (var command in tour.commands.values) {
-          updateCommandState(command, () {}, false);
+        // Mise à jour des statuts uniquement pour les tours en mode chargement
+        if (tour.status.id == 2) {
+          for (var command in tour.commands.values) {
+            updateCommandState(command, () {}, false);
+          }
         }
         loadedTours[key as String] = tour;
       }
