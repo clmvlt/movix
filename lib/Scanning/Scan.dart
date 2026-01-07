@@ -34,9 +34,12 @@ class _ScannerWidgetState extends State<ScannerWidget> {
   void initState() {
     super.initState();
     scannerManager.addListener(_onManagerChanged);
-    // Enregistrer le callback dans le manager
-    scannerManager.pushCallback(widget.validateCode);
-    _updateIsTop();
+    // Enregistrer le callback après le build initial pour éviter setState pendant build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        scannerManager.pushCallback(widget.validateCode);
+      }
+    });
   }
 
   @override
@@ -64,9 +67,14 @@ class _ScannerWidgetState extends State<ScannerWidget> {
 
   void _updateIsTop() {
     final isTop = scannerManager.isTopCallback(widget.validateCode);
-    if (isTop != _isTop) {
-      setState(() {
-        _isTop = isTop;
+    if (isTop != _isTop && mounted) {
+      // Utiliser addPostFrameCallback pour éviter setState pendant build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _isTop != isTop) {
+          setState(() {
+            _isTop = isTop;
+          });
+        }
       });
     }
   }

@@ -5,6 +5,7 @@ import 'package:movix/API/tour_fetcher.dart';
 import 'package:movix/Managers/CommandManager.dart';
 import 'package:movix/Managers/SpoolerManager.dart';
 import 'package:movix/Models/Tour.dart';
+import 'package:movix/Router/app_router.dart';
 import 'package:movix/Services/affichage.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -45,10 +46,26 @@ class _TourneesPageState extends State<TourneesPage> with RouteAware, SingleTick
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _shimmerController.dispose();
     _refreshController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Appelé quand on revient sur cette page (après un pop)
+    // Rafraîchit l'affichage sans appeler l'API
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<bool> _showSpoolerWarningDialog() async {

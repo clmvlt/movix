@@ -165,7 +165,7 @@ class _SuccessView extends StatelessWidget {
             width: double.infinity,
             margin: const EdgeInsets.symmetric(horizontal: 16),
             child: ElevatedButton(
-              onPressed: () => context.pop(),
+              onPressed: () => context.go('/tours'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Globals.COLOR_MOVIX,
                 foregroundColor: Colors.white,

@@ -495,7 +495,7 @@ void _showCommentDialog(BuildContext context, Command command, int statusId, Str
                               }
                               
                               context.push('/tour/validateLivraison',
-                                  extra: {'command': command, 'onUpdate': onUpdate});
+                                  extra: {'command': command, 'onUpdate': onUpdate, 'popCount': 1});
                             },
                             borderRadius: const BorderRadius.only(
                               bottomRight: Radius.circular(20),

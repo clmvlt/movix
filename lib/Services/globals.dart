@@ -25,20 +25,32 @@ enum ScanSpeed {
   }
 }
 
+enum ApiEnvironment {
+  production('Production', 'https://api.movix.fr'),
+  beta('Bêta', 'https://api.beta.movix.fr'),
+  demo('Démo', 'https://api.demo.movix.fr');
+
+  final String displayName;
+  final String url;
+
+  const ApiEnvironment(this.displayName, this.url);
+
+  static ApiEnvironment fromName(String name) {
+    return ApiEnvironment.values.firstWhere(
+      (e) => e.name == name,
+      orElse: () => ApiEnvironment.production,
+    );
+  }
+}
+
 class Globals {
-  static const List<String> _BETA_ACCOUNT_IDS = [
-    "6bce8203-058c-43d4-8c92-fc5cad90acc9",
-    "09aec7e6-586a-41bb-b6df-52b986a908a6",
-  ];
+  static ApiEnvironment API_ENVIRONMENT = ApiEnvironment.production;
 
   static String get API_URL {
     if (kDebugMode) {
       return "http://192.168.1.120:8081";
     }
-    if (_BETA_ACCOUNT_IDS.contains(profil?.account.id)) {
-      return "https://api.beta.movix.fr";
-    }
-    return "https://api.movix.fr";
+    return API_ENVIRONMENT.url;
   }
 
   static bool DARK_MODE = true;

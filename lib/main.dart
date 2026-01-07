@@ -66,6 +66,7 @@ void main() async {
   Globals.CAMERA_TORCH_ENABLED = await getCameraTorchEnabled();
   Globals.CAMERA_EXTENDED = await getCameraExtended();
   Globals.SCAN_SPEED = await getScanSpeed();
+  Globals.API_ENVIRONMENT = await getApiEnvironment();
 
   runApp(const MyApp());
 }

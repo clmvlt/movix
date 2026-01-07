@@ -11,9 +11,14 @@ import 'package:movix/Widgets/PhotoPickerWidget.dart';
 class LivraisonValidationPage extends StatefulWidget {
   final Command command;
   final VoidCallback onUpdate;
+  final int popCount;
 
-  const LivraisonValidationPage(
-      {super.key, required this.command, required this.onUpdate});
+  const LivraisonValidationPage({
+    super.key,
+    required this.command,
+    required this.onUpdate,
+    this.popCount = 2,
+  });
 
   @override
   _LivraisonValidationPageState createState() =>
@@ -198,7 +203,10 @@ class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
                       _launchGpsForNextDelivery();
                     }
 
-                    context.pop();
+                    // Retour à LivraisonPage (pop selon le nombre de pages à dépiler)
+                    for (int i = 0; i < widget.popCount; i++) {
+                      context.pop();
+                    }
                   } else {
                     Globals.showSnackbar('Au moins une photo est obligatoire.',
                         backgroundColor: Globals.COLOR_MOVIX_RED);

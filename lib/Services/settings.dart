@@ -113,3 +113,29 @@ Future<void> setScanSpeed(ScanSpeed speed) async {
   await prefs.setString('scan_speed', speed.name);
   Globals.SCAN_SPEED = speed;
 }
+
+const List<String> _BETA_ACCOUNT_IDS = [
+  "6bce8203-058c-43d4-8c92-fc5cad90acc9",
+  "09aec7e6-586a-41bb-b6df-52b986a908a6",
+];
+
+Future<ApiEnvironment> getApiEnvironment() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? envName = prefs.getString('api_environment');
+
+  if (envName == null) {
+    final accountId = Globals.profil?.account.id;
+    if (accountId != null && _BETA_ACCOUNT_IDS.contains(accountId)) {
+      return ApiEnvironment.beta;
+    }
+    return ApiEnvironment.production;
+  }
+
+  return ApiEnvironment.fromName(envName);
+}
+
+Future<void> setApiEnvironment(ApiEnvironment env) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setString('api_environment', env.name);
+  Globals.API_ENVIRONMENT = env;
+}

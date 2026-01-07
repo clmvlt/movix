@@ -175,9 +175,11 @@ final GoRouter appRouter = GoRouter(
         final extra = state.extra as Map<String, dynamic>;
         final command = extra['command'] as Command;
         final onUpdate = extra['onUpdate'] as VoidCallback;
+        final popCount = extra['popCount'] as int? ?? 2;
         return buildPageWithTransition(LivraisonValidationPage(
           onUpdate: onUpdate,
           command: command,
+          popCount: popCount,
         ));
       },
     ),

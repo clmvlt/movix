@@ -71,9 +71,6 @@ class _CameraScannerState extends State<CameraScanner>
 
   Future<void> _loadCamera() async {
     if (_controller != null) return;
-
-    // Délai avant chargement pour éviter les conflits
-    await Future<void>.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
 
     try {
@@ -82,25 +79,26 @@ class _CameraScannerState extends State<CameraScanner>
         facing: CameraFacing.back,
         torchEnabled: false,
         returnImage: false,
+        autoStart: true,
       );
 
-      await _controller!.start();
-
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-
-        // Restaurer l'état de la torche depuis les globals
-        if (Globals.CAMERA_TORCH_ENABLED) {
-          await _controller!.toggleTorch();
-          setState(() {
-            _isFlashOn = true;
-          });
-        }
-      }
+      _controller!.addListener(_onControllerUpdate);
+      if (mounted) setState(() {});
     } catch (e) {
       debugPrint('Erreur chargement caméra: $e');
+    }
+  }
+
+  void _onControllerUpdate() {
+    if (!mounted || _controller == null) return;
+
+    final isRunning = _controller!.value.isRunning;
+    if (isRunning && !_isInitialized) {
+      setState(() => _isInitialized = true);
+      if (Globals.CAMERA_TORCH_ENABLED) {
+        _controller!.toggleTorch();
+        setState(() => _isFlashOn = true);
+      }
     }
   }
 
@@ -118,7 +116,8 @@ class _CameraScannerState extends State<CameraScanner>
     }
 
     try {
-      await controllerToDispose!.stop();
+      controllerToDispose!.removeListener(_onControllerUpdate);
+      await controllerToDispose.stop();
       await controllerToDispose.dispose();
     } catch (e) {
       debugPrint('Erreur déchargement caméra: $e');
@@ -212,6 +211,7 @@ class _CameraScannerState extends State<CameraScanner>
 
   @override
   void dispose() {
+    _controller?.removeListener(_onControllerUpdate);
     WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     _controller?.dispose();
@@ -252,13 +252,13 @@ class _CameraScannerState extends State<CameraScanner>
                 borderRadius: BorderRadius.circular(16),
                 child: Stack(
                   children: [
-                    if (_isInitialized && _controller != null)
+                    if (_controller != null)
                       MobileScanner(
                         controller: _controller!,
                         onDetect: _onDetect,
                         fit: BoxFit.cover,
-                      )
-                    else
+                      ),
+                    if (!_isInitialized)
                       const Center(
                         child: CircularProgressIndicator(color: Colors.white),
                       ),

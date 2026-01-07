@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show TextInput;
 import 'package:go_router/go_router.dart';
@@ -117,6 +118,11 @@ class _LoginPageState extends State<LoginPage> {
                     top: 16,
                     right: 16,
                     child: _buildDarkModeToggle(),
+                  ),
+                  Positioned(
+                    top: 16,
+                    left: 16,
+                    child: _buildEnvironmentToggle(),
                   ),
                 ],
               ),
@@ -371,6 +377,203 @@ class _LoginPageState extends State<LoginPage> {
           await setDarkMode(newValue);
           setState(() {});
         },
+      ),
+    );
+  }
+
+  Widget _buildEnvironmentToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Globals.COLOR_SURFACE,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Globals.COLOR_SHADOW.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _showEnvironmentDialog(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.cloud_outlined,
+                color: Globals.COLOR_ADAPTIVE_ACCENT,
+                size: 20,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                kDebugMode ? 'Debug' : Globals.API_ENVIRONMENT.displayName,
+                style: TextStyle(
+                  color: Globals.COLOR_ADAPTIVE_ACCENT,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEnvironmentDialog() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useRootNavigator: true,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Globals.COLOR_SURFACE,
+              Globals.COLOR_SURFACE.withOpacity(0.95),
+            ],
+          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(
+            color: Globals.COLOR_TEXT_GRAY.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 48,
+                height: 5,
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                decoration: BoxDecoration(
+                  color: Globals.COLOR_TEXT_GRAY.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.15),
+                            Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.08),
+                          ],
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.cloud_outlined,
+                        color: Globals.COLOR_ADAPTIVE_ACCENT,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'Environnement API',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Globals.COLOR_TEXT_DARK,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                height: 1,
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      Globals.COLOR_TEXT_GRAY.withOpacity(0.2),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...ApiEnvironment.values.map((env) {
+                final isSelected = env == Globals.API_ENVIRONMENT;
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.1)
+                        : Globals.COLOR_SURFACE_SECONDARY.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected
+                          ? Globals.COLOR_ADAPTIVE_ACCENT.withOpacity(0.3)
+                          : Globals.COLOR_TEXT_GRAY.withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    leading: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Globals.COLOR_ADAPTIVE_ACCENT
+                            : Globals.COLOR_TEXT_GRAY.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    title: Text(
+                      env.displayName,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Globals.COLOR_TEXT_DARK,
+                      ),
+                    ),
+                    subtitle: Text(
+                      env.url,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Globals.COLOR_TEXT_GRAY,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? Icon(
+                            Icons.check_circle,
+                            color: Globals.COLOR_ADAPTIVE_ACCENT,
+                            size: 20,
+                          )
+                        : null,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await Future<void>.delayed(const Duration(milliseconds: 100));
+                      await setApiEnvironment(env);
+                      setState(() {});
+                    },
+                  ),
+                );
+              }),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
       ),
     );
   }
