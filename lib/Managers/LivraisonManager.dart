@@ -50,20 +50,10 @@ void ValidLivraisonCommand(
   final String timestamp = Globals.getSqlDate();
 
   final List<Spooler> tasks = [];
-  for (final base64image in base64images) {
-    tasks.add(Spooler(
-      url: "$apiUrl/commands/${command.id}/picture",
-      headers: {'Authorization': token},
-      body: {
-        "name": "photo_xx.jpg",
-        "base64": base64image
-      },
-      formType: 'post',
-    ));
-  }
 
   updateCommandState(command, onUpdate, false);
 
+  // 1. Package states
   for (final Package p in command.packages.values) {
     if (p.status.id == 5) continue;
     if (p.status.id == 8 || p.status.id == 9) {
@@ -81,6 +71,7 @@ void ValidLivraisonCommand(
     ));
   }
 
+  // 2. Command state
   final locationService = locator<LocationService>();
   final location = locationService.currentLocation;
 
@@ -91,17 +82,30 @@ void ValidLivraisonCommand(
     "latitude": location?.latitude ?? 0.0,
     "longitude": location?.longitude ?? 0.0,
   };
-  
+
   if (command.deliveryComment.isNotEmpty) {
     commandStateBody["comment"] = command.deliveryComment;
   }
-  
+
   tasks.add(Spooler(
     url: "$apiUrl/commands/state",
     headers: {'Authorization': token, "Content-Type": "application/json"},
     body: commandStateBody,
     formType: 'put',
   ));
+
+  // 3. Pictures (sent last)
+  for (final base64image in base64images) {
+    tasks.add(Spooler(
+      url: "$apiUrl/commands/${command.id}/picture",
+      headers: {'Authorization': token},
+      body: {
+        "name": "photo_xx.jpg",
+        "base64": base64image
+      },
+      formType: 'post',
+    ));
+  }
 
   globalSpooler.addTasks(tasks);
   saveToursToHive();

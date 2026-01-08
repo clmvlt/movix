@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:movix/Router/app_router.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/settings.dart';
 
@@ -17,7 +18,7 @@ class CameraScanner extends StatefulWidget {
 }
 
 class _CameraScannerState extends State<CameraScanner>
-    with TickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver, RouteAware {
   MobileScannerController? _controller;
   bool _isExtended = false;
   bool _isFlashOn = false;
@@ -50,6 +51,27 @@ class _CameraScannerState extends State<CameraScanner>
       _animationController.value = 1.0;
     }
 
+    _loadCamera();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPushNext() {
+    // Une nouvelle page a ete poussee par dessus - mettre en pause la camera
+    _unloadCamera();
+  }
+
+  @override
+  void didPopNext() {
+    // La page au dessus a ete fermee - reprendre la camera
     _loadCamera();
   }
 
@@ -211,6 +233,7 @@ class _CameraScannerState extends State<CameraScanner>
 
   @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _controller?.removeListener(_onControllerUpdate);
     WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
