@@ -164,21 +164,33 @@ final GoRouter appRouter = GoRouter(
       path: '/tour/fslivraison',
       pageBuilder: (context, state) {
         final extra = state.extra as Map<String, dynamic>;
-        final command = extra['command'] as Command;
         final onUpdate = extra['onUpdate'] as VoidCallback;
-        return buildPageWithTransition(FSLivraisonPage(command: command, onUpdate: onUpdate));
+        // Support pour une seule commande ou une liste de commandes
+        final List<Command> commands;
+        if (extra.containsKey('commands')) {
+          commands = extra['commands'] as List<Command>;
+        } else {
+          commands = [extra['command'] as Command];
+        }
+        return buildPageWithTransition(FSLivraisonPage(commands: commands, onUpdate: onUpdate));
       },
     ),
     GoRoute(
       path: '/tour/validateLivraison',
       pageBuilder: (context, state) {
         final extra = state.extra as Map<String, dynamic>;
-        final command = extra['command'] as Command;
         final onUpdate = extra['onUpdate'] as VoidCallback;
         final popCount = extra['popCount'] as int? ?? 2;
+        // Support pour une seule commande ou une liste de commandes
+        final List<Command> commands;
+        if (extra.containsKey('commands')) {
+          commands = extra['commands'] as List<Command>;
+        } else {
+          commands = [extra['command'] as Command];
+        }
         return buildPageWithTransition(LivraisonValidationPage(
           onUpdate: onUpdate,
-          command: command,
+          commands: commands,
           popCount: popCount,
         ));
       },

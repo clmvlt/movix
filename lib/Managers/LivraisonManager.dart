@@ -111,6 +111,85 @@ void ValidLivraisonCommand(
   saveToursToHive();
 }
 
+/// Valide plusieurs commandes (groupe) avec les mêmes photos
+void ValidLivraisonCommands(
+    List<Command> commands, List<String> base64images, VoidCallback onUpdate) async {
+  final globalSpooler = SpoolerManager();
+  final String token = Globals.profil?.token ?? "";
+  final String apiUrl = Globals.API_URL;
+  final String timestamp = Globals.getSqlDate();
+
+  final List<Spooler> tasks = [];
+
+  // Mettre à jour l'état de toutes les commandes
+  for (final command in commands) {
+    updateCommandState(command, onUpdate, false);
+  }
+
+  // 1. Package states pour toutes les commandes
+  for (final command in commands) {
+    for (final Package p in command.packages.values) {
+      if (p.status.id == 5) continue;
+      if (p.status.id == 8 || p.status.id == 9) {
+        p.status.id = 4;
+      }
+      tasks.add(Spooler(
+        url: "$apiUrl/packages/state",
+        headers: {'Authorization': token},
+        body: {
+          "packageBarcodes": [p.barcode],
+          "statusId": p.status.id,
+          "createdAt": timestamp
+        },
+        formType: 'put',
+      ));
+    }
+  }
+
+  // 2. Command states pour toutes les commandes
+  final locationService = locator<LocationService>();
+  final location = locationService.currentLocation;
+
+  for (final command in commands) {
+    Map<String, dynamic> commandStateBody = {
+      "commandIds": [command.id],
+      "statusId": command.status.id,
+      "createdAt": timestamp,
+      "latitude": location?.latitude ?? 0.0,
+      "longitude": location?.longitude ?? 0.0,
+    };
+
+    if (command.deliveryComment.isNotEmpty) {
+      commandStateBody["comment"] = command.deliveryComment;
+    }
+
+    tasks.add(Spooler(
+      url: "$apiUrl/commands/state",
+      headers: {'Authorization': token, "Content-Type": "application/json"},
+      body: commandStateBody,
+      formType: 'put',
+    ));
+  }
+
+  // 3. Pictures pour toutes les commandes (même photo pour chaque commande)
+  for (final command in commands) {
+    for (final base64image in base64images) {
+      tasks.add(Spooler(
+        url: "$apiUrl/commands/${command.id}/picture",
+        headers: {'Authorization': token},
+        body: {
+          "name": "photo_xx.jpg",
+          "base64": base64image
+        },
+        formType: 'post',
+      ));
+    }
+  }
+
+  globalSpooler.addTasks(tasks);
+  saveToursToHive();
+}
+
 Future<void> ValidLivraisonTour(
     BuildContext context, Tour tour, Function updateState) async {
   final globalSpooler = SpoolerManager();

@@ -6,9 +6,10 @@ import 'package:movix/Services/globals.dart';
 import 'package:movix/Services/affichage.dart';
 
 class LivraisonValidationLogicWidget {
+  /// Validation pour une liste de commandes (groupe)
   static Future<void> confirmValidation({
     required BuildContext context,
-    required Command command,
+    required List<Command> commands,
     required bool cipScanned,
     required VoidCallback onUpdate,
   }) async {
@@ -20,7 +21,8 @@ class LivraisonValidationLogicWidget {
       return;
     }
 
-    if (!_isCommandValid(command)) {
+    // Vérifier si toutes les commandes sont valides
+    if (!_areAllCommandsValid(commands)) {
       final result = await showDialog<Map<String, dynamic>>(
         context: context,
         builder: getColisConfirm,
@@ -28,25 +30,38 @@ class LivraisonValidationLogicWidget {
 
       if (result == null || result['confirmed'] != true) return;
 
-      // Enregistrer le commentaire dans la commande
+      // Enregistrer le commentaire dans toutes les commandes
       final comment = result['comment'] as String?;
       if (comment != null && comment.isNotEmpty) {
-        command.deliveryComment = comment;
+        for (final command in commands) {
+          command.deliveryComment = comment;
+        }
       }
 
-      for (final package in command.packages.values) {
-        if (package.status.id != 3) {
-          setPackageStateOffline(command, package, 4, onUpdate);
+      // Marquer les colis non scannés comme absents pour toutes les commandes
+      for (final command in commands) {
+        for (final package in command.packages.values) {
+          if (package.status.id != 3) {
+            setPackageStateOffline(command, package, 4, onUpdate);
+          }
         }
       }
     }
 
     if (context.mounted) {
       context.push('/tour/validateLivraison', extra: {
-        'command': command,
+        'commands': commands,
         'onUpdate': onUpdate,
       });
     }
+  }
+
+  /// Vérifie si toutes les commandes sont valides
+  static bool _areAllCommandsValid(List<Command> commands) {
+    for (final command in commands) {
+      if (!_isCommandValid(command)) return false;
+    }
+    return true;
   }
 
   static bool _isCommandValid(Command command) {

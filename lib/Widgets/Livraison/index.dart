@@ -22,3 +22,4 @@ export 'FSLivraisonBodyWidget.dart';
 export 'CIPScanValidationWidget.dart';
 export 'ScanInputDialogWidget.dart';
 export 'FSLivraisonCommandCardWidget.dart';
+export 'GroupedCommandCardWidget.dart';

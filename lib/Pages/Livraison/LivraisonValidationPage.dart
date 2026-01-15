@@ -9,13 +9,13 @@ import 'package:movix/Widgets/CustomButton.dart';
 import 'package:movix/Widgets/PhotoPickerWidget.dart';
 
 class LivraisonValidationPage extends StatefulWidget {
-  final Command command;
+  final List<Command> commands;
   final VoidCallback onUpdate;
   final int popCount;
 
   const LivraisonValidationPage({
     super.key,
-    required this.command,
+    required this.commands,
     required this.onUpdate,
     this.popCount = 2,
   });
@@ -27,6 +27,12 @@ class LivraisonValidationPage extends StatefulWidget {
 
 class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
   List<String> base64Images = [];
+
+  /// Première commande (utilisée pour les infos communes)
+  Command get _firstCommand => widget.commands.first;
+
+  /// Nombre de commandes dans le groupe
+  bool get _isGroup => widget.commands.length > 1;
 
   void onUpdate() {
     setState(() {});
@@ -41,18 +47,21 @@ class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
 
   /// Trouve et lance le GPS vers la prochaine livraison non livrée
   void _launchGpsForNextDelivery() {
-    final tour = Globals.tours[widget.command.tourId];
+    final tour = Globals.tours[_firstCommand.tourId];
     if (tour == null) return;
 
     // Récupérer les commandes triées par tourOrder
     final commands = tour.commands.values.toList()
       ..sort((a, b) => a.tourOrder.compareTo(b.tourOrder));
 
+    // IDs des commandes du groupe actuel à ignorer
+    final currentCommandIds = widget.commands.map((c) => c.id).toSet();
+
     // Trouver la prochaine commande non livrée (status != 3, 4, 5, 7, 8, 9)
     Command? nextCommand;
     for (final cmd in commands) {
-      // Ignorer la commande actuelle et les commandes déjà livrées/annulées
-      if (cmd.id == widget.command.id) continue;
+      // Ignorer les commandes du groupe actuel et les commandes déjà livrées/annulées
+      if (currentCommandIds.contains(cmd.id)) continue;
       final statusId = cmd.status.id;
       // Status 3=livré, 4=livré partiel, 5=anomalie, 7=annulé, 8=refusé, 9=absent
       if (statusId != 3 && statusId != 4 && statusId != 5 &&
@@ -142,7 +151,9 @@ class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Livraison terminée",
+                        _isGroup
+                            ? "Livraison terminée (${widget.commands.length} commandes)"
+                            : "Livraison terminée",
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -195,8 +206,9 @@ class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
               child: customButton(
                 onPressed: () {
                   if (base64Images.isNotEmpty) {
-                    ValidLivraisonCommand(
-                        widget.command, base64Images, widget.onUpdate);
+                    // Valider toutes les commandes du groupe avec les mêmes photos
+                    ValidLivraisonCommands(
+                        widget.commands, base64Images, widget.onUpdate);
 
                     // Lancement automatique du GPS vers la prochaine livraison
                     if (Globals.AUTO_LAUNCH_GPS) {
@@ -216,7 +228,7 @@ class _LivraisonValidationPageState extends State<LivraisonValidationPage> {
               ),
             ),
           ),
-        ],  
+        ],
       ),
     );
   }

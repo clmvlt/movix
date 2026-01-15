@@ -78,3 +78,25 @@ Widget packagesNumberBadge(int number, {BadgeSize size = BadgeSize.medium}) {
     ),
   );
 }
+
+Widget otCountBadge(int count, {BadgeSize size = BadgeSize.medium}) {
+  final double badgeSize = BadgeStyle.sizes[size]!;
+  return Container(
+    height: badgeSize,
+    padding: BadgeStyle.paddings[size],
+    decoration: BoxDecoration(
+      color: Globals.COLOR_MOVIX_YELLOW,
+      borderRadius: BorderRadius.circular(badgeSize / 2),
+    ),
+    child: Center(
+      child: Text(
+        "$count OT",
+        style: TextStyle(
+          fontSize: BadgeStyle.fontSizes[size],
+          fontWeight: FontWeight.w600,
+          color: Globals.COLOR_TEXT_DARK,
+        ),
+      ),
+    ),
+  );
+}

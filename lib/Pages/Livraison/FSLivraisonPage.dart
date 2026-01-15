@@ -3,18 +3,19 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:movix/Managers/PackageManager.dart';
 import 'package:movix/Models/Command.dart';
+import 'package:movix/Models/Package.dart';
 import 'package:movix/Models/Sound.dart';
 import 'package:movix/Services/globals.dart';
 import 'package:movix/Widgets/CustomPopup.dart';
 import 'package:movix/Widgets/Livraison/index.dart';
 
 class FSLivraisonPage extends StatefulWidget {
-  final Command command;
+  final List<Command> commands;
   final VoidCallback onUpdate;
 
   const FSLivraisonPage({
     super.key,
-    required this.command,
+    required this.commands,
     required this.onUpdate,
   });
 
@@ -27,6 +28,12 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
 
   bool get _isCIPRequired => Globals.profil?.account.isScanCIP ?? false;
 
+  /// Première commande (utilisée pour les infos pharmacie communes)
+  Command get _firstCommand => widget.commands.first;
+
+  /// Nombre de commandes dans le groupe
+  bool get _isGroup => widget.commands.length > 1;
+
   void onUpdate() {
     setState(() {});
     widget.onUpdate();
@@ -36,36 +43,40 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
   void initState() {
     super.initState();
 
-    // Valider auto le CIP si la commande est forcée
-    if (widget.command.isForced) {
+    // Valider auto le CIP si toutes les commandes sont forcées
+    if (widget.commands.every((c) => c.isForced)) {
       CIPScanned = true;
     }
 
     // Afficher les commentaires après un court délai
     Future.delayed(const Duration(milliseconds: 100), () async {
-      // Commentaire de la pharmacie
-      if (mounted && widget.command.pharmacy.commentaire.isNotEmpty) {
+      // Commentaire de la pharmacie (une seule fois car même pharmacie)
+      if (mounted && _firstCommand.pharmacy.commentaire.isNotEmpty) {
         await showInfoPopup(
           context: context,
           title: "Commentaire de la pharmacie",
-          content: Text(widget.command.pharmacy.commentaire),
+          content: Text(_firstCommand.pharmacy.commentaire),
           buttonText: "Fermer",
           icon: Icons.store_outlined,
         );
       }
 
-      // Commentaire de la commande
-      if (mounted && widget.command.comment.isNotEmpty) {
-        await showInfoPopup(
-          context: context,
-          title: "Commentaire de la commande",
-          content: Text(widget.command.comment),
-          buttonText: "Fermer",
-          icon: Icons.comment_outlined,
-        );
+      // Commentaires des commandes
+      for (final command in widget.commands) {
+        if (mounted && command.comment.isNotEmpty) {
+          await showInfoPopup(
+            context: context,
+            title: _isGroup
+                ? "Commentaire commande"
+                : "Commentaire de la commande",
+            content: Text(command.comment),
+            buttonText: "Fermer",
+            icon: Icons.comment_outlined,
+          );
+        }
       }
 
-      if (mounted && widget.command.newPharmacy) {
+      if (mounted && _firstCommand.newPharmacy) {
         bool? res = await showConfirmationPopup(
             context: context,
             title: "Nouvelle pharmacie",
@@ -74,10 +85,37 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
             cancelText: "Fermer",
             confirmText: "Ajouter");
         if (res == true) {
-          await context.push('/pharmacy', extra: {"command": widget.command});
+          await context.push('/pharmacy', extra: {"command": _firstCommand});
         }
       }
     });
+  }
+
+  /// Trouve un colis par son barcode dans toutes les commandes
+  (Command, Package)? _findPackage(String barcode) {
+    for (final command in widget.commands) {
+      final package = command.packages[barcode];
+      if (package != null) {
+        return (command, package);
+      }
+    }
+    return null;
+  }
+
+  /// Vérifie si un colis existe dans une autre commande du même tour
+  bool _findPackageInOtherCommands(String barcode) {
+    final tour = Globals.tours[_firstCommand.tourId];
+    if (tour == null) return false;
+
+    for (final command in tour.commands.values) {
+      // Ignorer les commandes déjà sélectionnées
+      if (widget.commands.any((c) => c.id == command.id)) continue;
+
+      if (command.packages.containsKey(barcode)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   Future<ScanResult> validateCode(String code, {bool isManualInput = false}) async {
@@ -85,8 +123,9 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
       return ScanResult.SCAN_ERROR;
     }
 
+    // Vérification du CIP (identique pour toutes les commandes du groupe)
     if (_isCIPRequired && !CIPScanned) {
-      if (code == widget.command.pharmacy.cip) {
+      if (code == _firstCommand.pharmacy.cip) {
         setState(() => CIPScanned = true);
         return ScanResult.SCAN_SUCCESS;
       }
@@ -99,15 +138,29 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
       return ScanResult.SCAN_ERROR;
     }
 
-    final package = widget.command.packages[code];
-    if (package == null) {
-      Globals.showSnackbar(
-        "Colis introuvable",
-        backgroundColor: Globals.COLOR_MOVIX_RED,
-        duration: const Duration(seconds: 1),
-      );
+    // Chercher le colis dans toutes les commandes
+    final result = _findPackage(code);
+    if (result == null) {
+      // Vérifier si le colis appartient à une autre commande du tour
+      if (_findPackageInOtherCommands(code)) {
+        await showInfoPopup(
+          context: context,
+          title: "Attention",
+          content: const Text("Ce colis appartient à une autre commande"),
+          buttonText: "OK",
+          icon: Icons.warning_amber_outlined,
+        );
+      } else {
+        Globals.showSnackbar(
+          "Colis introuvable",
+          backgroundColor: Globals.COLOR_MOVIX_RED,
+          duration: const Duration(seconds: 1),
+        );
+      }
       return ScanResult.SCAN_ERROR;
     }
+
+    final (command, package) = result;
 
     if (package.status.id == 3) {
       Globals.showSnackbar(
@@ -118,21 +171,29 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
       return ScanResult.SCAN_ERROR;
     }
 
-    setPackageStateOffline(widget.command, package, 3, onUpdate);
+    setPackageStateOffline(command, package, 3, onUpdate);
 
-    return _isAllScanned(widget.command)
+    return _isAllScanned()
         ? ScanResult.SCAN_FINISH
         : ScanResult.SCAN_SUCCESS;
   }
 
+  /// Vérifie si tous les colis de toutes les commandes sont scannés
+  bool _isAllScanned() {
+    for (final command in widget.commands) {
+      for (var p in command.packages.values) {
+        if (p.status.id != 3) return false;
+      }
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    Command command = widget.command;
-
     return Scaffold(
         backgroundColor: Globals.COLOR_BACKGROUND,
         appBar: PharmacyAppBarWidget(
-          command: command,
+          command: _firstCommand,
           actions: [
             if (kDebugMode)
               IconButton(
@@ -140,7 +201,7 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
                 onPressed: () => _debugScanAllPackages(),
                 tooltip: 'Debug: Scanner tous les colis',
               ),
-            PharmacyInfoActionWidget(command: command),
+            PharmacyInfoActionWidget(command: _firstCommand),
           ],
         ),
         body: Stack(fit: StackFit.expand, children: [
@@ -152,15 +213,16 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
                   validateCode: validateCode,
                 ),
                 if (_isCIPRequired) _buildCIPStatusButton(),
-                _buildModernCommandCard(command),
+                // Afficher toutes les commandes du groupe
+                ...widget.commands.map((command) => _buildModernCommandCard(command)),
                 const SizedBox(height: 120),
               ],
             ),
           ),
           BottomValidationButtonWidget(
             label: 'Valider la livraison',
-            onPressed: () => confirmValidation(command),
-            allPackagesScanned: _isAllScanned(command),
+            onPressed: () => confirmValidation(),
+            allPackagesScanned: _isAllScanned(),
           ),
         ]),
     );
@@ -180,11 +242,10 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
     );
   }
 
-
-  void confirmValidation(Command command) async {
+  void confirmValidation() async {
     await LivraisonValidationLogicWidget.confirmValidation(
       context: context,
-      command: command,
+      commands: widget.commands,
       cipScanned: _isCIPRequired ? CIPScanned : true,
       onUpdate: onUpdate,
     );
@@ -192,10 +253,10 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
 
   void _debugScanAllPackages() async {
     if (!kDebugMode) return;
-    
+
     // Scanner d'abord le CIP si nécessaire
     if (_isCIPRequired && !CIPScanned) {
-      ScanResult cipResult = await validateCode(widget.command.pharmacy.cip, isManualInput: true);
+      ScanResult cipResult = await validateCode(_firstCommand.pharmacy.cip, isManualInput: true);
       if (cipResult != ScanResult.SCAN_SUCCESS) {
         Globals.showSnackbar(
           "Debug: Impossible de scanner le CIP",
@@ -205,20 +266,17 @@ class _FSLivraisonPageState extends State<FSLivraisonPage> {
       }
     }
 
-    for (var packageId in widget.command.packages.keys) {
-      var package = widget.command.packages[packageId];
-      if (package != null) {
-        ScanResult result = await validateCode(packageId, isManualInput: true);
-        if (result == ScanResult.SCAN_SUCCESS || result == ScanResult.SCAN_FINISH) {
+    // Scanner tous les colis de toutes les commandes
+    for (final command in widget.commands) {
+      for (var packageId in command.packages.keys) {
+        var package = command.packages[packageId];
+        if (package != null) {
+          ScanResult result = await validateCode(packageId, isManualInput: true);
+          if (result == ScanResult.SCAN_SUCCESS || result == ScanResult.SCAN_FINISH) {
+            // Continue
+          }
         }
       }
     }
-  }
-
-  bool _isAllScanned(Command command) {
-    for (var p in command.packages.values) {
-      if (p.status.id != 3) return false;
-    }
-    return true;
   }
 }
